@@ -1,13 +1,15 @@
-import React, { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { Chunk } from "../../types/index.js";
 
 interface Props {
   chunk: Chunk;
   index: number;
+  isLast: boolean;
   onUpdate: (index: number, changes: Partial<Chunk>) => void;
+  onRemove: (index: number) => void;
 }
 
-export function ChunkCard({ chunk, index, onUpdate }: Props) {
+export function ChunkCard({ chunk, index, isLast, onUpdate, onRemove }: Props) {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(chunk.editedText ?? chunk.generatedText);
   const [notes, setNotes] = useState(chunk.humanNotes ?? "");
@@ -62,19 +64,27 @@ export function ChunkCard({ chunk, index, onUpdate }: Props) {
             }}
           />
         ) : (
-          chunk.editedText ?? chunk.generatedText
+          (chunk.editedText ?? chunk.generatedText)
         )}
       </div>
       <div className="chunk-card-actions">
         <button onClick={handleAccept} disabled={chunk.status === "accepted"}>
           Accept
         </button>
-        <button onClick={handleEdit}>
-          {editing ? "Save Edit" : "Edit"}
-        </button>
-        <button className="danger" onClick={handleReject} disabled={chunk.status === "rejected"}>
+        <button onClick={handleEdit}>{editing ? "Save Edit" : "Edit"}</button>
+        <button
+          className="danger"
+          onClick={handleReject}
+          disabled={chunk.status === "rejected" || !isLast}
+          title={!isLast ? "Can only reject the last chunk — later chunks depend on this one" : undefined}
+        >
           Reject
         </button>
+        {chunk.status === "rejected" && (
+          <button onClick={() => onRemove(index)} style={{ color: "var(--warning)" }}>
+            Remove & Retry
+          </button>
+        )}
         <div style={{ flex: 1 }} />
         <span style={{ fontSize: "10px", color: "var(--text-muted)" }}>
           {chunk.model} | t={chunk.temperature}

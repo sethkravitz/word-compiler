@@ -50,10 +50,7 @@ export interface StreamCallbacks {
   onError: (error: string) => void;
 }
 
-export async function generateStream(
-  payload: CompiledPayload,
-  callbacks: StreamCallbacks,
-): Promise<void> {
+export async function generateStream(payload: CompiledPayload, callbacks: StreamCallbacks): Promise<void> {
   const response = await fetch("/api/generate/stream", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

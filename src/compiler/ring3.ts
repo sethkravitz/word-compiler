@@ -1,27 +1,21 @@
-import type {
-  ScenePlan,
-  Bible,
-  Chunk,
-  CompilationConfig,
-  Ring3Result,
-  RingSection,
-} from "../types/index.js";
-import { getCanonicalText } from "../types/index.js";
 import { countTokens, lastNTokens } from "../tokens/index.js";
+import type { Bible, Chunk, CompilationConfig, Ring3Result, RingSection, ScenePlan } from "../types/index.js";
+import { getCanonicalText } from "../types/index.js";
 import {
-  formatSceneContract,
-  formatCharacterVoice,
-  formatSensoryPalette,
-  formatAntiAblation,
   assembleSections,
+  formatAntiAblation,
+  formatCharacterVoice,
+  formatSceneContract,
+  formatSensoryPalette,
 } from "./helpers.js";
 
 export function buildRing3(
   plan: ScenePlan,
   bible: Bible,
   previousChunks: Chunk[],
-  chunkNumber: number,
+  _chunkNumber: number,
   config: CompilationConfig,
+  previousSceneLastChunk?: Chunk,
 ): Ring3Result {
   const sections: RingSection[] = [];
 
@@ -95,6 +89,16 @@ export function buildRing3(
     sections.push({
       name: "CONTINUITY_BRIDGE",
       text: `=== PRECEDING TEXT (match rhythm and continuity) ===\n${verbatim}`,
+      priority: 3,
+      immune: false,
+    });
+  } else if (previousSceneLastChunk) {
+    // Cross-scene bridge: first chunk of new scene carries text from last chunk of previous scene
+    const canonText = getCanonicalText(previousSceneLastChunk);
+    const verbatim = lastNTokens(canonText, config.bridgeVerbatimTokens);
+    sections.push({
+      name: "CONTINUITY_BRIDGE",
+      text: `=== PRECEDING TEXT (previous scene — match rhythm and continuity) ===\n${verbatim}`,
       priority: 3,
       immune: false,
     });

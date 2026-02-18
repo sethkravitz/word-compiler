@@ -1,17 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { lintPayload } from "../../src/linter/index.js";
-import type {
-  Ring1Result,
-  Ring3Result,
-  ScenePlan,
-  Bible,
-  CompilationConfig,
-} from "../../src/types/index.js";
+import type { Bible, CompilationConfig, Ring1Result, Ring3Result, ScenePlan } from "../../src/types/index.js";
 import {
-  createEmptyBible,
-  createEmptyScenePlan,
   createDefaultCompilationConfig,
+  createEmptyBible,
   createEmptyCharacterDossier,
+  createEmptyScenePlan,
 } from "../../src/types/index.js";
 
 function makeR1(tokenCount: number): Ring1Result {

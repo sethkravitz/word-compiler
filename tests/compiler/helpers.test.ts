@@ -1,13 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  formatSceneContract,
-  formatCharacterVoice,
-  formatSensoryPalette,
-  formatAntiAblation,
   assembleSections,
+  formatAntiAblation,
+  formatCharacterVoice,
+  formatSceneContract,
+  formatSensoryPalette,
 } from "../../src/compiler/helpers.js";
-import type { ScenePlan, CharacterDossier, Location, RingSection } from "../../src/types/index.js";
-import { createEmptyScenePlan, createEmptyCharacterDossier } from "../../src/types/index.js";
+import type { CharacterDossier, Location, RingSection, ScenePlan } from "../../src/types/index.js";
+import { createEmptyCharacterDossier, createEmptyScenePlan } from "../../src/types/index.js";
 
 function makePlan(overrides: Partial<ScenePlan> = {}): ScenePlan {
   return {

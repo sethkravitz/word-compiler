@@ -1,10 +1,10 @@
-import React, { useRef, useEffect, useCallback } from "react";
-import { EditorState } from "@codemirror/state";
-import { EditorView, keymap, lineNumbers } from "@codemirror/view";
-import { json } from "@codemirror/lang-json";
-import { oneDark } from "@codemirror/theme-one-dark";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { json } from "@codemirror/lang-json";
 import { bracketMatching, foldGutter } from "@codemirror/language";
+import { EditorState } from "@codemirror/state";
+import { oneDark } from "@codemirror/theme-one-dark";
+import { EditorView, keymap, lineNumbers } from "@codemirror/view";
+import React, { useCallback, useEffect, useRef } from "react";
 import type { Bible, ScenePlan } from "../../types/index.js";
 import type { AppAction } from "../hooks/useProject.js";
 
@@ -17,15 +17,7 @@ interface Props {
   onBootstrap: () => void;
 }
 
-function JsonEditor({
-  value,
-  onChange,
-  label,
-}: {
-  value: string;
-  onChange: (val: string) => void;
-  label: string;
-}) {
+function JsonEditor({ value, onChange, label }: { value: string; onChange: (val: string) => void; label: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -64,7 +56,7 @@ function JsonEditor({
     };
     // Only create on mount — value updates handled below
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [value]);
 
   // Sync external value changes (e.g., file load)
   useEffect(() => {
@@ -147,7 +139,7 @@ export function BiblePane({ bible, scenePlan, dispatch, loadFile, saveFile, onBo
         </div>
       </div>
       <div className="pane-content" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-        <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", alignItems: "center" }}>
           <button onClick={handleLoadBible}>Load Bible</button>
           <button onClick={() => bible && saveFile(bible, "bible.json")} disabled={!bible}>
             Save Bible
@@ -156,6 +148,9 @@ export function BiblePane({ bible, scenePlan, dispatch, loadFile, saveFile, onBo
           <button onClick={() => scenePlan && saveFile(scenePlan, "scene-plan.json")} disabled={!scenePlan}>
             Save Plan
           </button>
+          {bible && (
+            <span style={{ fontSize: "10px", color: "var(--accent-dim)", marginLeft: "auto" }}>v{bible.version}</span>
+          )}
         </div>
         <JsonEditor value={bibleJson} onChange={handleBibleChange} label="Bible JSON" />
         <JsonEditor value={planJson} onChange={handlePlanChange} label="Scene Plan JSON" />

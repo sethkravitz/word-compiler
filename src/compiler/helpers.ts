@@ -1,9 +1,4 @@
-import type {
-  ScenePlan,
-  CharacterDossier,
-  Location,
-  RingSection,
-} from "../types/index.js";
+import type { CharacterDossier, Location, RingSection, ScenePlan } from "../types/index.js";
 
 export function formatSceneContract(plan: ScenePlan): string {
   const lines: string[] = [
@@ -56,17 +51,12 @@ export function formatSceneContract(plan: ScenePlan): string {
   return lines.join("\n");
 }
 
-export function formatCharacterVoice(
-  char: CharacterDossier,
-  sceneConstraints: string[],
-): string {
+export function formatCharacterVoice(char: CharacterDossier, sceneConstraints: string[]): string {
   const v = char.voice;
   const lines: string[] = [`=== ${char.name.toUpperCase()} — VOICE ===`];
 
   if (v.sentenceLengthRange) {
-    lines.push(
-      `Sentence length: ${v.sentenceLengthRange[0]}-${v.sentenceLengthRange[1]} words`,
-    );
+    lines.push(`Sentence length: ${v.sentenceLengthRange[0]}-${v.sentenceLengthRange[1]} words`);
   }
   if (v.vocabularyNotes) {
     lines.push(`Vocabulary: ${v.vocabularyNotes}`);
@@ -98,10 +88,8 @@ export function formatCharacterVoice(
   if (char.behavior) {
     const b = char.behavior;
     const behaviorParts: string[] = [];
-    if (b.emotionPhysicality)
-      behaviorParts.push(`Body shows emotion: ${b.emotionPhysicality}`);
-    if (b.stressResponse)
-      behaviorParts.push(`Under stress: ${b.stressResponse}`);
+    if (b.emotionPhysicality) behaviorParts.push(`Body shows emotion: ${b.emotionPhysicality}`);
+    if (b.stressResponse) behaviorParts.push(`Under stress: ${b.stressResponse}`);
     if (behaviorParts.length > 0) {
       lines.push(`\n${behaviorParts.join("\n")}`);
     }
@@ -138,18 +126,10 @@ export function formatAntiAblation(plan: ScenePlan): string {
 
   lines.push(`\nGENERAL:`);
   lines.push(`- Do not summarize what just happened.`);
-  lines.push(
-    `- Do not have characters explain their own motivations.`,
-  );
-  lines.push(
-    `- Do not resolve tension unless the scene contract calls for it.`,
-  );
-  lines.push(
-    `- Subtext must remain sub. If a character states the theme, you have failed.`,
-  );
-  lines.push(
-    `- Prefer specific, embodied detail over abstract description.`,
-  );
+  lines.push(`- Do not have characters explain their own motivations.`);
+  lines.push(`- Do not resolve tension unless the scene contract calls for it.`);
+  lines.push(`- Subtext must remain sub. If a character states the theme, you have failed.`);
+  lines.push(`- Prefer specific, embodied detail over abstract description.`);
   lines.push(`- Vary sentence length. Monotony is failure.`);
 
   return lines.join("\n");

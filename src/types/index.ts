@@ -232,6 +232,7 @@ export interface CompilationLog {
   totalTokens: number;
   availableBudget: number;
   ring1Contents: string[];
+  ring2Contents: string[];
   ring3Contents: string[];
   lintWarnings: string[];
   lintErrors: string[];
@@ -262,8 +263,10 @@ export interface Ring3Result {
 
 export interface BudgetResult {
   r1: string;
+  r2?: string;
   r3: string;
   r1Sections: RingSection[];
+  r2Sections?: RingSection[];
   r3Sections: RingSection[];
   wasCompressed: boolean;
   compressionLog: string[];
@@ -295,6 +298,17 @@ export interface AuditFlag {
   wasActionable: boolean | null;
 }
 
+export interface AuditStats {
+  total: number;
+  resolved: number;
+  dismissed: number;
+  pending: number;
+  actionable: number;
+  nonActionable: number;
+  signalToNoiseRatio: number;
+  byCategory: Record<string, { total: number; actionable: number }>;
+}
+
 export interface ProseMetrics {
   wordCount: number;
   sentenceCount: number;
@@ -305,7 +319,11 @@ export interface ProseMetrics {
   avgParagraphLength: number;
 }
 
-// ─── Phase 1+ Stubs ─────────────────────────────────────
+// ─── Scene Status ───────────────────────────────────────
+
+export type SceneStatus = "planned" | "drafting" | "complete";
+
+// ─── Chapter Arc ────────────────────────────────────────
 
 export interface ChapterArc {
   id: string;
@@ -348,9 +366,17 @@ export function generateId(): string {
   if (typeof globalThis.crypto !== "undefined" && globalThis.crypto.randomUUID) {
     return globalThis.crypto.randomUUID();
   }
-  // Fallback for Node <19
-  const { randomUUID } = require("node:crypto") as typeof import("node:crypto");
-  return randomUUID();
+  // Fallback for Node <19 — try CJS require, then UUID v4 polyfill for ESM
+  try {
+    const { randomUUID } = require("node:crypto") as typeof import("node:crypto");
+    return randomUUID();
+  } catch {
+    // ESM context where require is unavailable and globalThis.crypto is missing
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+    });
+  }
 }
 
 export function getCanonicalText(chunk: Chunk): string {
@@ -415,6 +441,21 @@ export function createEmptyScenePlan(projectId: string): ScenePlan {
     chunkDescriptions: [],
     failureModeToAvoid: "",
     locationId: null,
+  };
+}
+
+export function createEmptyChapterArc(projectId: string, chapterNumber: number = 1): ChapterArc {
+  return {
+    id: generateId(),
+    projectId,
+    chapterNumber,
+    workingTitle: "",
+    narrativeFunction: "",
+    dominantRegister: "",
+    pacingTarget: "",
+    endingPosture: "",
+    readerStateEntering: { knows: [], suspects: [], wrongAbout: [], activeTensions: [] },
+    readerStateExiting: { knows: [], suspects: [], wrongAbout: [], activeTensions: [] },
   };
 }
 
@@ -495,12 +536,14 @@ export const MODEL_REGISTRY: Record<string, ModelSpec> = {
 export const DEFAULT_MODEL = "claude-sonnet-4-6";
 
 export function getModelSpec(modelId: string): ModelSpec {
-  return MODEL_REGISTRY[modelId] ?? {
-    id: modelId,
-    label: modelId,
-    contextWindow: 200000,
-    maxOutput: 64000,
-  };
+  return (
+    MODEL_REGISTRY[modelId] ?? {
+      id: modelId,
+      label: modelId,
+      contextWindow: 200000,
+      maxOutput: 64000,
+    }
+  );
 }
 
 export function createDefaultCompilationConfig(modelId: string = DEFAULT_MODEL): CompilationConfig {
@@ -510,7 +553,7 @@ export function createDefaultCompilationConfig(modelId: string = DEFAULT_MODEL):
     reservedForOutput: Math.min(2000, spec.maxOutput),
     ring1MaxFraction: 0.15,
     ring2MaxFraction: 0.25,
-    ring3MinFraction: 0.60,
+    ring3MinFraction: 0.6,
     ring1HardCap: 2000,
     bridgeVerbatimTokens: 200,
     bridgeIncludeStateBullets: true,

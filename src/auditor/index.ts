@@ -1,6 +1,6 @@
-import type { AuditFlag, Bible, KillListEntry, ProseMetrics } from "../types/index.js";
-import { generateId } from "../types/index.js";
 import { countWords } from "../tokens/index.js";
+import type { AuditFlag, AuditStats, Bible, KillListEntry, ProseMetrics } from "../types/index.js";
+import { generateId } from "../types/index.js";
 
 // ─── Kill List ──────────────────────────────────────────
 
@@ -14,11 +14,7 @@ function getLineReference(prose: string, matchIndex: number): string {
   return `line ${line}`;
 }
 
-export function checkKillList(
-  prose: string,
-  killList: KillListEntry[],
-  sceneId: string,
-): AuditFlag[] {
+export function checkKillList(prose: string, killList: KillListEntry[], sceneId: string): AuditFlag[] {
   const flags: AuditFlag[] = [];
 
   for (const entry of killList) {
@@ -68,17 +64,12 @@ export function splitSentences(text: string): string[] {
   const raw = cleaned.split(/[.!?]\s+(?=[A-Z"])/);
 
   // Restore abbreviations and trim
-  return raw
-    .map((s) => s.replace(/\u0000/g, ".").trim())
-    .filter((s) => s.length > 0);
+  return raw.map((s) => s.replace(/\u0000/g, ".").trim()).filter((s) => s.length > 0);
 }
 
 // ─── Sentence Variance ─────────────────────────────────
 
-export function checkSentenceVariance(
-  prose: string,
-  sceneId: string,
-): AuditFlag[] {
+export function checkSentenceVariance(prose: string, sceneId: string): AuditFlag[] {
   const flags: AuditFlag[] = [];
   const sentences = splitSentences(prose);
   const lengths = sentences.map((s) => countWords(s));
@@ -86,9 +77,7 @@ export function checkSentenceVariance(
   if (lengths.length < 5) return flags;
 
   const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
-  const stddev = Math.sqrt(
-    lengths.reduce((sum, l) => sum + Math.pow(l - mean, 2), 0) / lengths.length,
-  );
+  const stddev = Math.sqrt(lengths.reduce((sum, l) => sum + (l - mean) ** 2, 0) / lengths.length);
 
   if (stddev < 3.0) {
     flags.push({
@@ -106,10 +95,7 @@ export function checkSentenceVariance(
 
   // Check 3+ consecutive similar-length sentences
   for (let i = 0; i < lengths.length - 2; i++) {
-    if (
-      Math.abs(lengths[i]! - lengths[i + 1]!) <= 2 &&
-      Math.abs(lengths[i + 1]! - lengths[i + 2]!) <= 2
-    ) {
+    if (Math.abs(lengths[i]! - lengths[i + 1]!) <= 2 && Math.abs(lengths[i + 1]! - lengths[i + 2]!) <= 2) {
       flags.push({
         id: generateId(),
         sceneId,
@@ -129,11 +115,7 @@ export function checkSentenceVariance(
 
 // ─── Paragraph Length ───────────────────────────────────
 
-export function checkParagraphLength(
-  prose: string,
-  maxSentences: number | null,
-  sceneId: string,
-): AuditFlag[] {
+export function checkParagraphLength(prose: string, maxSentences: number | null, sceneId: string): AuditFlag[] {
   if (!maxSentences) return [];
 
   const flags: AuditFlag[] = [];
@@ -169,16 +151,10 @@ export function computeMetrics(prose: string): ProseMetrics {
   const paragraphs = prose.split(/\n\n+/).filter((p) => p.trim().length > 0);
 
   const sentenceLengths = sentences.map((s) => countWords(s));
-  const mean =
-    sentenceLengths.length > 0
-      ? sentenceLengths.reduce((a, b) => a + b, 0) / sentenceLengths.length
-      : 0;
+  const mean = sentenceLengths.length > 0 ? sentenceLengths.reduce((a, b) => a + b, 0) / sentenceLengths.length : 0;
   const variance =
     sentenceLengths.length > 0
-      ? Math.sqrt(
-          sentenceLengths.reduce((sum, l) => sum + Math.pow(l - mean, 2), 0) /
-            sentenceLengths.length,
-        )
+      ? Math.sqrt(sentenceLengths.reduce((sum, l) => sum + (l - mean) ** 2, 0) / sentenceLengths.length)
       : 0;
 
   return {
@@ -188,26 +164,51 @@ export function computeMetrics(prose: string): ProseMetrics {
     sentenceLengthVariance: variance,
     typeTokenRatio: allWords.length > 0 ? uniqueWords.size / allWords.length : 0,
     paragraphCount: paragraphs.length,
-    avgParagraphLength:
-      paragraphs.length > 0 ? sentences.length / paragraphs.length : 0,
+    avgParagraphLength: paragraphs.length > 0 ? sentences.length / paragraphs.length : 0,
+  };
+}
+
+// ─── Audit Stats ───────────────────────────────────────
+
+export function getAuditStats(flags: AuditFlag[]): AuditStats {
+  const resolved = flags.filter((f) => f.resolved && f.wasActionable === true);
+  const dismissed = flags.filter((f) => f.resolved && f.wasActionable === false);
+  const pending = flags.filter((f) => !f.resolved);
+  const actionable = resolved.length;
+  const nonActionable = dismissed.length;
+  const decided = actionable + nonActionable;
+  const signalToNoiseRatio = decided > 0 ? actionable / decided : 1;
+
+  const byCategory: Record<string, { total: number; actionable: number }> = {};
+  for (const flag of flags) {
+    if (!byCategory[flag.category]) {
+      byCategory[flag.category] = { total: 0, actionable: 0 };
+    }
+    byCategory[flag.category]!.total++;
+    if (flag.wasActionable === true) {
+      byCategory[flag.category]!.actionable++;
+    }
+  }
+
+  return {
+    total: flags.length,
+    resolved: resolved.length,
+    dismissed: dismissed.length,
+    pending: pending.length,
+    actionable,
+    nonActionable,
+    signalToNoiseRatio,
+    byCategory,
   };
 }
 
 // ─── Convenience ────────────────────────────────────────
 
-export function runAudit(
-  prose: string,
-  bible: Bible,
-  sceneId: string,
-): { flags: AuditFlag[]; metrics: ProseMetrics } {
+export function runAudit(prose: string, bible: Bible, sceneId: string): { flags: AuditFlag[]; metrics: ProseMetrics } {
   const flags: AuditFlag[] = [
     ...checkKillList(prose, bible.styleGuide.killList, sceneId),
     ...checkSentenceVariance(prose, sceneId),
-    ...checkParagraphLength(
-      prose,
-      bible.styleGuide.paragraphPolicy?.maxSentences ?? null,
-      sceneId,
-    ),
+    ...checkParagraphLength(prose, bible.styleGuide.paragraphPolicy?.maxSentences ?? null, sceneId),
   ];
 
   const metrics = computeMetrics(prose);

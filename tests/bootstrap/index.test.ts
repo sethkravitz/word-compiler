@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  buildBootstrapPrompt,
-  parseBootstrapResponse,
   bootstrapToBible,
+  buildBootstrapPrompt,
   type ParsedBootstrap,
+  parseBootstrapResponse,
 } from "../../src/bootstrap/index.js";
 
 describe("buildBootstrapPrompt", () => {
@@ -30,14 +30,14 @@ describe("parseBootstrapResponse", () => {
   });
 
   it("parses markdown-wrapped JSON", () => {
-    const wrapped = "Here's the result:\n```json\n" + JSON.stringify(validJson) + "\n```\nDone.";
+    const wrapped = `Here's the result:\n\`\`\`json\n${JSON.stringify(validJson)}\n\`\`\`\nDone.`;
     const result = parseBootstrapResponse(wrapped);
     expect("error" in result).toBe(false);
     expect((result as ParsedBootstrap).characters[0]!.name).toBe("Marcus");
   });
 
   it("parses JSON embedded in prose (brace depth)", () => {
-    const embedded = "I analyzed the synopsis. " + JSON.stringify(validJson) + " Hope this helps!";
+    const embedded = `I analyzed the synopsis. ${JSON.stringify(validJson)} Hope this helps!`;
     const result = parseBootstrapResponse(embedded);
     expect("error" in result).toBe(false);
     expect((result as ParsedBootstrap).characters[0]!.name).toBe("Marcus");

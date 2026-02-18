@@ -1,12 +1,12 @@
-import { describe, it, expect } from "vitest";
-import { countTokens, countWords, truncateToTokens, lastNTokens } from "../../src/tokens/index.js";
+import { describe, expect, it } from "vitest";
+import { countTokens, countWords, lastNTokens, truncateToTokens } from "../../src/tokens/index.js";
 import {
-  createEmptyBible,
-  createEmptyScenePlan,
-  createDefaultCompilationConfig,
-  createEmptyCharacterDossier,
-  getCanonicalText,
   type Chunk,
+  createDefaultCompilationConfig,
+  createEmptyBible,
+  createEmptyCharacterDossier,
+  createEmptyScenePlan,
+  getCanonicalText,
 } from "../../src/types/index.js";
 
 describe("countWords", () => {

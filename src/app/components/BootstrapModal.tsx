@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useRef } from "react";
-import type { AppAction } from "../hooks/useProject.js";
-import { buildBootstrapPrompt, parseBootstrapResponse, bootstrapToBible } from "../../bootstrap/index.js";
+import React, { useCallback, useRef, useState } from "react";
+import { bootstrapToBible, buildBootstrapPrompt, parseBootstrapResponse } from "../../bootstrap/index.js";
 import { generateStream } from "../../llm/client.js";
+import type { AppAction } from "../hooks/useProject.js";
 
 interface Props {
   open: boolean;
@@ -95,8 +95,8 @@ export function BootstrapModal({ open, dispatch }: Props) {
         <div className="modal-header">Bootstrap Bible from Synopsis</div>
         <div className="modal-body">
           <p style={{ marginBottom: "12px", color: "var(--text-secondary)", fontSize: "12px" }}>
-            Paste your story synopsis. The system will extract characters, locations, tone, and a
-            suggested kill list. You'll need to add dialogue samples manually.
+            Paste your story synopsis. The system will extract characters, locations, tone, and a suggested kill list.
+            You'll need to add dialogue samples manually.
           </p>
 
           {!loading ? (
@@ -126,16 +126,18 @@ export function BootstrapModal({ open, dispatch }: Props) {
           )}
 
           {loading && (
-            <div style={{
-              marginTop: "8px",
-              padding: "6px 10px",
-              background: "var(--bg-tertiary)",
-              borderRadius: "4px",
-              fontSize: "11px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}>
+            <div
+              style={{
+                marginTop: "8px",
+                padding: "6px 10px",
+                background: "var(--bg-tertiary)",
+                borderRadius: "4px",
+                fontSize: "11px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
               <span className="spinner" style={{ width: "10px", height: "10px" }} />
               <span style={{ color: "var(--text-primary)" }}>{status}</span>
               <span style={{ color: "var(--text-secondary)", marginLeft: "auto" }}>
@@ -144,17 +146,15 @@ export function BootstrapModal({ open, dispatch }: Props) {
             </div>
           )}
 
-          {error && <div className="error-banner" style={{ marginTop: "8px", whiteSpace: "pre-wrap" }}>{error}</div>}
+          {error && (
+            <div className="error-banner" style={{ marginTop: "8px", whiteSpace: "pre-wrap" }}>
+              {error}
+            </div>
+          )}
         </div>
         <div className="modal-footer">
-          <button onClick={handleClose}>
-            Cancel
-          </button>
-          <button
-            className="primary"
-            onClick={handleBootstrap}
-            disabled={loading || !synopsis.trim()}
-          >
+          <button onClick={handleClose}>Cancel</button>
+          <button className="primary" onClick={handleBootstrap} disabled={loading || !synopsis.trim()}>
             {loading ? "Bootstrapping..." : "Bootstrap Bible"}
           </button>
         </div>
