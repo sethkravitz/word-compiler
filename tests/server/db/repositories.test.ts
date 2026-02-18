@@ -1,23 +1,23 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { createSchema } from "../../../server/db/schema.js";
-import * as projects from "../../../server/db/repositories/projects.js";
+import { beforeEach, describe, expect, it } from "vitest";
+import * as auditFlagsRepo from "../../../server/db/repositories/audit-flags.js";
 import * as bibles from "../../../server/db/repositories/bibles.js";
 import * as chapterArcs from "../../../server/db/repositories/chapter-arcs.js";
-import * as scenePlans from "../../../server/db/repositories/scene-plans.js";
 import * as chunks from "../../../server/db/repositories/chunks.js";
-import * as auditFlagsRepo from "../../../server/db/repositories/audit-flags.js";
 import * as compilationLogs from "../../../server/db/repositories/compilation-logs.js";
+import * as projects from "../../../server/db/repositories/projects.js";
+import * as scenePlans from "../../../server/db/repositories/scene-plans.js";
+import { createSchema } from "../../../server/db/schema.js";
 import {
-  generateId,
+  type AuditFlag,
+  type ChapterArc,
+  type Chunk,
+  type CompilationLog,
   createEmptyBible,
   createEmptyScenePlan,
+  generateId,
   type Project,
-  type ChapterArc,
   type ReaderState,
-  type Chunk,
-  type AuditFlag,
-  type CompilationLog,
 } from "../../../src/types/index.js";
 
 let db: Database.Database;
@@ -370,11 +370,7 @@ describe("audit flags repository", () => {
   });
 
   it("bulk creates flags", () => {
-    const flags = [
-      makeAuditFlag(sceneId),
-      makeAuditFlag(sceneId),
-      makeAuditFlag(sceneId),
-    ];
+    const flags = [makeAuditFlag(sceneId), makeAuditFlag(sceneId), makeAuditFlag(sceneId)];
     auditFlagsRepo.createAuditFlags(db, flags);
     expect(auditFlagsRepo.listAuditFlags(db, sceneId)).toHaveLength(3);
   });
@@ -416,9 +412,9 @@ describe("audit flags repository", () => {
     expect(stats.actionable).toBe(1);
     expect(stats.dismissed).toBe(1);
     expect(stats.signalToNoise).toBe(0.5);
-    expect(stats.byCategory["kill_list"]!.total).toBe(2);
-    expect(stats.byCategory["kill_list"]!.actionable).toBe(1);
-    expect(stats.byCategory["rhythm_monotony"]!.total).toBe(1);
+    expect(stats.byCategory.kill_list!.total).toBe(2);
+    expect(stats.byCategory.kill_list!.actionable).toBe(1);
+    expect(stats.byCategory.rhythm_monotony!.total).toBe(1);
   });
 
   it("signal-to-noise is 0 when no flags resolved", () => {

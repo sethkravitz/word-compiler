@@ -1,6 +1,6 @@
 import React from "react";
 import type { Chunk, SceneStatus } from "../../types/index.js";
-import type { SceneEntry, AppAction } from "../hooks/useProject.js";
+import type { AppAction, SceneEntry } from "../hooks/useProject.js";
 
 interface Props {
   scenes: SceneEntry[];
@@ -35,13 +35,9 @@ export function SceneSequencer({ scenes, activeSceneIndex, sceneChunks, dispatch
             className={`scene-card ${isActive ? "scene-card-active" : ""}`}
             onClick={() => dispatch({ type: "SET_ACTIVE_SCENE", index: i })}
           >
-            <div className="scene-card-title">
-              {entry.plan.title || `Scene ${i + 1}`}
-            </div>
+            <div className="scene-card-title">{entry.plan.title || `Scene ${i + 1}`}</div>
             <div className="scene-card-meta">
-              <span className={`badge ${STATUS_CLASSES[entry.status]}`}>
-                {STATUS_LABELS[entry.status]}
-              </span>
+              <span className={`badge ${STATUS_CLASSES[entry.status]}`}>{STATUS_LABELS[entry.status]}</span>
               <span className="scene-card-chunks">
                 {chunks.length}/{entry.plan.chunkCount}
               </span>

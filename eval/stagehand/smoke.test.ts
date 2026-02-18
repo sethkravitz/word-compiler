@@ -15,18 +15,20 @@
 
 import { Stagehand } from "@browserbasehq/stagehand";
 
-const APP_URL = process.env["APP_URL"] ?? "http://localhost:5173";
+const APP_URL = process.env.APP_URL ?? "http://localhost:5173";
 
 async function runSmokeTest(): Promise<void> {
   const stagehand = new Stagehand({
     env: "LOCAL",
-    headless: process.env["HEADLESS"] !== "false",
-    enableCaching: false,
+    localBrowserLaunchOptions: {
+      headless: process.env.HEADLESS !== "false",
+    },
   });
 
   try {
     await stagehand.init();
-    const page = stagehand.page;
+    const page = stagehand.context.activePage();
+    if (!page) throw new Error("No active page after init");
 
     console.log("1. Navigate to app...");
     await page.goto(APP_URL, { waitUntil: "networkidle" });
@@ -39,55 +41,56 @@ async function runSmokeTest(): Promise<void> {
     console.log(`   Title: ${title}`);
 
     console.log("3. Check for main app container...");
-    const appContainer = await page.$("[data-testid='app-root'], #root, .app");
-    if (!appContainer) {
+    const containerVisible = await page.evaluate(() => {
+      const el =
+        document.querySelector("[data-testid='app-root']") ??
+        document.querySelector("#root") ??
+        document.querySelector(".app");
+      return el !== null;
+    });
+    if (!containerVisible) {
       throw new Error("App root container not found");
     }
     console.log("   App container found.");
 
     console.log("4. Look for Bible/Scene controls...");
-    const observed = await stagehand.observe({
-      instruction: "Find any buttons, panels, or sections related to Bible, Scene Plan, Compiler, or text generation",
-    });
+    const observed = await stagehand.observe(
+      "Find any buttons, panels, or sections related to Bible, Scene Plan, Compiler, or text generation",
+    );
     console.log(`   Observed ${observed.length} UI elements.`);
 
     if (observed.length === 0) {
       console.log("   Warning: No Bible/Scene UI elements found. App may be in empty state.");
     }
 
-    // Try to find text content on the page
     console.log("5. Check for visible text content...");
-    const bodyText = await page.evaluate(() => document.body?.innerText?.length ?? 0);
-    console.log(`   Page has ${bodyText} characters of text content.`);
+    const bodyTextLength = await page.evaluate(() => document.body?.innerText?.length ?? 0);
+    console.log(`   Page has ${bodyTextLength} characters of text content.`);
 
-    if (bodyText < 10) {
+    if (bodyTextLength < 10) {
       throw new Error("Page appears blank — less than 10 characters of visible text");
     }
 
-    console.log("6. Verify no console errors...");
-    const errors: string[] = [];
-    page.on("pageerror", (err) => errors.push(err.message));
+    console.log("6. Check for JS errors...");
+    const jsErrors = await page.evaluate(() => {
+      // Check if any error overlay is visible (Vite error overlay)
+      const overlay = document.querySelector("vite-error-overlay");
+      return overlay ? "Vite error overlay detected" : null;
+    });
 
-    // Wait briefly for any async errors
-    await page.waitForTimeout(1000);
-
-    if (errors.length > 0) {
-      console.log(`   Warning: ${errors.length} console error(s):`);
-      for (const err of errors) {
-        console.log(`     - ${err}`);
-      }
+    if (jsErrors) {
+      console.log(`   Warning: ${jsErrors}`);
     } else {
-      console.log("   No console errors.");
+      console.log("   No error overlays detected.");
     }
 
     console.log("\n=== SMOKE TEST PASSED ===");
-
   } finally {
     await stagehand.close();
   }
 }
 
-runSmokeTest().catch((err) => {
+runSmokeTest().catch((err: unknown) => {
   console.error("\n=== SMOKE TEST FAILED ===");
   console.error(err);
   process.exit(1);

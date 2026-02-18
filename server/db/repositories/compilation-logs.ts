@@ -16,8 +16,8 @@ export function getCompilationLog(db: Database.Database, id: string): Compilatio
 }
 
 export function listCompilationLogs(db: Database.Database, chunkId: string): CompilationLog[] {
-  const rows = db.prepare(
-    `SELECT data FROM compilation_logs WHERE chunk_id = ? ORDER BY created_at DESC`,
-  ).all(chunkId) as Array<{ data: string }>;
+  const rows = db
+    .prepare(`SELECT data FROM compilation_logs WHERE chunk_id = ? ORDER BY created_at DESC`)
+    .all(chunkId) as Array<{ data: string }>;
   return rows.map((r) => JSON.parse(r.data) as CompilationLog);
 }

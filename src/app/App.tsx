@@ -1,15 +1,15 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { useProject } from "./hooks/useProject.js";
+import { useCallback, useMemo, useState } from "react";
+import { checkChunkReviewGate, checkCompileGate, checkScenePlanGate } from "../gates/index.js";
+import type { Chunk } from "../types/index.js";
+import { BiblePane } from "./components/BiblePane.js";
+import { BootstrapModal } from "./components/BootstrapModal.js";
+import { ChapterArcEditor } from "./components/ChapterArcEditor.js";
+import { CompilerView } from "./components/CompilerView.js";
+import { DraftingDesk } from "./components/DraftingDesk.js";
+import { SceneSequencer } from "./components/SceneSequencer.js";
 import { useCompiler } from "./hooks/useCompiler.js";
 import { useGeneration } from "./hooks/useGeneration.js";
-import { BiblePane } from "./components/BiblePane.js";
-import { DraftingDesk } from "./components/DraftingDesk.js";
-import { CompilerView } from "./components/CompilerView.js";
-import { BootstrapModal } from "./components/BootstrapModal.js";
-import { SceneSequencer } from "./components/SceneSequencer.js";
-import { ChapterArcEditor } from "./components/ChapterArcEditor.js";
-import { checkScenePlanGate, checkCompileGate, checkChunkReviewGate } from "../gates/index.js";
-import type { Chunk } from "../types/index.js";
+import { useProject } from "./hooks/useProject.js";
 
 export function App() {
   const {
@@ -29,9 +29,7 @@ export function App() {
   // Auto-recompile when inputs change
   useCompiler(state, dispatch, activeScenePlan, activeSceneChunks, previousSceneLastChunk);
 
-  const { generateChunk, runAuditManual } = useGeneration(
-    state, dispatch, activeScenePlan, activeSceneChunks,
-  );
+  const { generateChunk, runAuditManual } = useGeneration(state, dispatch, activeScenePlan, activeSceneChunks);
 
   const handleUpdateChunk = useCallback(
     (index: number, changes: Partial<Chunk>) => {
@@ -104,7 +102,15 @@ export function App() {
               Chapter Arc
             </button>
           )}
-          <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "var(--text-secondary)" }}>
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "11px",
+              color: "var(--text-secondary)",
+            }}
+          >
             Model:
             <select
               value={state.compilationConfig.defaultModel}
@@ -126,16 +132,13 @@ export function App() {
                   </option>
                 ))
               ) : (
-                <option value={state.compilationConfig.defaultModel}>
-                  {state.compilationConfig.defaultModel}
-                </option>
+                <option value={state.compilationConfig.defaultModel}>{state.compilationConfig.defaultModel}</option>
               )}
             </select>
           </label>
           <span className="app-status">
             {state.bible ? `Bible v${state.bible.version}` : "No bible"} |{" "}
-            {activeScenePlan ? `Scene: ${activeScenePlan.title}` : "No scene plan"} |{" "}
-            Chunks: {activeSceneChunks.length}
+            {activeScenePlan ? `Scene: ${activeScenePlan.title}` : "No scene plan"} | Chunks: {activeSceneChunks.length}
             {activeScenePlan ? `/${activeScenePlan.chunkCount}` : ""}
           </span>
         </div>
@@ -197,11 +200,7 @@ export function App() {
       <BootstrapModal open={state.bootstrapModalOpen} dispatch={dispatch} />
 
       {showArcEditor && state.chapterArc && (
-        <ChapterArcEditor
-          arc={state.chapterArc}
-          dispatch={dispatch}
-          onClose={() => setShowArcEditor(false)}
-        />
+        <ChapterArcEditor arc={state.chapterArc} dispatch={dispatch} onClose={() => setShowArcEditor(false)} />
       )}
     </div>
   );

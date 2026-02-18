@@ -9,30 +9,30 @@
  * - Bible versioning
  * - Scene status transitions
  */
-import { describe, it, expect } from "vitest";
-import {
-  createEmptyBible,
-  createEmptyScenePlan,
-  createEmptyChapterArc,
-  createDefaultCompilationConfig,
-  generateId,
-  type Bible,
-  type ScenePlan,
-  type Chunk,
-  type ChapterArc,
-  type AuditFlag,
-} from "../../src/types/index.js";
-import { compilePayload } from "../../src/compiler/assembler.js";
-import { runAudit, getAuditStats } from "../../src/auditor/index.js";
+import { describe, expect, it } from "vitest";
+import { getAuditStats, runAudit } from "../../src/auditor/index.js";
 import { createBibleVersion, diffBibles } from "../../src/bible/versioning.js";
+import { compilePayload } from "../../src/compiler/assembler.js";
 import {
-  checkScenePlanGate,
-  checkCompileGate,
-  checkChunkReviewGate,
-  checkSceneCompletionGate,
   checkAuditResolutionGate,
   checkBibleVersioningGate,
+  checkChunkReviewGate,
+  checkCompileGate,
+  checkSceneCompletionGate,
+  checkScenePlanGate,
 } from "../../src/gates/index.js";
+import {
+  type AuditFlag,
+  type Bible,
+  type ChapterArc,
+  type Chunk,
+  createDefaultCompilationConfig,
+  createEmptyBible,
+  createEmptyChapterArc,
+  createEmptyScenePlan,
+  generateId,
+  type ScenePlan,
+} from "../../src/types/index.js";
 
 // ─── Test Data Setup ───────────────────────────────
 
@@ -321,14 +321,13 @@ describe("4-scene chapter end-to-end workflow", () => {
   describe("Scene 2: cross-scene continuity bridge", () => {
     it("first chunk of scene 2 includes previous scene text", () => {
       const prevSceneLastChunk = simulateChunk(
-        "scene-1", 2,
+        "scene-1",
+        2,
         "Elena set down her thermos. The fluorescent light hummed. Nobody mentioned the empty desk.",
       );
       prevSceneLastChunk.status = "accepted";
 
-      const result = compilePayload(
-        bible, scenePlans[1]!, [], 0, config, chapterArc, prevSceneLastChunk,
-      );
+      const result = compilePayload(bible, scenePlans[1]!, [], 0, config, chapterArc, prevSceneLastChunk);
 
       // User message should contain the bridge text
       expect(result.payload.userMessage).toContain("previous scene");
@@ -357,9 +356,15 @@ describe("4-scene chapter end-to-end workflow", () => {
     it("audit resolution gate blocks on unresolved critical flags", () => {
       const flags: AuditFlag[] = [
         {
-          id: "af1", sceneId: "scene-1", severity: "critical", category: "kill_list",
-          message: "Kill list: suddenly", lineReference: "line 1",
-          resolved: false, resolvedAction: null, wasActionable: null,
+          id: "af1",
+          sceneId: "scene-1",
+          severity: "critical",
+          category: "kill_list",
+          message: "Kill list: suddenly",
+          lineReference: "line 1",
+          resolved: false,
+          resolvedAction: null,
+          wasActionable: null,
         },
       ];
       const gate = checkAuditResolutionGate(flags);
@@ -369,9 +374,15 @@ describe("4-scene chapter end-to-end workflow", () => {
     it("audit resolution gate passes after resolving critical flags", () => {
       const flags: AuditFlag[] = [
         {
-          id: "af1", sceneId: "scene-1", severity: "critical", category: "kill_list",
-          message: "Kill list: suddenly", lineReference: "line 1",
-          resolved: true, resolvedAction: "Removed the word", wasActionable: true,
+          id: "af1",
+          sceneId: "scene-1",
+          severity: "critical",
+          category: "kill_list",
+          message: "Kill list: suddenly",
+          lineReference: "line 1",
+          resolved: true,
+          resolvedAction: "Removed the word",
+          wasActionable: true,
         },
       ];
       const gate = checkAuditResolutionGate(flags);
@@ -380,19 +391,43 @@ describe("4-scene chapter end-to-end workflow", () => {
 
     it("signal-to-noise ratio tracks across resolved flags", () => {
       const flags: AuditFlag[] = [
-        { id: "af1", sceneId: "s1", severity: "critical", category: "kill_list",
-          message: "Kill list: suddenly", lineReference: "line 1",
-          resolved: true, resolvedAction: "Removed", wasActionable: true },
-        { id: "af2", sceneId: "s1", severity: "warning", category: "rhythm_monotony",
-          message: "Low variance", lineReference: null,
-          resolved: true, resolvedAction: "False positive", wasActionable: false },
-        { id: "af3", sceneId: "s1", severity: "critical", category: "kill_list",
-          message: "Kill list: realized", lineReference: "line 2",
-          resolved: true, resolvedAction: "Rewrote sentence", wasActionable: true },
+        {
+          id: "af1",
+          sceneId: "s1",
+          severity: "critical",
+          category: "kill_list",
+          message: "Kill list: suddenly",
+          lineReference: "line 1",
+          resolved: true,
+          resolvedAction: "Removed",
+          wasActionable: true,
+        },
+        {
+          id: "af2",
+          sceneId: "s1",
+          severity: "warning",
+          category: "rhythm_monotony",
+          message: "Low variance",
+          lineReference: null,
+          resolved: true,
+          resolvedAction: "False positive",
+          wasActionable: false,
+        },
+        {
+          id: "af3",
+          sceneId: "s1",
+          severity: "critical",
+          category: "kill_list",
+          message: "Kill list: realized",
+          lineReference: "line 2",
+          resolved: true,
+          resolvedAction: "Rewrote sentence",
+          wasActionable: true,
+        },
       ];
       const stats = getAuditStats(flags);
       expect(stats.signalToNoiseRatio).toBeCloseTo(0.667, 2); // 2/3
-      expect(stats.byCategory["kill_list"]!.actionable).toBe(2);
+      expect(stats.byCategory.kill_list!.actionable).toBe(2);
     });
   });
 
@@ -421,10 +456,7 @@ describe("4-scene chapter end-to-end workflow", () => {
         version: 2,
         styleGuide: {
           ...bible.styleGuide,
-          killList: [
-            ...bible.styleGuide.killList,
-            { pattern: "very", type: "exact" },
-          ],
+          killList: [...bible.styleGuide.killList, { pattern: "very", type: "exact" }],
         },
       };
       const diffs = diffBibles(bible, v2);
@@ -438,9 +470,7 @@ describe("4-scene chapter end-to-end workflow", () => {
     it("each scene produces a valid payload", () => {
       for (let i = 0; i < scenePlans.length; i++) {
         const plan = scenePlans[i]!;
-        const prevChunk = i > 0
-          ? simulateChunk(scenePlans[i - 1]!.id, 2, "Previous scene final text.")
-          : undefined;
+        const prevChunk = i > 0 ? simulateChunk(scenePlans[i - 1]!.id, 2, "Previous scene final text.") : undefined;
 
         const result = compilePayload(bible, plan, [], 0, config, chapterArc, prevChunk);
 
@@ -467,7 +497,7 @@ describe("4-scene chapter end-to-end workflow", () => {
     it("Gate 2 (compile) allows warnings", () => {
       // A compile result with only warnings should pass
       const result = compilePayload(bible, scenePlans[0]!, [], 0, config, chapterArc);
-      const warnings = result.lintResult.issues.filter((i) => i.severity === "warning");
+      const _warnings = result.lintResult.issues.filter((i) => i.severity === "warning");
       const errors = result.lintResult.issues.filter((i) => i.severity === "error");
       // Even if there are warnings, gate passes if no errors
       expect(checkCompileGate(result.lintResult).passed).toBe(errors.length === 0);
@@ -486,11 +516,19 @@ describe("4-scene chapter end-to-end workflow", () => {
     });
 
     it("Gate 5 (audit) allows non-critical unresolved", () => {
-      const flags: AuditFlag[] = [{
-        id: "x", sceneId: "s1", severity: "warning", category: "test",
-        message: "test", lineReference: null, resolved: false,
-        resolvedAction: null, wasActionable: null,
-      }];
+      const flags: AuditFlag[] = [
+        {
+          id: "x",
+          sceneId: "s1",
+          severity: "warning",
+          category: "test",
+          message: "test",
+          lineReference: null,
+          resolved: false,
+          resolvedAction: null,
+          wasActionable: null,
+        },
+      ];
       expect(checkAuditResolutionGate(flags).passed).toBe(true);
     });
 

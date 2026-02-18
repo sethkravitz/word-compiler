@@ -1,14 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildRing3 } from "../../src/compiler/ring3.js";
 import {
+  type Bible,
+  type CharacterDossier,
+  type Chunk,
+  createDefaultCompilationConfig,
   createEmptyBible,
   createEmptyScenePlan,
-  createDefaultCompilationConfig,
-  type Bible,
   type ScenePlan,
-  type Chunk,
-  type CompilationConfig,
-  type CharacterDossier,
 } from "../../src/types/index.js";
 
 function makeChar(id: string, name: string): CharacterDossier {
@@ -65,9 +64,7 @@ function makePlan(overrides: Partial<ScenePlan> = {}): ScenePlan {
     failureModeToAvoid: "Stated emotions",
     dialogueConstraints: { elena: ["Guarded"] },
     locationId: "loc-bar",
-    anchorLines: [
-      { text: "The ice never melts the same way twice.", placement: "final third", verbatim: true },
-    ],
+    anchorLines: [{ text: "The ice never melts the same way twice.", placement: "final third", verbatim: true }],
     ...overrides,
   };
 }

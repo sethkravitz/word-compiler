@@ -1,9 +1,9 @@
 import { useCallback } from "react";
-import type { ScenePlan, Chunk } from "../../types/index.js";
-import type { AppState, AppAction } from "./useProject.js";
-import { generateId } from "../../types/index.js";
-import { generateStream } from "../../llm/client.js";
 import { runAudit } from "../../auditor/index.js";
+import { generateStream } from "../../llm/client.js";
+import type { Chunk, ScenePlan } from "../../types/index.js";
+import { generateId } from "../../types/index.js";
+import type { AppAction, AppState } from "./useProject.js";
 
 export function useGeneration(
   state: AppState,
@@ -69,9 +69,7 @@ export function useGeneration(
   const runAuditManual = useCallback(() => {
     if (!state.bible || !activeScenePlan || activeSceneChunks.length === 0) return;
 
-    const allText = activeSceneChunks
-      .map((c) => c.editedText ?? c.generatedText)
-      .join("\n\n");
+    const allText = activeSceneChunks.map((c) => c.editedText ?? c.generatedText).join("\n\n");
     const { flags, metrics } = runAudit(allText, state.bible, activeScenePlan.id);
     dispatch({ type: "SET_AUDIT", flags, metrics });
   }, [state.bible, activeScenePlan, activeSceneChunks, dispatch]);

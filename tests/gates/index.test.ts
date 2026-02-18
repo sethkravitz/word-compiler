@@ -1,19 +1,19 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  checkScenePlanGate,
-  checkCompileGate,
-  checkChunkReviewGate,
-  checkSceneCompletionGate,
   checkAuditResolutionGate,
   checkBibleVersioningGate,
+  checkChunkReviewGate,
+  checkCompileGate,
+  checkSceneCompletionGate,
+  checkScenePlanGate,
 } from "../../src/gates/index.js";
 import {
-  createEmptyScenePlan,
-  createEmptyBible,
-  type ScenePlan,
-  type Chunk,
   type AuditFlag,
+  type Chunk,
+  createEmptyBible,
+  createEmptyScenePlan,
   type LintResult,
+  type ScenePlan,
 } from "../../src/types/index.js";
 
 // ─── Helpers ───────────────────────────────────────
@@ -232,10 +232,7 @@ describe("checkAuditResolutionGate", () => {
   });
 
   it("passes with only warning/info flags (even unresolved)", () => {
-    const flags = [
-      makeFlag({ severity: "warning", resolved: false }),
-      makeFlag({ severity: "info", resolved: false }),
-    ];
+    const flags = [makeFlag({ severity: "warning", resolved: false }), makeFlag({ severity: "info", resolved: false })];
     const result = checkAuditResolutionGate(flags);
     expect(result.passed).toBe(true);
   });

@@ -14,7 +14,12 @@
     "eval:quick": "tsx eval/runner.ts --rollouts=1",
     "eval:mock": "tsx eval/runner.ts --mock --rollouts=1",
     "eval:nightly": "tsx eval/runner.ts --rollouts=5",
-    "eval:smoke": "tsx eval/stagehand/smoke.test.ts"
+    "eval:smoke": "tsx eval/stagehand/smoke.test.ts",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
+    "format": "biome format --write",
+    "typecheck": "tsc --noEmit",
+    "check-all": "biome check && tsc --noEmit && npx vitest run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.75.0",
@@ -31,6 +36,7 @@
     "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.2",
     "@browserbasehq/stagehand": "^3.0.8",
     "@types/better-sqlite3": "^7.6.13",
     "@types/cors": "^2.8.19",

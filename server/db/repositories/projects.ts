@@ -32,7 +32,11 @@ export function listProjects(db: Database.Database): Project[] {
   }));
 }
 
-export function updateProject(db: Database.Database, id: string, updates: Partial<Pick<Project, "title" | "status">>): Project | null {
+export function updateProject(
+  db: Database.Database,
+  id: string,
+  updates: Partial<Pick<Project, "title" | "status">>,
+): Project | null {
   const existing = getProject(db, id);
   if (!existing) return null;
 
@@ -40,9 +44,12 @@ export function updateProject(db: Database.Database, id: string, updates: Partia
   const status = updates.status ?? existing.status;
   const updatedAt = new Date().toISOString();
 
-  db.prepare(
-    `UPDATE projects SET title = ?, status = ?, updated_at = ? WHERE id = ?`,
-  ).run(title, status, updatedAt, id);
+  db.prepare(`UPDATE projects SET title = ?, status = ?, updated_at = ? WHERE id = ?`).run(
+    title,
+    status,
+    updatedAt,
+    id,
+  );
 
   return { ...existing, title, status, updatedAt };
 }

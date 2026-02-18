@@ -2,13 +2,13 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { Bible, CharacterDossier, ScenePlan } from "../../src/types/index.js";
 import type { JudgeScore } from "../types.js";
 import {
-  VOICE_CONSISTENCY,
+  CONTINUITY,
+  METAPHORIC_REGISTER,
+  type Rubric,
+  SCENE_GOAL,
   SUBTEXT_ADHERENCE,
   TONE_WHIPLASH,
-  METAPHORIC_REGISTER,
-  SCENE_GOAL,
-  CONTINUITY,
-  type Rubric,
+  VOICE_CONSISTENCY,
 } from "./rubrics.js";
 
 // ─── Raw Judge Response ─────────────────────────────────
@@ -93,14 +93,19 @@ export async function evaluateVoice(
   client: Anthropic,
   model: string,
 ): Promise<JudgeScore> {
-  return callJudge(VOICE_CONSISTENCY, {
-    prose,
-    sentenceLengthRange: character.voice.sentenceLengthRange?.join("-") ?? "not specified",
-    vocabularyNotes: character.voice.vocabularyNotes ?? "not specified",
-    verbalTics: character.voice.verbalTics.join(", ") || "none",
-    metaphoricRegister: character.voice.metaphoricRegister ?? "not specified",
-    dialogueSamples: character.voice.dialogueSamples.join("\n") || "none provided",
-  }, client, model);
+  return callJudge(
+    VOICE_CONSISTENCY,
+    {
+      prose,
+      sentenceLengthRange: character.voice.sentenceLengthRange?.join("-") ?? "not specified",
+      vocabularyNotes: character.voice.vocabularyNotes ?? "not specified",
+      verbalTics: character.voice.verbalTics.join(", ") || "none",
+      metaphoricRegister: character.voice.metaphoricRegister ?? "not specified",
+      dialogueSamples: character.voice.dialogueSamples.join("\n") || "none provided",
+    },
+    client,
+    model,
+  );
 }
 
 export async function evaluateSubtext(
@@ -111,12 +116,17 @@ export async function evaluateSubtext(
 ): Promise<JudgeScore | null> {
   if (!plan.subtext) return null;
 
-  return callJudge(SUBTEXT_ADHERENCE, {
-    prose,
-    surfaceConversation: plan.subtext.surfaceConversation,
-    actualConversation: plan.subtext.actualConversation,
-    enforcementRule: plan.subtext.enforcementRule,
-  }, client, model);
+  return callJudge(
+    SUBTEXT_ADHERENCE,
+    {
+      prose,
+      surfaceConversation: plan.subtext.surfaceConversation,
+      actualConversation: plan.subtext.actualConversation,
+      enforcementRule: plan.subtext.enforcementRule,
+    },
+    client,
+    model,
+  );
 }
 
 export async function evaluateToneWhiplash(
@@ -125,10 +135,15 @@ export async function evaluateToneWhiplash(
   client: Anthropic,
   model: string,
 ): Promise<JudgeScore> {
-  return callJudge(TONE_WHIPLASH, {
-    prevSceneEnd,
-    nextSceneStart,
-  }, client, model);
+  return callJudge(
+    TONE_WHIPLASH,
+    {
+      prevSceneEnd,
+      nextSceneStart,
+    },
+    client,
+    model,
+  );
 }
 
 export async function evaluateMetaphoricRegister(
@@ -139,11 +154,16 @@ export async function evaluateMetaphoricRegister(
 ): Promise<JudgeScore | null> {
   if (!bible.styleGuide.metaphoricRegister) return null;
 
-  return callJudge(METAPHORIC_REGISTER, {
-    prose,
-    approvedDomains: bible.styleGuide.metaphoricRegister.approvedDomains.join(", "),
-    prohibitedDomains: bible.styleGuide.metaphoricRegister.prohibitedDomains.join(", "),
-  }, client, model);
+  return callJudge(
+    METAPHORIC_REGISTER,
+    {
+      prose,
+      approvedDomains: bible.styleGuide.metaphoricRegister.approvedDomains.join(", "),
+      prohibitedDomains: bible.styleGuide.metaphoricRegister.prohibitedDomains.join(", "),
+    },
+    client,
+    model,
+  );
 }
 
 export async function evaluateSceneGoal(
@@ -152,13 +172,18 @@ export async function evaluateSceneGoal(
   client: Anthropic,
   model: string,
 ): Promise<JudgeScore> {
-  return callJudge(SCENE_GOAL, {
-    prose,
-    narrativeGoal: plan.narrativeGoal,
-    emotionalBeat: plan.emotionalBeat,
-    readerEffect: plan.readerEffect,
-    failureModeToAvoid: plan.failureModeToAvoid,
-  }, client, model);
+  return callJudge(
+    SCENE_GOAL,
+    {
+      prose,
+      narrativeGoal: plan.narrativeGoal,
+      emotionalBeat: plan.emotionalBeat,
+      readerEffect: plan.readerEffect,
+      failureModeToAvoid: plan.failureModeToAvoid,
+    },
+    client,
+    model,
+  );
 }
 
 export async function evaluateContinuity(
@@ -167,8 +192,13 @@ export async function evaluateContinuity(
   client: Anthropic,
   model: string,
 ): Promise<JudgeScore> {
-  return callJudge(CONTINUITY, {
-    prevSceneEnd,
-    nextSceneStart,
-  }, client, model);
+  return callJudge(
+    CONTINUITY,
+    {
+      prevSceneEnd,
+      nextSceneStart,
+    },
+    client,
+    model,
+  );
 }

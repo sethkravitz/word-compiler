@@ -1,4 +1,4 @@
-import type { EvalRunArtifact, EvalReport } from "./types.js";
+import type { EvalReport, EvalRunArtifact } from "./types.js";
 
 export function generateReport(artifact: EvalRunArtifact): EvalReport {
   const detPassed = artifact.deterministicChecks.filter((c) => c.passed).length;

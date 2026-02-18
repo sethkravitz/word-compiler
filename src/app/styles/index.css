@@ -23,7 +23,9 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   overflow: hidden;
 }
@@ -116,11 +118,11 @@ body {
 
 .cm-editor {
   height: 100%;
-  font-size: 12px !important;
+  font-size: 12px;
 }
 
 .cm-editor .cm-scroller {
-  font-family: var(--font-mono) !important;
+  font-family: var(--font-mono);
 }
 
 .editor-wrapper {
@@ -251,10 +253,22 @@ button.danger {
   letter-spacing: 0.05em;
 }
 
-.badge-pending { background: var(--bg-secondary); color: var(--text-muted); }
-.badge-accepted { background: #1a3a2a; color: var(--success); }
-.badge-edited { background: #2a2a1a; color: var(--warning); }
-.badge-rejected { background: #2a1a1a; color: var(--error); }
+.badge-pending {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+}
+.badge-accepted {
+  background: #1a3a2a;
+  color: var(--success);
+}
+.badge-edited {
+  background: #2a2a1a;
+  color: var(--warning);
+}
+.badge-rejected {
+  background: #2a1a1a;
+  color: var(--error);
+}
 
 /* ─── Compiler View ──────────────────────────── */
 
@@ -326,11 +340,25 @@ button.danger {
   min-width: 40px;
 }
 
-.budget-r1 { background: #4a6fa5; }
-.budget-r2 { background: #7a5a9e; }
-.budget-r2-empty { background: var(--bg-secondary); color: var(--text-muted); border: 1px dashed var(--border); font-style: italic; }
-.budget-r3 { background: #2d8a6a; }
-.budget-free { background: var(--bg-secondary); color: var(--text-muted); }
+.budget-r1 {
+  background: #4a6fa5;
+}
+.budget-r2 {
+  background: #7a5a9e;
+}
+.budget-r2-empty {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+  font-style: italic;
+}
+.budget-r3 {
+  background: #2d8a6a;
+}
+.budget-free {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+}
 
 /* ─── Lint Panel ─────────────────────────────── */
 
@@ -344,9 +372,18 @@ button.danger {
   align-items: flex-start;
 }
 
-.lint-error { background: rgba(255, 71, 87, 0.1); border-left: 3px solid var(--error); }
-.lint-warning { background: rgba(255, 165, 2, 0.1); border-left: 3px solid var(--warning); }
-.lint-info { background: rgba(95, 158, 160, 0.1); border-left: 3px solid var(--info); }
+.lint-error {
+  background: rgba(255, 71, 87, 0.1);
+  border-left: 3px solid var(--error);
+}
+.lint-warning {
+  background: rgba(255, 165, 2, 0.1);
+  border-left: 3px solid var(--warning);
+}
+.lint-info {
+  background: rgba(95, 158, 160, 0.1);
+  border-left: 3px solid var(--info);
+}
 
 .lint-code {
   font-weight: bold;
@@ -363,9 +400,18 @@ button.danger {
   font-size: 11px;
 }
 
-.audit-critical { background: rgba(255, 71, 87, 0.15); border-left: 3px solid var(--error); }
-.audit-warning { background: rgba(255, 165, 2, 0.1); border-left: 3px solid var(--warning); }
-.audit-info { background: rgba(95, 158, 160, 0.1); border-left: 3px solid var(--info); }
+.audit-critical {
+  background: rgba(255, 71, 87, 0.15);
+  border-left: 3px solid var(--error);
+}
+.audit-warning {
+  background: rgba(255, 165, 2, 0.1);
+  border-left: 3px solid var(--warning);
+}
+.audit-info {
+  background: rgba(95, 158, 160, 0.1);
+  border-left: 3px solid var(--info);
+}
 
 /* ─── Metrics ────────────────────────────────── */
 
@@ -470,7 +516,9 @@ button.danger {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ─── Error Display ──────────────────────────── */

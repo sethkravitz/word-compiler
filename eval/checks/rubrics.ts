@@ -46,14 +46,14 @@ export const VOICE_CONSISTENCY: Rubric = {
   buildUserPrompt: (ctx) => `Evaluate whether this prose matches the character's voice fingerprint.
 
 ## Voice Fingerprint
-- Sentence length range: ${ctx["sentenceLengthRange"] ?? "not specified"}
-- Vocabulary notes: ${ctx["vocabularyNotes"] ?? "not specified"}
-- Verbal tics: ${ctx["verbalTics"] ?? "none"}
-- Metaphoric register: ${ctx["metaphoricRegister"] ?? "not specified"}
-- Dialogue samples: ${ctx["dialogueSamples"] ?? "none provided"}
+- Sentence length range: ${ctx.sentenceLengthRange ?? "not specified"}
+- Vocabulary notes: ${ctx.vocabularyNotes ?? "not specified"}
+- Verbal tics: ${ctx.verbalTics ?? "none"}
+- Metaphoric register: ${ctx.metaphoricRegister ?? "not specified"}
+- Dialogue samples: ${ctx.dialogueSamples ?? "none provided"}
 
 ## Prose to Evaluate
-${ctx["prose"] ?? ""}
+${ctx.prose ?? ""}
 
 ## Instructions
 Score 1-10 on how well the prose matches this voice:
@@ -75,15 +75,17 @@ A score of 7+ passes.`,
 export const SUBTEXT_ADHERENCE: Rubric = {
   dimension: "subtext_adherence",
   systemPrompt: JUDGE_SYSTEM_BASE,
-  buildUserPrompt: (ctx) => `Evaluate whether the prose maintains subtext — the gap between what characters say and what they mean.
+  buildUserPrompt: (
+    ctx,
+  ) => `Evaluate whether the prose maintains subtext — the gap between what characters say and what they mean.
 
 ## Subtext Specification
-- Surface conversation: ${ctx["surfaceConversation"] ?? "not specified"}
-- Actual conversation: ${ctx["actualConversation"] ?? "not specified"}
-- Enforcement rule: ${ctx["enforcementRule"] ?? "not specified"}
+- Surface conversation: ${ctx.surfaceConversation ?? "not specified"}
+- Actual conversation: ${ctx.actualConversation ?? "not specified"}
+- Enforcement rule: ${ctx.enforcementRule ?? "not specified"}
 
 ## Prose to Evaluate
-${ctx["prose"] ?? ""}
+${ctx.prose ?? ""}
 
 ## Instructions
 Evaluate on a 3-point scale:
@@ -103,13 +105,15 @@ A score of 2+ passes.`,
 export const TONE_WHIPLASH: Rubric = {
   dimension: "tone_whiplash",
   systemPrompt: JUDGE_SYSTEM_BASE,
-  buildUserPrompt: (ctx) => `Evaluate whether the transition between two consecutive scenes has jarring tonal shifts (tone whiplash).
+  buildUserPrompt: (
+    ctx,
+  ) => `Evaluate whether the transition between two consecutive scenes has jarring tonal shifts (tone whiplash).
 
 ## End of Previous Scene
-${ctx["prevSceneEnd"] ?? ""}
+${ctx.prevSceneEnd ?? ""}
 
 ## Start of Next Scene
-${ctx["nextSceneStart"] ?? ""}
+${ctx.nextSceneStart ?? ""}
 
 ## Instructions
 Score 1-10 on tonal continuity:
@@ -131,16 +135,18 @@ A score of 7+ passes.`,
 export const METAPHORIC_REGISTER: Rubric = {
   dimension: "metaphoric_register",
   systemPrompt: JUDGE_SYSTEM_BASE,
-  buildUserPrompt: (ctx) => `Evaluate whether all metaphors and figurative language in this prose use approved domains and avoid prohibited domains.
+  buildUserPrompt: (
+    ctx,
+  ) => `Evaluate whether all metaphors and figurative language in this prose use approved domains and avoid prohibited domains.
 
 ## Approved Metaphor Domains
-${ctx["approvedDomains"] ?? "not specified"}
+${ctx.approvedDomains ?? "not specified"}
 
 ## Prohibited Metaphor Domains
-${ctx["prohibitedDomains"] ?? "not specified"}
+${ctx.prohibitedDomains ?? "not specified"}
 
 ## Prose to Evaluate
-${ctx["prose"] ?? ""}
+${ctx.prose ?? ""}
 
 ## Instructions
 Evaluate on a 3-point scale:
@@ -165,19 +171,19 @@ export const SCENE_GOAL: Rubric = {
   buildUserPrompt: (ctx) => `Evaluate whether this prose accomplishes its narrative goal.
 
 ## Scene Narrative Goal
-${ctx["narrativeGoal"] ?? ""}
+${ctx.narrativeGoal ?? ""}
 
 ## Emotional Beat
-${ctx["emotionalBeat"] ?? ""}
+${ctx.emotionalBeat ?? ""}
 
 ## Intended Reader Effect
-${ctx["readerEffect"] ?? ""}
+${ctx.readerEffect ?? ""}
 
 ## Failure Mode to Avoid
-${ctx["failureModeToAvoid"] ?? ""}
+${ctx.failureModeToAvoid ?? ""}
 
 ## Prose to Evaluate
-${ctx["prose"] ?? ""}
+${ctx.prose ?? ""}
 
 ## Instructions
 Score 1-10:
@@ -199,13 +205,15 @@ A score of 7+ passes.`,
 export const CONTINUITY: Rubric = {
   dimension: "continuity",
   systemPrompt: JUDGE_SYSTEM_BASE,
-  buildUserPrompt: (ctx) => `Evaluate whether the opening of a new scene follows naturally from the ending of the previous scene.
+  buildUserPrompt: (
+    ctx,
+  ) => `Evaluate whether the opening of a new scene follows naturally from the ending of the previous scene.
 
 ## End of Previous Scene
-${ctx["prevSceneEnd"] ?? ""}
+${ctx.prevSceneEnd ?? ""}
 
 ## Start of Next Scene
-${ctx["nextSceneStart"] ?? ""}
+${ctx.nextSceneStart ?? ""}
 
 ## Instructions
 Score 1-10 on narrative continuity:

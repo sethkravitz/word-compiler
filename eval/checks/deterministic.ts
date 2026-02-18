@@ -1,3 +1,5 @@
+import { checkKillList } from "../../src/auditor/index.js";
+import { checkCompileGate } from "../../src/gates/index.js";
 import type {
   Bible,
   CharacterDossier,
@@ -7,17 +9,11 @@ import type {
   ProseMetrics,
   ScenePlan,
 } from "../../src/types/index.js";
-import { checkKillList } from "../../src/auditor/index.js";
-import { checkCompileGate } from "../../src/gates/index.js";
 import type { CheckResult } from "../types.js";
 
 // ─── Individual Checks ──────────────────────────────────
 
-export function checkKillListCompliance(
-  prose: string,
-  bible: Bible,
-  sceneId: string,
-): CheckResult {
+export function checkKillListCompliance(prose: string, bible: Bible, sceneId: string): CheckResult {
   const flags = checkKillList(prose, bible.styleGuide.killList, sceneId);
   if (flags.length === 0) {
     return { name: "kill_list", passed: true, detail: "No kill list violations." };
@@ -26,10 +22,7 @@ export function checkKillListCompliance(
   return { name: "kill_list", passed: false, detail: `${flags.length} violation(s): ${violations}` };
 }
 
-export function checkBudgetCompliance(
-  log: CompilationLog,
-  config: CompilationConfig,
-): CheckResult {
+export function checkBudgetCompliance(log: CompilationLog, config: CompilationConfig): CheckResult {
   const available = config.modelContextWindow - config.reservedForOutput;
   if (log.totalTokens <= available) {
     return {
@@ -45,10 +38,7 @@ export function checkBudgetCompliance(
   };
 }
 
-export function checkRing1Cap(
-  log: CompilationLog,
-  config: CompilationConfig,
-): CheckResult {
+export function checkRing1Cap(log: CompilationLog, config: CompilationConfig): CheckResult {
   if (log.ring1Tokens <= config.ring1HardCap) {
     return {
       name: "ring1_cap",
@@ -75,10 +65,7 @@ export function checkLintCompliance(lintResult: LintResult): CheckResult {
   };
 }
 
-export function checkSentenceDistribution(
-  metrics: ProseMetrics,
-  character: CharacterDossier | undefined,
-): CheckResult {
+export function checkSentenceDistribution(metrics: ProseMetrics, character: CharacterDossier | undefined): CheckResult {
   // Variance check — prose should have rhythm variety
   if (metrics.sentenceLengthVariance < 3.0 && metrics.sentenceCount >= 5) {
     return {
@@ -107,10 +94,7 @@ export function checkSentenceDistribution(
   };
 }
 
-export function checkProhibitedLanguage(
-  prose: string,
-  character: CharacterDossier | undefined,
-): CheckResult {
+export function checkProhibitedLanguage(prose: string, character: CharacterDossier | undefined): CheckResult {
   if (!character || character.voice.prohibitedLanguage.length === 0) {
     return { name: "prohibited_language", passed: true, detail: "No prohibited language defined." };
   }
@@ -134,10 +118,7 @@ export function checkProhibitedLanguage(
   };
 }
 
-export function checkStructuralBans(
-  prose: string,
-  bible: Bible,
-): CheckResult {
+export function checkStructuralBans(prose: string, bible: Bible): CheckResult {
   if (bible.styleGuide.structuralBans.length === 0) {
     return { name: "structural_bans", passed: true, detail: "No structural bans defined." };
   }
@@ -167,10 +148,7 @@ export function checkStructuralBans(
   };
 }
 
-export function checkWordCount(
-  metrics: ProseMetrics,
-  plan: ScenePlan,
-): CheckResult {
+export function checkWordCount(metrics: ProseMetrics, plan: ScenePlan): CheckResult {
   const [min, max] = plan.estimatedWordCount;
   const tolerance = 0.2;
   const effectiveMin = Math.floor(min * (1 - tolerance));
@@ -197,9 +175,7 @@ export function checkDialoguePresence(prose: string): CheckResult {
   return {
     name: "dialogue_presence",
     passed: true, // Informational — doesn't fail
-    detail: hasDialogue
-      ? `Found ${quoteMatches.length} dialogue segment(s).`
-      : "No dialogue found in prose.",
+    detail: hasDialogue ? `Found ${quoteMatches.length} dialogue segment(s).` : "No dialogue found in prose.",
   };
 }
 

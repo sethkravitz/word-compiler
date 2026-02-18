@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 // The API client is a thin fetch wrapper — its correctness is tested via
 // integration tests against the live server (Step 10). Here we validate

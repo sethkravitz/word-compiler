@@ -1,8 +1,6 @@
-import React from "react";
-import type { Chunk, ScenePlan, SceneStatus } from "../../types/index.js";
+import { checkAuditResolutionGate, checkSceneCompletionGate } from "../../gates/index.js";
+import type { AuditFlag, Chunk, ScenePlan, SceneStatus } from "../../types/index.js";
 import { ChunkCard } from "./ChunkCard.js";
-import { checkSceneCompletionGate, checkAuditResolutionGate } from "../../gates/index.js";
-import type { AuditFlag } from "../../types/index.js";
 
 interface Props {
   chunks: Chunk[];
@@ -46,9 +44,7 @@ export function DraftingDesk({
       <div className="pane-header">
         <span>Drafting Desk</span>
         <div className="pane-actions">
-          {sceneStatus === "complete" && (
-            <span className="badge badge-accepted">COMPLETE</span>
-          )}
+          {sceneStatus === "complete" && <span className="badge badge-accepted">COMPLETE</span>}
           <button onClick={onRunAudit} disabled={chunks.length === 0}>
             Run Audit
           </button>
@@ -73,10 +69,7 @@ export function DraftingDesk({
               disabled={!canComplete}
               title={
                 !canComplete
-                  ? [
-                      ...(completionGate?.messages ?? []),
-                      ...auditGate.messages,
-                    ].join("\n")
+                  ? [...(completionGate?.messages ?? []), ...auditGate.messages].join("\n")
                   : "Mark scene as complete"
               }
             >
@@ -103,16 +96,21 @@ export function DraftingDesk({
         )}
 
         {chunks.map((chunk, i) => (
-          <ChunkCard key={chunk.id} chunk={chunk} index={i} isLast={i === chunks.length - 1} onUpdate={onUpdateChunk} onRemove={onRemoveChunk} />
+          <ChunkCard
+            key={chunk.id}
+            chunk={chunk}
+            index={i}
+            isLast={i === chunks.length - 1}
+            onUpdate={onUpdateChunk}
+            onRemove={onRemoveChunk}
+          />
         ))}
 
         {isGenerating && (
           <div className="loading">
             <div className="spinner" />
             Generating chunk {chunks.length + 1}
-            {scenePlan?.chunkDescriptions[chunks.length]
-              ? `: ${scenePlan.chunkDescriptions[chunks.length]}`
-              : ""}
+            {scenePlan?.chunkDescriptions[chunks.length] ? `: ${scenePlan.chunkDescriptions[chunks.length]}` : ""}
             ...
           </div>
         )}

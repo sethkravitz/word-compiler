@@ -25,7 +25,15 @@ function ReaderStateFields({
         <input
           type="text"
           value={state.knows.join(", ")}
-          onChange={(e) => onChange({ ...state, knows: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
+          onChange={(e) =>
+            onChange({
+              ...state,
+              knows: e.target.value
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+            })
+          }
           placeholder="Comma-separated items"
         />
       </label>
@@ -34,7 +42,15 @@ function ReaderStateFields({
         <input
           type="text"
           value={state.suspects.join(", ")}
-          onChange={(e) => onChange({ ...state, suspects: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
+          onChange={(e) =>
+            onChange({
+              ...state,
+              suspects: e.target.value
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+            })
+          }
           placeholder="Comma-separated items"
         />
       </label>
@@ -43,7 +59,15 @@ function ReaderStateFields({
         <input
           type="text"
           value={state.wrongAbout.join(", ")}
-          onChange={(e) => onChange({ ...state, wrongAbout: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
+          onChange={(e) =>
+            onChange({
+              ...state,
+              wrongAbout: e.target.value
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+            })
+          }
           placeholder="Comma-separated items"
         />
       </label>
@@ -52,7 +76,15 @@ function ReaderStateFields({
         <input
           type="text"
           value={state.activeTensions.join(", ")}
-          onChange={(e) => onChange({ ...state, activeTensions: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
+          onChange={(e) =>
+            onChange({
+              ...state,
+              activeTensions: e.target.value
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean),
+            })
+          }
           placeholder="Comma-separated items"
         />
       </label>
@@ -79,11 +111,19 @@ export function ChapterArcEditor({ arc, dispatch, onClose }: Props) {
           </label>
           <label>
             Narrative Function
-            <textarea value={arc.narrativeFunction} onChange={(e) => update({ narrativeFunction: e.target.value })} rows={2} />
+            <textarea
+              value={arc.narrativeFunction}
+              onChange={(e) => update({ narrativeFunction: e.target.value })}
+              rows={2}
+            />
           </label>
           <label>
             Dominant Register
-            <input type="text" value={arc.dominantRegister} onChange={(e) => update({ dominantRegister: e.target.value })} />
+            <input
+              type="text"
+              value={arc.dominantRegister}
+              onChange={(e) => update({ dominantRegister: e.target.value })}
+            />
           </label>
           <label>
             Pacing Target

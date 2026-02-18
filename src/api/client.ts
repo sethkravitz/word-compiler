@@ -1,12 +1,4 @@
-import type {
-  Project,
-  Bible,
-  ChapterArc,
-  ScenePlan,
-  Chunk,
-  AuditFlag,
-  CompilationLog,
-} from "../types/index.js";
+import type { AuditFlag, Bible, ChapterArc, Chunk, CompilationLog, Project, ScenePlan } from "../types/index.js";
 
 const BASE = "/api/data";
 
@@ -95,7 +87,9 @@ export function apiUpdateChapterArc(arc: ChapterArc): Promise<ChapterArc> {
 
 type SceneStatus = "planned" | "drafting" | "complete";
 
-export function apiListScenePlans(chapterId: string): Promise<Array<{ plan: ScenePlan; status: SceneStatus; sceneOrder: number }>> {
+export function apiListScenePlans(
+  chapterId: string,
+): Promise<Array<{ plan: ScenePlan; status: SceneStatus; sceneOrder: number }>> {
   return fetchJson(`${BASE}/chapters/${chapterId}/scenes`);
 }
 

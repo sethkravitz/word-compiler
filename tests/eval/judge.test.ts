@@ -1,13 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { parseJudgeResponse } from "../../eval/checks/judge.js";
 import {
-  VOICE_CONSISTENCY,
-  SUBTEXT_ADHERENCE,
-  TONE_WHIPLASH,
+  ALL_RUBRICS,
+  CONTINUITY,
   METAPHORIC_REGISTER,
   SCENE_GOAL,
-  CONTINUITY,
-  ALL_RUBRICS,
+  SUBTEXT_ADHERENCE,
+  TONE_WHIPLASH,
+  VOICE_CONSISTENCY,
 } from "../../eval/checks/rubrics.js";
 
 // ─── parseJudgeResponse ─────────────────────────────────

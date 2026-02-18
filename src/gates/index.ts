@@ -1,4 +1,4 @@
-import type { ScenePlan, LintResult, Chunk, AuditFlag, Bible } from "../types/index.js";
+import type { AuditFlag, Bible, Chunk, LintResult, ScenePlan } from "../types/index.js";
 
 export interface GateResult {
   passed: boolean;
@@ -50,7 +50,9 @@ export function checkChunkReviewGate(chunk: Chunk): GateResult {
   }
   return {
     passed: false,
-    messages: [`Chunk ${chunk.sequenceNumber + 1} is "${chunk.status}" — must be accepted or edited before continuing.`],
+    messages: [
+      `Chunk ${chunk.sequenceNumber + 1} is "${chunk.status}" — must be accepted or edited before continuing.`,
+    ],
   };
 }
 
@@ -83,9 +85,7 @@ export function checkAuditResolutionGate(flags: AuditFlag[]): GateResult {
   }
   return {
     passed: false,
-    messages: unresolvedCritical.map(
-      (f) => `Unresolved critical flag: [${f.category}] ${f.message}`,
-    ),
+    messages: unresolvedCritical.map((f) => `Unresolved critical flag: [${f.category}] ${f.message}`),
   };
 }
 
@@ -98,6 +98,8 @@ export function checkBibleVersioningGate(bible: Bible, latestVersion: number): G
   }
   return {
     passed: false,
-    messages: [`Bible version ${bible.version} is outdated — latest is ${latestVersion}. Recompile with current bible.`],
+    messages: [
+      `Bible version ${bible.version} is outdated — latest is ${latestVersion}. Recompile with current bible.`,
+    ],
   };
 }

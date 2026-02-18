@@ -1,8 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { enforceBudget } from "../../src/compiler/budget.js";
-import { countTokens } from "../../src/tokens/index.js";
-import { assembleSections } from "../../src/compiler/helpers.js";
-import type { RingSection, CompilationConfig } from "../../src/types/index.js";
+import type { RingSection } from "../../src/types/index.js";
 import { createDefaultCompilationConfig } from "../../src/types/index.js";
 
 function makeSection(name: string, wordCount: number, priority: number, immune: boolean): RingSection {
@@ -65,10 +63,7 @@ describe("enforceBudget", () => {
   });
 
   it("kill list never removed (immune)", () => {
-    const r1 = [
-      makeSection("KILL_LIST", 20, 0, true),
-      makeSection("EXEMPLARS", 20, 6, false),
-    ];
+    const r1 = [makeSection("KILL_LIST", 20, 0, true), makeSection("EXEMPLARS", 20, 6, false)];
     const r3 = [makeSection("CONTRACT", 5, 0, true)];
 
     // Very tight budget — only immune sections should survive

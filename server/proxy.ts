@@ -1,8 +1,8 @@
-import express from "express";
-import cors from "cors";
 import Anthropic from "@anthropic-ai/sdk";
-import { getDatabase } from "./db/connection.js";
+import cors from "cors";
+import express from "express";
 import { createApiRouter } from "./api/routes.js";
+import { getDatabase } from "./db/connection.js";
 
 const app = express();
 app.use(cors());
@@ -104,11 +104,13 @@ app.post("/api/generate/stream", async (req, res) => {
     });
 
     const finalMessage = await stream.finalMessage();
-    res.write(`data: ${JSON.stringify({
-      type: "done",
-      usage: finalMessage.usage,
-      stopReason: finalMessage.stop_reason,
-    })}\n\n`);
+    res.write(
+      `data: ${JSON.stringify({
+        type: "done",
+        usage: finalMessage.usage,
+        stopReason: finalMessage.stop_reason,
+      })}\n\n`,
+    );
     res.end();
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";

@@ -1,10 +1,4 @@
-import type {
-  CompilationConfig,
-  CompilationLog,
-  LintResult,
-  AuditFlag,
-  ProseMetrics,
-} from "../src/types/index.js";
+import type { AuditFlag, CompilationConfig, CompilationLog, LintResult, ProseMetrics } from "../src/types/index.js";
 
 // ─── Check Results ──────────────────────────────────────
 

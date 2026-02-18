@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react";
-import type { AuditFlag, AuditStats } from "../../types/index.js";
+import { useMemo, useState } from "react";
 import { getAuditStats } from "../../auditor/index.js";
+import type { AuditFlag, AuditStats } from "../../types/index.js";
 
 interface Props {
   flags: AuditFlag[];
@@ -34,9 +34,7 @@ export function AuditPanel({ flags, onResolve, onDismiss }: Props) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
           <strong>[{flag.category}]</strong> {flag.message}
-          {flag.lineReference && (
-            <span style={{ color: "var(--text-muted)" }}> ({flag.lineReference})</span>
-          )}
+          {flag.lineReference && <span style={{ color: "var(--text-muted)" }}> ({flag.lineReference})</span>}
         </div>
       </div>
       {!flag.resolved && (
@@ -79,23 +77,29 @@ export function AuditPanel({ flags, onResolve, onDismiss }: Props) {
       </div>
 
       {/* Signal-to-noise meter */}
-      {stats.total > 0 && (stats.actionable + stats.nonActionable) > 0 && (
+      {stats.total > 0 && stats.actionable + stats.nonActionable > 0 && (
         <div style={{ padding: "4px 0", marginBottom: "6px" }}>
-          <div style={{
-            display: "flex",
-            gap: "2px",
-            height: "8px",
-            borderRadius: "4px",
-            overflow: "hidden",
-          }}>
-            <div style={{
-              flex: stats.actionable,
-              background: "var(--success)",
-            }} />
-            <div style={{
-              flex: stats.nonActionable,
-              background: "var(--warning)",
-            }} />
+          <div
+            style={{
+              display: "flex",
+              gap: "2px",
+              height: "8px",
+              borderRadius: "4px",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                flex: stats.actionable,
+                background: "var(--success)",
+              }}
+            />
+            <div
+              style={{
+                flex: stats.nonActionable,
+                background: "var(--warning)",
+              }}
+            />
           </div>
           <div style={{ fontSize: "9px", color: "var(--text-muted)", marginTop: "2px" }}>
             {stats.actionable} actionable / {stats.nonActionable} noise
@@ -123,9 +127,7 @@ export function AuditPanel({ flags, onResolve, onDismiss }: Props) {
             <div key={flag.id} className="audit-flag" style={{ opacity: 0.5 }}>
               <strong>[{flag.category}]</strong> {flag.message}
               {flag.resolvedAction && (
-                <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>
-                  Action: {flag.resolvedAction}
-                </div>
+                <div style={{ fontSize: "10px", color: "var(--text-muted)" }}>Action: {flag.resolvedAction}</div>
               )}
               <span className="badge" style={{ marginLeft: "4px" }}>
                 {flag.wasActionable ? "actionable" : "dismissed"}

@@ -7,10 +7,17 @@ export function createAuditFlag(db: Database.Database, flag: AuditFlag): AuditFl
     `INSERT INTO audit_flags (id, scene_id, severity, category, message, line_reference, resolved, resolved_action, was_actionable, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
-    flag.id, flag.sceneId, flag.severity, flag.category, flag.message,
-    flag.lineReference, flag.resolved ? 1 : 0, flag.resolvedAction,
+    flag.id,
+    flag.sceneId,
+    flag.severity,
+    flag.category,
+    flag.message,
+    flag.lineReference,
+    flag.resolved ? 1 : 0,
+    flag.resolvedAction,
     flag.wasActionable === null ? null : flag.wasActionable ? 1 : 0,
-    now, now,
+    now,
+    now,
   );
   return flag;
 }
@@ -24,10 +31,17 @@ export function createAuditFlags(db: Database.Database, flags: AuditFlag[]): Aud
   const tx = db.transaction(() => {
     for (const flag of flags) {
       insert.run(
-        flag.id, flag.sceneId, flag.severity, flag.category, flag.message,
-        flag.lineReference, flag.resolved ? 1 : 0, flag.resolvedAction,
+        flag.id,
+        flag.sceneId,
+        flag.severity,
+        flag.category,
+        flag.message,
+        flag.lineReference,
+        flag.resolved ? 1 : 0,
+        flag.resolvedAction,
         flag.wasActionable === null ? null : flag.wasActionable ? 1 : 0,
-        now, now,
+        now,
+        now,
       );
     }
   });
@@ -36,18 +50,22 @@ export function createAuditFlags(db: Database.Database, flags: AuditFlag[]): Aud
 }
 
 export function listAuditFlags(db: Database.Database, sceneId: string): AuditFlag[] {
-  const rows = db.prepare(
-    `SELECT * FROM audit_flags WHERE scene_id = ? ORDER BY
+  const rows = db
+    .prepare(
+      `SELECT * FROM audit_flags WHERE scene_id = ? ORDER BY
        CASE severity WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END`,
-  ).all(sceneId) as any[];
+    )
+    .all(sceneId) as any[];
   return rows.map(rowToFlag);
 }
 
 export function resolveAuditFlag(db: Database.Database, id: string, action: string, wasActionable: boolean): boolean {
   const now = new Date().toISOString();
-  const result = db.prepare(
-    `UPDATE audit_flags SET resolved = 1, resolved_action = ?, was_actionable = ?, updated_at = ? WHERE id = ?`,
-  ).run(action, wasActionable ? 1 : 0, now, id);
+  const result = db
+    .prepare(
+      `UPDATE audit_flags SET resolved = 1, resolved_action = ?, was_actionable = ?, updated_at = ? WHERE id = ?`,
+    )
+    .run(action, wasActionable ? 1 : 0, now, id);
   return result.changes > 0;
 }
 

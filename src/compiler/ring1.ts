@@ -1,5 +1,5 @@
-import type { Bible, CompilationConfig, Ring1Result, RingSection } from "../types/index.js";
 import { countTokens, truncateToTokens } from "../tokens/index.js";
+import type { Bible, CompilationConfig, Ring1Result, RingSection } from "../types/index.js";
 
 export function buildRing1(bible: Bible, config: CompilationConfig): Ring1Result {
   const sections: RingSection[] = [];
@@ -92,41 +92,29 @@ export function buildRing1(bible: Bible, config: CompilationConfig): Ring1Result
   if (bible.styleGuide.structuralBans.length > 0) {
     sections.push({
       name: "STRUCTURAL_RULES",
-      text:
-        `STRUCTURAL RULES:\n` +
-        bible.styleGuide.structuralBans.map((b) => `- ${b}`).join("\n"),
+      text: `STRUCTURAL RULES:\n${bible.styleGuide.structuralBans.map((b) => `- ${b}`).join("\n")}`,
       priority: 0,
       immune: true,
     });
   }
 
   // --- Negative Exemplars ---
-  const negExemplars = bible.styleGuide.negativeExemplars.slice(
-    0,
-    config.maxNegativeExemplars,
-  );
+  const negExemplars = bible.styleGuide.negativeExemplars.slice(0, config.maxNegativeExemplars);
   if (negExemplars.length > 0) {
     sections.push({
       name: "NEGATIVE_EXEMPLARS",
-      text:
-        `DO NOT SOUND LIKE THIS:\n` +
-        negExemplars.map((e) => `"${e.text}"`).join("\n"),
+      text: `DO NOT SOUND LIKE THIS:\n${negExemplars.map((e) => `"${e.text}"`).join("\n")}`,
       priority: 6,
       immune: false,
     });
   }
 
   // --- Positive Exemplars ---
-  const posExemplars = bible.styleGuide.positiveExemplars.slice(
-    0,
-    config.maxPositiveExemplars,
-  );
+  const posExemplars = bible.styleGuide.positiveExemplars.slice(0, config.maxPositiveExemplars);
   if (posExemplars.length > 0) {
     sections.push({
       name: "POSITIVE_EXEMPLARS",
-      text:
-        `THE VOICE SOUNDS LIKE THIS:\n` +
-        posExemplars.map((e) => `"${e.text}"`).join("\n"),
+      text: `THE VOICE SOUNDS LIKE THIS:\n${posExemplars.map((e) => `"${e.text}"`).join("\n")}`,
       priority: 6,
       immune: false,
     });

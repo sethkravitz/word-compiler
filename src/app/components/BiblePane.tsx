@@ -1,10 +1,10 @@
-import React, { useRef, useEffect, useCallback } from "react";
-import { EditorState } from "@codemirror/state";
-import { EditorView, keymap, lineNumbers } from "@codemirror/view";
-import { json } from "@codemirror/lang-json";
-import { oneDark } from "@codemirror/theme-one-dark";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { json } from "@codemirror/lang-json";
 import { bracketMatching, foldGutter } from "@codemirror/language";
+import { EditorState } from "@codemirror/state";
+import { oneDark } from "@codemirror/theme-one-dark";
+import { EditorView, keymap, lineNumbers } from "@codemirror/view";
+import React, { useCallback, useEffect, useRef } from "react";
 import type { Bible, ScenePlan } from "../../types/index.js";
 import type { AppAction } from "../hooks/useProject.js";
 
@@ -17,15 +17,7 @@ interface Props {
   onBootstrap: () => void;
 }
 
-function JsonEditor({
-  value,
-  onChange,
-  label,
-}: {
-  value: string;
-  onChange: (val: string) => void;
-  label: string;
-}) {
+function JsonEditor({ value, onChange, label }: { value: string; onChange: (val: string) => void; label: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -64,7 +56,7 @@ function JsonEditor({
     };
     // Only create on mount — value updates handled below
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [value]);
 
   // Sync external value changes (e.g., file load)
   useEffect(() => {
@@ -157,9 +149,7 @@ export function BiblePane({ bible, scenePlan, dispatch, loadFile, saveFile, onBo
             Save Plan
           </button>
           {bible && (
-            <span style={{ fontSize: "10px", color: "var(--accent-dim)", marginLeft: "auto" }}>
-              v{bible.version}
-            </span>
+            <span style={{ fontSize: "10px", color: "var(--accent-dim)", marginLeft: "auto" }}>v{bible.version}</span>
           )}
         </div>
         <JsonEditor value={bibleJson} onChange={handleBibleChange} label="Bible JSON" />

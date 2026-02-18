@@ -1,13 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { compilePayload } from "../../src/compiler/assembler.js";
 import {
-  createEmptyBible,
-  createEmptyScenePlan,
-  createDefaultCompilationConfig,
-  createEmptyCharacterDossier,
   type Bible,
-  type ScenePlan,
   type Chunk,
+  createDefaultCompilationConfig,
+  createEmptyBible,
+  createEmptyCharacterDossier,
+  createEmptyScenePlan,
+  type ScenePlan,
 } from "../../src/types/index.js";
 
 function makeChar(id: string, name: string) {

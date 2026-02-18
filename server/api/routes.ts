@@ -1,12 +1,12 @@
-import { Router } from "express";
 import type Database from "better-sqlite3";
-import * as projects from "../db/repositories/projects.js";
+import { Router } from "express";
+import * as auditFlags from "../db/repositories/audit-flags.js";
 import * as bibles from "../db/repositories/bibles.js";
 import * as chapterArcs from "../db/repositories/chapter-arcs.js";
-import * as scenePlans from "../db/repositories/scene-plans.js";
 import * as chunks from "../db/repositories/chunks.js";
-import * as auditFlags from "../db/repositories/audit-flags.js";
 import * as compilationLogs from "../db/repositories/compilation-logs.js";
+import * as projects from "../db/repositories/projects.js";
+import * as scenePlans from "../db/repositories/scene-plans.js";
 
 export function createApiRouter(db: Database.Database): Router {
   const router = Router();

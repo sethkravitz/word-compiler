@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { getAuditStats } from "../../src/auditor/index.js";
-import type { AuditFlag, AuditStats } from "../../src/types/index.js";
+import type { AuditFlag } from "../../src/types/index.js";
 
 function makeFlag(overrides: Partial<AuditFlag> = {}): AuditFlag {
   return {
@@ -31,10 +31,7 @@ describe("getAuditStats", () => {
   });
 
   it("counts pending flags", () => {
-    const stats = getAuditStats([
-      makeFlag({ id: "f1", resolved: false }),
-      makeFlag({ id: "f2", resolved: false }),
-    ]);
+    const stats = getAuditStats([makeFlag({ id: "f1", resolved: false }), makeFlag({ id: "f2", resolved: false })]);
     expect(stats.total).toBe(2);
     expect(stats.pending).toBe(2);
     expect(stats.resolved).toBe(0);
@@ -51,9 +48,7 @@ describe("getAuditStats", () => {
   });
 
   it("counts dismissed (non-actionable) flags", () => {
-    const stats = getAuditStats([
-      makeFlag({ id: "f1", resolved: true, wasActionable: false }),
-    ]);
+    const stats = getAuditStats([makeFlag({ id: "f1", resolved: true, wasActionable: false })]);
     expect(stats.dismissed).toBe(1);
     expect(stats.nonActionable).toBe(1);
     expect(stats.signalToNoiseRatio).toBe(0);
@@ -75,8 +70,8 @@ describe("getAuditStats", () => {
       makeFlag({ id: "f2", category: "kill_list", resolved: true, wasActionable: false }),
       makeFlag({ id: "f3", category: "rhythm_monotony", resolved: true, wasActionable: true, resolvedAction: "Fix" }),
     ]);
-    expect(stats.byCategory["kill_list"]).toEqual({ total: 2, actionable: 1 });
-    expect(stats.byCategory["rhythm_monotony"]).toEqual({ total: 1, actionable: 1 });
+    expect(stats.byCategory.kill_list).toEqual({ total: 2, actionable: 1 });
+    expect(stats.byCategory.rhythm_monotony).toEqual({ total: 1, actionable: 1 });
   });
 
   it("mixes pending and resolved flags", () => {
@@ -108,7 +103,7 @@ describe("getAuditStats", () => {
       makeFlag({ id: "f2", severity: "warning", category: "voice_drift" }),
       makeFlag({ id: "f3", severity: "info", category: "rhythm_monotony" }),
     ]);
-    expect(stats.byCategory["voice_drift"]!.total).toBe(2);
-    expect(stats.byCategory["rhythm_monotony"]!.total).toBe(1);
+    expect(stats.byCategory.voice_drift!.total).toBe(2);
+    expect(stats.byCategory.rhythm_monotony!.total).toBe(1);
   });
 });

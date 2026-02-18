@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createBibleVersion, diffBibles } from "../../src/bible/versioning.js";
-import { createEmptyBible, type Bible } from "../../src/types/index.js";
+import { type Bible, createEmptyBible } from "../../src/types/index.js";
 
 function makeBible(overrides: Partial<Bible> = {}): Bible {
   return { ...createEmptyBible("test"), ...overrides };
@@ -18,11 +18,20 @@ describe("createBibleVersion", () => {
       version: 3,
       characters: [
         {
-          id: "c1", name: "Alice", role: "protagonist",
-          physicalDescription: null, backstory: null, selfNarrative: null, contradictions: null,
+          id: "c1",
+          name: "Alice",
+          role: "protagonist",
+          physicalDescription: null,
+          backstory: null,
+          selfNarrative: null,
+          contradictions: null,
           voice: {
-            sentenceLengthRange: null, vocabularyNotes: null, verbalTics: [],
-            metaphoricRegister: null, prohibitedLanguage: [], dialogueSamples: [],
+            sentenceLengthRange: null,
+            vocabularyNotes: null,
+            verbalTics: [],
+            metaphoricRegister: null,
+            prohibitedLanguage: [],
+            dialogueSamples: [],
           },
           behavior: null,
         },
@@ -51,58 +60,99 @@ describe("diffBibles", () => {
   it("detects added character", () => {
     const v1 = makeBible();
     const v2 = makeBible({
-      characters: [{
-        id: "c1", name: "Bob", role: "protagonist",
-        physicalDescription: null, backstory: null, selfNarrative: null, contradictions: null,
-        voice: {
-          sentenceLengthRange: null, vocabularyNotes: null, verbalTics: [],
-          metaphoricRegister: null, prohibitedLanguage: [], dialogueSamples: [],
+      characters: [
+        {
+          id: "c1",
+          name: "Bob",
+          role: "protagonist",
+          physicalDescription: null,
+          backstory: null,
+          selfNarrative: null,
+          contradictions: null,
+          voice: {
+            sentenceLengthRange: null,
+            vocabularyNotes: null,
+            verbalTics: [],
+            metaphoricRegister: null,
+            prohibitedLanguage: [],
+            dialogueSamples: [],
+          },
+          behavior: null,
         },
-        behavior: null,
-      }],
+      ],
     });
     const diffs = diffBibles(v1, v2);
-    expect(diffs).toContainEqual(expect.objectContaining({
-      type: "added", area: "character", description: expect.stringContaining("Bob"),
-    }));
+    expect(diffs).toContainEqual(
+      expect.objectContaining({
+        type: "added",
+        area: "character",
+        description: expect.stringContaining("Bob"),
+      }),
+    );
   });
 
   it("detects removed character", () => {
     const v1 = makeBible({
-      characters: [{
-        id: "c1", name: "Carol", role: "supporting",
-        physicalDescription: null, backstory: null, selfNarrative: null, contradictions: null,
-        voice: {
-          sentenceLengthRange: null, vocabularyNotes: null, verbalTics: [],
-          metaphoricRegister: null, prohibitedLanguage: [], dialogueSamples: [],
+      characters: [
+        {
+          id: "c1",
+          name: "Carol",
+          role: "supporting",
+          physicalDescription: null,
+          backstory: null,
+          selfNarrative: null,
+          contradictions: null,
+          voice: {
+            sentenceLengthRange: null,
+            vocabularyNotes: null,
+            verbalTics: [],
+            metaphoricRegister: null,
+            prohibitedLanguage: [],
+            dialogueSamples: [],
+          },
+          behavior: null,
         },
-        behavior: null,
-      }],
+      ],
     });
     const v2 = makeBible();
     const diffs = diffBibles(v1, v2);
-    expect(diffs).toContainEqual(expect.objectContaining({
-      type: "removed", area: "character", description: expect.stringContaining("Carol"),
-    }));
+    expect(diffs).toContainEqual(
+      expect.objectContaining({
+        type: "removed",
+        area: "character",
+        description: expect.stringContaining("Carol"),
+      }),
+    );
   });
 
   it("detects modified character", () => {
     const char = {
-      id: "c1", name: "Dave", role: "protagonist" as const,
-      physicalDescription: null, backstory: null, selfNarrative: null, contradictions: null,
+      id: "c1",
+      name: "Dave",
+      role: "protagonist" as const,
+      physicalDescription: null,
+      backstory: null,
+      selfNarrative: null,
+      contradictions: null,
       voice: {
-        sentenceLengthRange: null as [number, number] | null, vocabularyNotes: null,
-        verbalTics: [] as string[], metaphoricRegister: null,
-        prohibitedLanguage: [] as string[], dialogueSamples: [] as string[],
+        sentenceLengthRange: null as [number, number] | null,
+        vocabularyNotes: null,
+        verbalTics: [] as string[],
+        metaphoricRegister: null,
+        prohibitedLanguage: [] as string[],
+        dialogueSamples: [] as string[],
       },
       behavior: null,
     };
     const v1 = makeBible({ characters: [{ ...char }] });
     const v2 = makeBible({ characters: [{ ...char, backstory: "Something happened" }] });
     const diffs = diffBibles(v1, v2);
-    expect(diffs).toContainEqual(expect.objectContaining({
-      type: "modified", area: "character",
-    }));
+    expect(diffs).toContainEqual(
+      expect.objectContaining({
+        type: "modified",
+        area: "character",
+      }),
+    );
   });
 
   it("detects added kill list entry", () => {
@@ -114,9 +164,13 @@ describe("diffBibles", () => {
       },
     });
     const diffs = diffBibles(v1, v2);
-    expect(diffs).toContainEqual(expect.objectContaining({
-      type: "added", area: "kill_list", description: expect.stringContaining("suddenly"),
-    }));
+    expect(diffs).toContainEqual(
+      expect.objectContaining({
+        type: "added",
+        area: "kill_list",
+        description: expect.stringContaining("suddenly"),
+      }),
+    );
   });
 
   it("detects removed kill list entry", () => {
@@ -128,9 +182,12 @@ describe("diffBibles", () => {
     });
     const v2 = makeBible();
     const diffs = diffBibles(v1, v2);
-    expect(diffs).toContainEqual(expect.objectContaining({
-      type: "removed", area: "kill_list",
-    }));
+    expect(diffs).toContainEqual(
+      expect.objectContaining({
+        type: "removed",
+        area: "kill_list",
+      }),
+    );
   });
 
   it("detects style guide changes", () => {
@@ -142,9 +199,12 @@ describe("diffBibles", () => {
       },
     });
     const diffs = diffBibles(v1, v2);
-    expect(diffs).toContainEqual(expect.objectContaining({
-      type: "modified", area: "style_guide",
-    }));
+    expect(diffs).toContainEqual(
+      expect.objectContaining({
+        type: "modified",
+        area: "style_guide",
+      }),
+    );
   });
 
   it("detects narrative rules changes", () => {
@@ -156,17 +216,48 @@ describe("diffBibles", () => {
       },
     });
     const diffs = diffBibles(v1, v2);
-    expect(diffs).toContainEqual(expect.objectContaining({
-      type: "modified", area: "narrative_rules",
-    }));
+    expect(diffs).toContainEqual(
+      expect.objectContaining({
+        type: "modified",
+        area: "narrative_rules",
+      }),
+    );
   });
 
   it("detects added and removed locations", () => {
     const v1 = makeBible({
-      locations: [{ id: "l1", name: "Kitchen", description: null, sensoryPalette: { sounds: [], smells: [], textures: [], lightQuality: null, atmosphere: null, prohibitedDefaults: [] } }],
+      locations: [
+        {
+          id: "l1",
+          name: "Kitchen",
+          description: null,
+          sensoryPalette: {
+            sounds: [],
+            smells: [],
+            textures: [],
+            lightQuality: null,
+            atmosphere: null,
+            prohibitedDefaults: [],
+          },
+        },
+      ],
     });
     const v2 = makeBible({
-      locations: [{ id: "l2", name: "Garden", description: null, sensoryPalette: { sounds: [], smells: [], textures: [], lightQuality: null, atmosphere: null, prohibitedDefaults: [] } }],
+      locations: [
+        {
+          id: "l2",
+          name: "Garden",
+          description: null,
+          sensoryPalette: {
+            sounds: [],
+            smells: [],
+            textures: [],
+            lightQuality: null,
+            atmosphere: null,
+            prohibitedDefaults: [],
+          },
+        },
+      ],
     });
     const diffs = diffBibles(v1, v2);
     expect(diffs).toContainEqual(expect.objectContaining({ type: "added", area: "location" }));

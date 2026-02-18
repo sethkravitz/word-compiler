@@ -1,21 +1,21 @@
-import { useReducer, useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { fetchModels } from "../../llm/client.js";
 import type {
-  Project,
+  AuditFlag,
   Bible,
   ChapterArc,
-  ScenePlan,
   Chunk,
   CompilationConfig,
-  CompiledPayload,
   CompilationLog,
+  CompiledPayload,
   LintResult,
-  AuditFlag,
-  ProseMetrics,
   ModelSpec,
+  Project,
+  ProseMetrics,
+  ScenePlan,
   SceneStatus,
 } from "../../types/index.js";
 import { createDefaultCompilationConfig } from "../../types/index.js";
-import { fetchModels } from "../../llm/client.js";
 
 export interface SceneEntry {
   plan: ScenePlan;
@@ -70,7 +70,15 @@ export type AppAction =
   | { type: "SET_BOOTSTRAP_OPEN"; value: boolean }
   | { type: "SET_ERROR"; error: string | null }
   | { type: "SELECT_CHUNK"; index: number | null }
-  | { type: "LOAD_FROM_SERVER"; project: Project; bible: Bible | null; chapterArc: ChapterArc | null; scenes: SceneEntry[]; sceneChunks: Record<string, Chunk[]>; bibleVersions: Array<{ version: number; createdAt: string }> }
+  | {
+      type: "LOAD_FROM_SERVER";
+      project: Project;
+      bible: Bible | null;
+      chapterArc: ChapterArc | null;
+      scenes: SceneEntry[];
+      sceneChunks: Record<string, Chunk[]>;
+      bibleVersions: Array<{ version: number; createdAt: string }>;
+    }
   | { type: "COMPLETE_SCENE"; sceneId: string }
   // Backward compat: Phase 0 single-scene mode
   | { type: "SET_SCENE_PLAN"; plan: ScenePlan | null };
@@ -92,9 +100,7 @@ function reducer(state: AppState, action: AppAction): AppState {
     case "UPDATE_SCENE_STATUS":
       return {
         ...state,
-        scenes: state.scenes.map((s) =>
-          s.plan.id === action.sceneId ? { ...s, status: action.status } : s,
-        ),
+        scenes: state.scenes.map((s) => (s.plan.id === action.sceneId ? { ...s, status: action.status } : s)),
       };
     case "SET_SCENE_CHUNKS":
       return {
@@ -158,9 +164,7 @@ function reducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         auditFlags: state.auditFlags.map((f) =>
-          f.id === action.flagId
-            ? { ...f, resolved: true, resolvedAction: action.action, wasActionable: false }
-            : f,
+          f.id === action.flagId ? { ...f, resolved: true, resolvedAction: action.action, wasActionable: false } : f,
         ),
       };
     case "SET_GENERATING":
@@ -268,7 +272,7 @@ export function useProject() {
         });
       }
     },
-    [state.availableModels, state.compilationConfig, dispatch],
+    [state.availableModels, state.compilationConfig],
   );
 
   const loadFile = useCallback(async (): Promise<string | null> => {

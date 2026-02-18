@@ -1,13 +1,13 @@
+import { countTokens } from "../tokens/index.js";
 import type {
-  Ring1Result,
-  Ring3Result,
-  ScenePlan,
   Bible,
   CompilationConfig,
   LintIssue,
   LintResult,
+  Ring1Result,
+  Ring3Result,
+  ScenePlan,
 } from "../types/index.js";
-import { countTokens } from "../tokens/index.js";
 
 export function lintPayload(
   ring1: Ring1Result,

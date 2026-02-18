@@ -1,37 +1,28 @@
 import Anthropic from "@anthropic-ai/sdk";
-import {
-  createEmptyBible,
-  createEmptyScenePlan,
-  createEmptyChapterArc,
-  createDefaultCompilationConfig,
-  generateId,
-  type Bible,
-  type ScenePlan,
-  type ChapterArc,
-} from "../src/types/index.js";
 import { computeMetrics } from "../src/auditor/index.js";
-import { runChapterWorkflow, type GenerateFn } from "./driver.js";
 import {
-  runAllDeterministicChecks,
-  type DeterministicCheckInputs,
-} from "./checks/deterministic.js";
-import {
-  evaluateVoice,
-  evaluateSceneGoal,
-  evaluateToneWhiplash,
-  evaluateContinuity,
-  evaluateSubtext,
-  evaluateMetaphoricRegister,
-} from "./checks/judge.js";
+  type Bible,
+  type ChapterArc,
+  createDefaultCompilationConfig,
+  createEmptyBible,
+  createEmptyChapterArc,
+  createEmptyScenePlan,
+  generateId,
+  type ScenePlan,
+} from "../src/types/index.js";
 import { saveArtifact } from "./artifacts.js";
+import { type DeterministicCheckInputs, runAllDeterministicChecks } from "./checks/deterministic.js";
+import {
+  evaluateContinuity,
+  evaluateMetaphoricRegister,
+  evaluateSceneGoal,
+  evaluateSubtext,
+  evaluateToneWhiplash,
+  evaluateVoice,
+} from "./checks/judge.js";
+import { type GenerateFn, runChapterWorkflow } from "./driver.js";
 import { generateReport } from "./report.js";
-import type {
-  EvalRunArtifact,
-  CheckResult,
-  JudgeScore,
-  RunnerOptions,
-  EvalCost,
-} from "./types.js";
+import type { CheckResult, EvalRunArtifact, JudgeScore, RunnerOptions } from "./types.js";
 
 // ─── Default Fixtures ───────────────────────────────────
 
@@ -53,9 +44,7 @@ function defaultBible(): Bible {
           verbalTics: ["Look,", "The thing is"],
           metaphoricRegister: "Mechanical — gears, engines, pressure",
           prohibitedLanguage: ["literally", "actually"],
-          dialogueSamples: [
-            "Look, I'm not saying it's a conspiracy. I'm saying someone moved the letters.",
-          ],
+          dialogueSamples: ["Look, I'm not saying it's a conspiracy. I'm saying someone moved the letters."],
         },
         behavior: {
           stressResponse: "Gets very still, then paces",
@@ -109,10 +98,42 @@ function defaultScenePlans(): ScenePlan[] {
   };
 
   return [
-    { ...base, id: "scene-1", title: "The Empty Desk", narrativeGoal: "Establish the mystery", emotionalBeat: "Unease", readerEffect: "Something is wrong", failureModeToAvoid: "Stating emotions directly" },
-    { ...base, id: "scene-2", title: "The Staff Room", narrativeGoal: "Deepen suspicion", emotionalBeat: "Growing paranoia", readerEffect: "Distrust the official story", failureModeToAvoid: "Info-dump through dialogue" },
-    { ...base, id: "scene-3", title: "After Hours", narrativeGoal: "Discovery", emotionalBeat: "Dread", readerEffect: "Feel physical tension", failureModeToAvoid: "Melodrama" },
-    { ...base, id: "scene-4", title: "The Corridor", narrativeGoal: "Confrontation without resolution", emotionalBeat: "Controlled fury", readerEffect: "Feel the weight of what's unsaid", failureModeToAvoid: "Climactic resolution too early" },
+    {
+      ...base,
+      id: "scene-1",
+      title: "The Empty Desk",
+      narrativeGoal: "Establish the mystery",
+      emotionalBeat: "Unease",
+      readerEffect: "Something is wrong",
+      failureModeToAvoid: "Stating emotions directly",
+    },
+    {
+      ...base,
+      id: "scene-2",
+      title: "The Staff Room",
+      narrativeGoal: "Deepen suspicion",
+      emotionalBeat: "Growing paranoia",
+      readerEffect: "Distrust the official story",
+      failureModeToAvoid: "Info-dump through dialogue",
+    },
+    {
+      ...base,
+      id: "scene-3",
+      title: "After Hours",
+      narrativeGoal: "Discovery",
+      emotionalBeat: "Dread",
+      readerEffect: "Feel physical tension",
+      failureModeToAvoid: "Melodrama",
+    },
+    {
+      ...base,
+      id: "scene-4",
+      title: "The Corridor",
+      narrativeGoal: "Confrontation without resolution",
+      emotionalBeat: "Controlled fury",
+      readerEffect: "Feel the weight of what's unsaid",
+      failureModeToAvoid: "Climactic resolution too early",
+    },
   ];
 }
 
@@ -188,9 +209,7 @@ async function runEval(options: RunnerOptions): Promise<void> {
   for (let rollout = 0; rollout < options.rollouts; rollout++) {
     console.log(`--- Rollout ${rollout + 1}/${options.rollouts} ---`);
 
-    const generateFn = options.mock
-      ? createMockGenerateFn()
-      : createRealGenerateFn(client!, options.generatorModel);
+    const generateFn = options.mock ? createMockGenerateFn() : createRealGenerateFn(client!, options.generatorModel);
 
     // Run the chapter workflow
     const driverResult = await runChapterWorkflow(bible, arc, plans, {
@@ -271,14 +290,10 @@ async function runEval(options: RunnerOptions): Promise<void> {
 
     // Compute aggregates
     const voiceScores = judgeScores.filter((s) => s.dimension === "voice_consistency");
-    const voiceAvg = voiceScores.length > 0
-      ? voiceScores.reduce((sum, s) => sum + s.score, 0) / voiceScores.length
-      : 0;
+    const voiceAvg = voiceScores.length > 0 ? voiceScores.reduce((sum, s) => sum + s.score, 0) / voiceScores.length : 0;
 
     const contScores = judgeScores.filter((s) => s.dimension === "continuity");
-    const contAvg = contScores.length > 0
-      ? contScores.reduce((sum, s) => sum + s.score, 0) / contScores.length
-      : 0;
+    const contAvg = contScores.length > 0 ? contScores.reduce((sum, s) => sum + s.score, 0) / contScores.length : 0;
 
     const detAllPass = allDetChecks.every((c) => c.passed);
     const judgeAllPass = judgeScores.length === 0 || judgeScores.every((s) => s.passed);

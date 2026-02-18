@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { Chunk } from "../../types/index.js";
 
 interface Props {
@@ -64,16 +64,14 @@ export function ChunkCard({ chunk, index, isLast, onUpdate, onRemove }: Props) {
             }}
           />
         ) : (
-          chunk.editedText ?? chunk.generatedText
+          (chunk.editedText ?? chunk.generatedText)
         )}
       </div>
       <div className="chunk-card-actions">
         <button onClick={handleAccept} disabled={chunk.status === "accepted"}>
           Accept
         </button>
-        <button onClick={handleEdit}>
-          {editing ? "Save Edit" : "Edit"}
-        </button>
+        <button onClick={handleEdit}>{editing ? "Save Edit" : "Edit"}</button>
         <button
           className="danger"
           onClick={handleReject}

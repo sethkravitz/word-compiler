@@ -1,11 +1,5 @@
-import type {
-  ChapterArc,
-  Bible,
-  NarrativeIR,
-  CompilationConfig,
-  RingSection,
-} from "../types/index.js";
 import { countTokens } from "../tokens/index.js";
+import type { Bible, ChapterArc, CompilationConfig, NarrativeIR, RingSection } from "../types/index.js";
 import { assembleSections } from "./helpers.js";
 
 export interface Ring2Result {
@@ -17,15 +11,13 @@ export interface Ring2Result {
 export function buildRing2(
   chapterArc: ChapterArc,
   bible: Bible,
-  previousSceneIRs: NarrativeIR[],
-  config: CompilationConfig,
+  _previousSceneIRs: NarrativeIR[],
+  _config: CompilationConfig,
 ): Ring2Result {
   const sections: RingSection[] = [];
 
   // --- Chapter Brief (immune) ---
-  const briefParts: string[] = [
-    `Chapter ${chapterArc.chapterNumber}: ${chapterArc.workingTitle}`,
-  ];
+  const briefParts: string[] = [`Chapter ${chapterArc.chapterNumber}: ${chapterArc.workingTitle}`];
   if (chapterArc.narrativeFunction) {
     briefParts.push(`Function: ${chapterArc.narrativeFunction}`);
   }
@@ -64,15 +56,11 @@ export function buildRing2(
   }
 
   // --- Active Setups (compressible) ---
-  const activeSetups = bible.narrativeRules.setups.filter(
-    (s) => s.status === "planned" || s.status === "planted",
-  );
+  const activeSetups = bible.narrativeRules.setups.filter((s) => s.status === "planned" || s.status === "planted");
   if (activeSetups.length > 0) {
     sections.push({
       name: "ACTIVE_SETUPS",
-      text:
-        `ACTIVE SETUPS:\n` +
-        activeSetups.map((s) => `- ${s.description} [${s.status}]`).join("\n"),
+      text: `ACTIVE SETUPS:\n${activeSetups.map((s) => `- ${s.description} [${s.status}]`).join("\n")}`,
       priority: 4,
       immune: false,
     });

@@ -1,5 +1,4 @@
-import React from "react";
-import type { CompiledPayload, CompilationLog, LintResult, AuditFlag, ProseMetrics } from "../../types/index.js";
+import type { AuditFlag, CompilationLog, CompiledPayload, LintResult, ProseMetrics } from "../../types/index.js";
 import { AuditPanel } from "./AuditPanel.js";
 
 interface Props {
@@ -53,10 +52,7 @@ export function CompilerView({ payload, log, lintResult, auditFlags, metrics, on
           {usedPct}% of budget ({total.toLocaleString()} / {log.availableBudget.toLocaleString()} tokens)
         </div>
         <div className="budget-gauge">
-          <div
-            className="budget-gauge-fill"
-            style={{ width: `${Math.max(usedPct, 1)}%` }}
-          />
+          <div className="budget-gauge-fill" style={{ width: `${Math.max(usedPct, 1)}%` }} />
         </div>
 
         {/* Ring Breakdown — what's in the tank? */}
@@ -148,11 +144,7 @@ export function CompilerView({ payload, log, lintResult, auditFlags, metrics, on
         </div>
 
         {/* Audit Panel */}
-        <AuditPanel
-          flags={auditFlags}
-          onResolve={onResolveFlag}
-          onDismiss={onDismissFlag}
-        />
+        <AuditPanel flags={auditFlags} onResolve={onResolveFlag} onDismiss={onDismissFlag} />
 
         {/* Metrics */}
         {metrics && (

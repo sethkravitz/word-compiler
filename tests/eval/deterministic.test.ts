@@ -1,24 +1,24 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  checkKillListCompliance,
   checkBudgetCompliance,
-  checkRing1Cap,
+  checkDialoguePresence,
+  checkKillListCompliance,
   checkLintCompliance,
-  checkSentenceDistribution,
   checkProhibitedLanguage,
+  checkRing1Cap,
+  checkSentenceDistribution,
   checkStructuralBans,
   checkWordCount,
-  checkDialoguePresence,
   runAllDeterministicChecks,
 } from "../../eval/checks/deterministic.js";
 import {
-  createEmptyBible,
-  createEmptyScenePlan,
-  createDefaultCompilationConfig,
-  createEmptyCharacterDossier,
   type Bible,
   type CharacterDossier,
   type CompilationLog,
+  createDefaultCompilationConfig,
+  createEmptyBible,
+  createEmptyCharacterDossier,
+  createEmptyScenePlan,
   type LintResult,
   type ProseMetrics,
   type ScenePlan,
@@ -99,31 +99,19 @@ function makePlan(overrides: Partial<ScenePlan> = {}): ScenePlan {
 
 describe("checkKillListCompliance", () => {
   it("passes with clean prose", () => {
-    const result = checkKillListCompliance(
-      "Marcus stood at the window. The desk was empty.",
-      makeBible(),
-      "scene-1",
-    );
+    const result = checkKillListCompliance("Marcus stood at the window. The desk was empty.", makeBible(), "scene-1");
     expect(result.passed).toBe(true);
   });
 
   it("fails when kill list words appear", () => {
-    const result = checkKillListCompliance(
-      "Marcus suddenly looked up. He realized the truth.",
-      makeBible(),
-      "scene-1",
-    );
+    const result = checkKillListCompliance("Marcus suddenly looked up. He realized the truth.", makeBible(), "scene-1");
     expect(result.passed).toBe(false);
     expect(result.detail).toContain("suddenly");
     expect(result.detail).toContain("he realized");
   });
 
   it("counts multiple violations", () => {
-    const result = checkKillListCompliance(
-      "Suddenly he turned. Then suddenly again.",
-      makeBible(),
-      "scene-1",
-    );
+    const result = checkKillListCompliance("Suddenly he turned. Then suddenly again.", makeBible(), "scene-1");
     expect(result.passed).toBe(false);
     expect(result.detail).toContain("2 violation");
   });
@@ -243,10 +231,7 @@ describe("checkProhibitedLanguage", () => {
   });
 
   it("fails when prohibited words appear", () => {
-    const result = checkProhibitedLanguage(
-      "He literally could not believe it. Actually, he could.",
-      makeCharacter(),
-    );
+    const result = checkProhibitedLanguage("He literally could not believe it. Actually, he could.", makeCharacter());
     expect(result.passed).toBe(false);
     expect(result.detail).toContain("literally");
     expect(result.detail).toContain("actually");
@@ -276,10 +261,7 @@ describe("checkStructuralBans", () => {
   });
 
   it("fails when structural ban violated", () => {
-    const result = checkStructuralBans(
-      "It was a dark and stormy night when Marcus arrived.",
-      makeBible(),
-    );
+    const result = checkStructuralBans("It was a dark and stormy night when Marcus arrived.", makeBible());
     expect(result.passed).toBe(false);
   });
 

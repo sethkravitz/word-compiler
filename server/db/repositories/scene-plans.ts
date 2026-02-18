@@ -12,7 +12,10 @@ export function createScenePlan(db: Database.Database, plan: ScenePlan, sceneOrd
   return plan;
 }
 
-export function getScenePlan(db: Database.Database, id: string): { plan: ScenePlan; status: SceneStatus; sceneOrder: number } | null {
+export function getScenePlan(
+  db: Database.Database,
+  id: string,
+): { plan: ScenePlan; status: SceneStatus; sceneOrder: number } | null {
   const row = db.prepare("SELECT data, status, scene_order FROM scene_plans WHERE id = ?").get(id) as
     | { data: string; status: SceneStatus; scene_order: number }
     | undefined;
@@ -20,10 +23,13 @@ export function getScenePlan(db: Database.Database, id: string): { plan: ScenePl
   return { plan: JSON.parse(row.data) as ScenePlan, status: row.status, sceneOrder: row.scene_order };
 }
 
-export function listScenePlans(db: Database.Database, chapterId: string): Array<{ plan: ScenePlan; status: SceneStatus; sceneOrder: number }> {
-  const rows = db.prepare(
-    `SELECT data, status, scene_order FROM scene_plans WHERE chapter_id = ? ORDER BY scene_order`,
-  ).all(chapterId) as Array<{ data: string; status: SceneStatus; scene_order: number }>;
+export function listScenePlans(
+  db: Database.Database,
+  chapterId: string,
+): Array<{ plan: ScenePlan; status: SceneStatus; sceneOrder: number }> {
+  const rows = db
+    .prepare(`SELECT data, status, scene_order FROM scene_plans WHERE chapter_id = ? ORDER BY scene_order`)
+    .all(chapterId) as Array<{ data: string; status: SceneStatus; scene_order: number }>;
   return rows.map((r) => ({
     plan: JSON.parse(r.data) as ScenePlan,
     status: r.status,
@@ -33,16 +39,12 @@ export function listScenePlans(db: Database.Database, chapterId: string): Array<
 
 export function updateScenePlan(db: Database.Database, plan: ScenePlan): ScenePlan {
   const now = new Date().toISOString();
-  db.prepare(
-    `UPDATE scene_plans SET data = ?, updated_at = ? WHERE id = ?`,
-  ).run(JSON.stringify(plan), now, plan.id);
+  db.prepare(`UPDATE scene_plans SET data = ?, updated_at = ? WHERE id = ?`).run(JSON.stringify(plan), now, plan.id);
   return plan;
 }
 
 export function updateSceneStatus(db: Database.Database, id: string, status: SceneStatus): boolean {
   const now = new Date().toISOString();
-  const result = db.prepare(
-    `UPDATE scene_plans SET status = ?, updated_at = ? WHERE id = ?`,
-  ).run(status, now, id);
+  const result = db.prepare(`UPDATE scene_plans SET status = ?, updated_at = ? WHERE id = ?`).run(status, now, id);
   return result.changes > 0;
 }

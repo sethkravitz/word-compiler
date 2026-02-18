@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
+import { beforeEach, describe, expect, it } from "vitest";
 import { createSchema } from "../../../server/db/schema.js";
 
 let db: Database.Database;
@@ -12,9 +12,9 @@ beforeEach(() => {
 
 describe("createSchema", () => {
   it("creates all expected tables", () => {
-    const tables = db.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
-    ).all() as Array<{ name: string }>;
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as Array<{
+      name: string;
+    }>;
     const names = tables.map((t) => t.name);
 
     expect(names).toContain("projects");
@@ -33,9 +33,7 @@ describe("createSchema", () => {
 
   it("enforces foreign keys on projects", () => {
     expect(() => {
-      db.prepare(
-        "INSERT INTO bibles (id, project_id, version, data) VALUES ('b1', 'nonexistent', 1, '{}')",
-      ).run();
+      db.prepare("INSERT INTO bibles (id, project_id, version, data) VALUES ('b1', 'nonexistent', 1, '{}')").run();
     }).toThrow();
   });
 
@@ -56,9 +54,9 @@ describe("createSchema", () => {
   });
 
   it("creates expected indexes", () => {
-    const indexes = db.prepare(
-      "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%' ORDER BY name",
-    ).all() as Array<{ name: string }>;
+    const indexes = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%' ORDER BY name")
+      .all() as Array<{ name: string }>;
     const names = indexes.map((i) => i.name);
 
     expect(names).toContain("idx_bibles_project");

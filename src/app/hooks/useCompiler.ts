@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import type { ScenePlan, Chunk, ChapterArc } from "../../types/index.js";
-import type { AppState, AppAction } from "./useProject.js";
 import { compilePayload } from "../../compiler/assembler.js";
+import type { Chunk, ScenePlan } from "../../types/index.js";
+import type { AppAction, AppState } from "./useProject.js";
 
 export function useCompiler(
   state: AppState,
@@ -43,5 +43,14 @@ export function useCompiler(
         error: err instanceof Error ? err.message : "Compilation error",
       });
     }
-  }, [state.bible, state.isGenerating, activeScenePlan, activeSceneChunks, state.compilationConfig, state.chapterArc, previousSceneLastChunk, dispatch]);
+  }, [
+    state.bible,
+    state.isGenerating,
+    activeScenePlan,
+    activeSceneChunks,
+    state.compilationConfig,
+    state.chapterArc,
+    previousSceneLastChunk,
+    dispatch,
+  ]);
 }

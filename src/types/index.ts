@@ -536,12 +536,14 @@ export const MODEL_REGISTRY: Record<string, ModelSpec> = {
 export const DEFAULT_MODEL = "claude-sonnet-4-6";
 
 export function getModelSpec(modelId: string): ModelSpec {
-  return MODEL_REGISTRY[modelId] ?? {
-    id: modelId,
-    label: modelId,
-    contextWindow: 200000,
-    maxOutput: 64000,
-  };
+  return (
+    MODEL_REGISTRY[modelId] ?? {
+      id: modelId,
+      label: modelId,
+      contextWindow: 200000,
+      maxOutput: 64000,
+    }
+  );
 }
 
 export function createDefaultCompilationConfig(modelId: string = DEFAULT_MODEL): CompilationConfig {
@@ -551,7 +553,7 @@ export function createDefaultCompilationConfig(modelId: string = DEFAULT_MODEL):
     reservedForOutput: Math.min(2000, spec.maxOutput),
     ring1MaxFraction: 0.15,
     ring2MaxFraction: 0.25,
-    ring3MinFraction: 0.60,
+    ring3MinFraction: 0.6,
     ring1HardCap: 2000,
     bridgeVerbatimTokens: 200,
     bridgeIncludeStateBullets: true,

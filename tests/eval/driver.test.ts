@@ -1,13 +1,13 @@
-import { describe, it, expect } from "vitest";
-import { runChapterWorkflow, type GenerateFn } from "../../eval/driver.js";
+import { describe, expect, it } from "vitest";
+import { type GenerateFn, runChapterWorkflow } from "../../eval/driver.js";
 import {
-  createEmptyBible,
-  createEmptyScenePlan,
-  createEmptyChapterArc,
-  createDefaultCompilationConfig,
   type Bible,
-  type ScenePlan,
   type ChapterArc,
+  createDefaultCompilationConfig,
+  createEmptyBible,
+  createEmptyChapterArc,
+  createEmptyScenePlan,
+  type ScenePlan,
 } from "../../src/types/index.js";
 
 // ─── Test Fixtures ──────────────────────────────────
@@ -96,12 +96,10 @@ describe("runChapterWorkflow", () => {
   const config = createDefaultCompilationConfig();
 
   it("produces results for all scenes", async () => {
-    const result = await runChapterWorkflow(
-      makeBible(),
-      makeArc(),
-      makeScenePlans(),
-      { generateFn: mockGenerate, config },
-    );
+    const result = await runChapterWorkflow(makeBible(), makeArc(), makeScenePlans(), {
+      generateFn: mockGenerate,
+      config,
+    });
 
     expect(result.scenes).toHaveLength(2);
     expect(result.scenes[0]!.sceneId).toBe("scene-1");
@@ -109,12 +107,10 @@ describe("runChapterWorkflow", () => {
   });
 
   it("generates correct number of chunks per scene", async () => {
-    const result = await runChapterWorkflow(
-      makeBible(),
-      makeArc(),
-      makeScenePlans(),
-      { generateFn: mockGenerate, config },
-    );
+    const result = await runChapterWorkflow(makeBible(), makeArc(), makeScenePlans(), {
+      generateFn: mockGenerate,
+      config,
+    });
 
     // Each scene has chunkCount = 2
     expect(result.scenes[0]!.chunks).toHaveLength(2);
@@ -123,24 +119,20 @@ describe("runChapterWorkflow", () => {
   });
 
   it("accumulates all prose", async () => {
-    const result = await runChapterWorkflow(
-      makeBible(),
-      makeArc(),
-      makeScenePlans(),
-      { generateFn: mockGenerate, config },
-    );
+    const result = await runChapterWorkflow(makeBible(), makeArc(), makeScenePlans(), {
+      generateFn: mockGenerate,
+      config,
+    });
 
     expect(result.allProse.length).toBeGreaterThan(0);
     expect(result.allProse).toContain("Marcus walked");
   });
 
   it("each chunk has metrics and audit flags", async () => {
-    const result = await runChapterWorkflow(
-      makeBible(),
-      makeArc(),
-      makeScenePlans(),
-      { generateFn: mockGenerate, config },
-    );
+    const result = await runChapterWorkflow(makeBible(), makeArc(), makeScenePlans(), {
+      generateFn: mockGenerate,
+      config,
+    });
 
     for (const scene of result.scenes) {
       for (const chunk of scene.chunks) {
@@ -152,12 +144,10 @@ describe("runChapterWorkflow", () => {
   });
 
   it("scene results include compilation log and lint", async () => {
-    const result = await runChapterWorkflow(
-      makeBible(),
-      makeArc(),
-      makeScenePlans(),
-      { generateFn: mockGenerate, config },
-    );
+    const result = await runChapterWorkflow(makeBible(), makeArc(), makeScenePlans(), {
+      generateFn: mockGenerate,
+      config,
+    });
 
     for (const scene of result.scenes) {
       expect(scene.compilationLog.totalTokens).toBeGreaterThan(0);
@@ -167,37 +157,29 @@ describe("runChapterWorkflow", () => {
 
   it("calls onSceneComplete callback", async () => {
     const completed: string[] = [];
-    await runChapterWorkflow(
-      makeBible(),
-      makeArc(),
-      makeScenePlans(),
-      {
-        generateFn: mockGenerate,
-        config,
-        onSceneComplete: (sceneId) => completed.push(sceneId),
-      },
-    );
+    await runChapterWorkflow(makeBible(), makeArc(), makeScenePlans(), {
+      generateFn: mockGenerate,
+      config,
+      onSceneComplete: (sceneId) => completed.push(sceneId),
+    });
 
     expect(completed).toEqual(["scene-1", "scene-2"]);
   });
 
   it("handles single scene with one chunk", async () => {
-    const singlePlan: ScenePlan[] = [{
-      ...createEmptyScenePlan("test"),
-      id: "scene-solo",
-      title: "Solo Scene",
-      narrativeGoal: "Test single scene",
-      failureModeToAvoid: "None",
-      chunkCount: 1,
-      estimatedWordCount: [50, 100],
-    }];
+    const singlePlan: ScenePlan[] = [
+      {
+        ...createEmptyScenePlan("test"),
+        id: "scene-solo",
+        title: "Solo Scene",
+        narrativeGoal: "Test single scene",
+        failureModeToAvoid: "None",
+        chunkCount: 1,
+        estimatedWordCount: [50, 100],
+      },
+    ];
 
-    const result = await runChapterWorkflow(
-      makeBible(),
-      makeArc(),
-      singlePlan,
-      { generateFn: mockGenerate, config },
-    );
+    const result = await runChapterWorkflow(makeBible(), makeArc(), singlePlan, { generateFn: mockGenerate, config });
 
     expect(result.scenes).toHaveLength(1);
     expect(result.scenes[0]!.chunks).toHaveLength(1);
@@ -205,16 +187,10 @@ describe("runChapterWorkflow", () => {
   });
 
   it("detects kill list violations in generated text", async () => {
-    const badGenerate: GenerateFn = async () =>
-      "Marcus suddenly turned around. He realized the door was open.";
+    const badGenerate: GenerateFn = async () => "Marcus suddenly turned around. He realized the door was open.";
 
     const bible = makeBible();
-    const result = await runChapterWorkflow(
-      bible,
-      makeArc(),
-      makeScenePlans(),
-      { generateFn: badGenerate, config },
-    );
+    const result = await runChapterWorkflow(bible, makeArc(), makeScenePlans(), { generateFn: badGenerate, config });
 
     // At least some chunks should have kill list flags
     const allFlags = result.scenes.flatMap((s) => s.chunks.flatMap((c) => c.auditFlags));

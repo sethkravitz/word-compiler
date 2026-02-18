@@ -17,17 +17,15 @@ export function getChunk(db: Database.Database, id: string): Chunk | null {
 }
 
 export function listChunksForScene(db: Database.Database, sceneId: string): Chunk[] {
-  const rows = db.prepare(
-    `SELECT data FROM chunks WHERE scene_id = ? ORDER BY sequence_number`,
-  ).all(sceneId) as Array<{ data: string }>;
+  const rows = db.prepare(`SELECT data FROM chunks WHERE scene_id = ? ORDER BY sequence_number`).all(sceneId) as Array<{
+    data: string;
+  }>;
   return rows.map((r) => JSON.parse(r.data) as Chunk);
 }
 
 export function updateChunk(db: Database.Database, chunk: Chunk): Chunk {
   const now = new Date().toISOString();
-  db.prepare(
-    `UPDATE chunks SET data = ?, updated_at = ? WHERE id = ?`,
-  ).run(JSON.stringify(chunk), now, chunk.id);
+  db.prepare(`UPDATE chunks SET data = ?, updated_at = ? WHERE id = ?`).run(JSON.stringify(chunk), now, chunk.id);
   return chunk;
 }
 

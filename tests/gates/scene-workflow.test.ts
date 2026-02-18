@@ -1,15 +1,6 @@
-import { describe, it, expect } from "vitest";
-import {
-  checkSceneCompletionGate,
-  checkAuditResolutionGate,
-  checkScenePlanGate,
-} from "../../src/gates/index.js";
-import {
-  createEmptyScenePlan,
-  type ScenePlan,
-  type Chunk,
-  type AuditFlag,
-} from "../../src/types/index.js";
+import { describe, expect, it } from "vitest";
+import { checkAuditResolutionGate, checkSceneCompletionGate, checkScenePlanGate } from "../../src/gates/index.js";
+import { type AuditFlag, type Chunk, createEmptyScenePlan, type ScenePlan } from "../../src/types/index.js";
 
 function makePlan(overrides: Partial<ScenePlan> = {}): ScenePlan {
   return {
@@ -60,10 +51,7 @@ describe("scene workflow gates", () => {
   describe("scene completion flow", () => {
     it("scene cannot complete with fewer chunks than planned", () => {
       const plan = makePlan({ chunkCount: 3 });
-      const chunks = [
-        makeChunk({ sequenceNumber: 0 }),
-        makeChunk({ sequenceNumber: 1 }),
-      ];
+      const chunks = [makeChunk({ sequenceNumber: 0 }), makeChunk({ sequenceNumber: 1 })];
       const result = checkSceneCompletionGate(chunks, plan);
       expect(result.passed).toBe(false);
     });
@@ -89,17 +77,13 @@ describe("scene workflow gates", () => {
     });
 
     it("scene cannot complete with unresolved critical audit flags", () => {
-      const flags = [
-        makeFlag({ severity: "critical", resolved: false }),
-      ];
+      const flags = [makeFlag({ severity: "critical", resolved: false })];
       const result = checkAuditResolutionGate(flags);
       expect(result.passed).toBe(false);
     });
 
     it("scene can complete with resolved critical flags", () => {
-      const flags = [
-        makeFlag({ severity: "critical", resolved: true, wasActionable: true, resolvedAction: "Fixed" }),
-      ];
+      const flags = [makeFlag({ severity: "critical", resolved: true, wasActionable: true, resolvedAction: "Fixed" })];
       const result = checkAuditResolutionGate(flags);
       expect(result.passed).toBe(true);
     });

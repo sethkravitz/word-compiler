@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildRing1 } from "../../src/compiler/ring1.js";
 import {
-  createEmptyBible,
-  createDefaultCompilationConfig,
   type Bible,
   type CompilationConfig,
+  createDefaultCompilationConfig,
+  createEmptyBible,
 } from "../../src/types/index.js";
 
 function makeBible(overrides: Partial<Bible> = {}): Bible {
@@ -79,12 +79,8 @@ describe("buildRing1", () => {
           notes: null,
         },
         killList: [{ pattern: "a sense of", type: "exact" }],
-        negativeExemplars: [
-          { text: "She felt a wave of sadness", annotation: "telling not showing" },
-        ],
-        positiveExemplars: [
-          { text: "The glass sweated in his grip", annotation: "embodied detail" },
-        ],
+        negativeExemplars: [{ text: "She felt a wave of sadness", annotation: "telling not showing" }],
+        positiveExemplars: [{ text: "The glass sweated in his grip", annotation: "embodied detail" }],
         structuralBans: ["Never end on stated emotion"],
       },
       narrativeRules: {

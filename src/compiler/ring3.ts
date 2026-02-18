@@ -1,26 +1,19 @@
-import type {
-  ScenePlan,
-  Bible,
-  Chunk,
-  CompilationConfig,
-  Ring3Result,
-  RingSection,
-} from "../types/index.js";
-import { getCanonicalText } from "../types/index.js";
 import { countTokens, lastNTokens } from "../tokens/index.js";
+import type { Bible, Chunk, CompilationConfig, Ring3Result, RingSection, ScenePlan } from "../types/index.js";
+import { getCanonicalText } from "../types/index.js";
 import {
-  formatSceneContract,
-  formatCharacterVoice,
-  formatSensoryPalette,
-  formatAntiAblation,
   assembleSections,
+  formatAntiAblation,
+  formatCharacterVoice,
+  formatSceneContract,
+  formatSensoryPalette,
 } from "./helpers.js";
 
 export function buildRing3(
   plan: ScenePlan,
   bible: Bible,
   previousChunks: Chunk[],
-  chunkNumber: number,
+  _chunkNumber: number,
   config: CompilationConfig,
   previousSceneLastChunk?: Chunk,
 ): Ring3Result {

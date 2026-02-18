@@ -87,9 +87,7 @@ export interface ParsedBootstrap {
   suggestedKillList?: string[];
 }
 
-export function parseBootstrapResponse(
-  response: string,
-): ParsedBootstrap | { error: string; rawText: string } {
+export function parseBootstrapResponse(response: string): ParsedBootstrap | { error: string; rawText: string } {
   // Try 1: direct parse
   try {
     return JSON.parse(response) as ParsedBootstrap;
@@ -129,10 +127,7 @@ export function parseBootstrapResponse(
 
 // ─── Bootstrap → Bible ──────────────────────────────────
 
-export function bootstrapToBible(
-  parsed: ParsedBootstrap,
-  projectId: string,
-): Bible {
+export function bootstrapToBible(parsed: ParsedBootstrap, projectId: string): Bible {
   const characters = (parsed.characters || []).map((c) => ({
     id: generateId(),
     name: c.name,
@@ -202,11 +197,12 @@ export function bootstrapToBible(
       pov: {
         default: "close-third",
         distance: "close",
-        interiority: tone?.interiority === "stream"
-          ? "stream"
-          : tone?.interiority === "behavioral-only"
-            ? "behavioral-only"
-            : "filtered",
+        interiority:
+          tone?.interiority === "stream"
+            ? "stream"
+            : tone?.interiority === "behavioral-only"
+              ? "behavioral-only"
+              : "filtered",
         reliability: "reliable",
       },
       subtextPolicy: null,

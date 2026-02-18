@@ -1,14 +1,7 @@
-import type {
-  Bible,
-  ChapterArc,
-  Chunk,
-  CompilationConfig,
-  CompiledPayload,
-  ScenePlan,
-} from "../src/types/index.js";
+import { computeMetrics, runAudit } from "../src/auditor/index.js";
+import { type CompileResult, compilePayload } from "../src/compiler/assembler.js";
+import type { Bible, ChapterArc, Chunk, CompilationConfig, CompiledPayload, ScenePlan } from "../src/types/index.js";
 import { generateId, getCanonicalText } from "../src/types/index.js";
-import { compilePayload, type CompileResult } from "../src/compiler/assembler.js";
-import { runAudit, computeMetrics } from "../src/auditor/index.js";
 import type { EvalSceneResult } from "./types.js";
 
 // ─── Generate Function Signature ────────────────────────
@@ -80,12 +73,6 @@ export async function runChapterWorkflow(
 
       sceneChunks.push(chunk);
     }
-
-    // Accumulate full scene prose
-    const sceneProse = sceneChunks.map((c) => getCanonicalText(c)).join("\n\n");
-
-    // Audit the scene
-    const { flags, metrics } = runAudit(sceneProse, bible, plan.id);
 
     // Build per-chunk audit/metrics detail
     const chunkDetails = sceneChunks.map((chunk) => {

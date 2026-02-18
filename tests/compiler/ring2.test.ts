@@ -1,10 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { buildRing2 } from "../../src/compiler/ring2.js";
 import {
-  createEmptyBible,
-  createDefaultCompilationConfig,
-  type ChapterArc,
   type Bible,
+  type ChapterArc,
+  createDefaultCompilationConfig,
+  createEmptyBible,
   type ReaderState,
 } from "../../src/types/index.js";
 
@@ -38,9 +38,21 @@ function makeBible(overrides: Partial<Bible> = {}): Bible {
     narrativeRules: {
       ...createEmptyBible("test").narrativeRules,
       setups: [
-        { id: "s1", description: "The letter in the desk", plantedInScene: null, payoffInScene: null, status: "planned" },
+        {
+          id: "s1",
+          description: "The letter in the desk",
+          plantedInScene: null,
+          payoffInScene: null,
+          status: "planned",
+        },
         { id: "s2", description: "Missing keys", plantedInScene: "scene-1", payoffInScene: null, status: "planted" },
-        { id: "s3", description: "Dog barking", plantedInScene: "scene-1", payoffInScene: "scene-2", status: "paid-off" },
+        {
+          id: "s3",
+          description: "Dog barking",
+          plantedInScene: "scene-1",
+          payoffInScene: "scene-2",
+          status: "paid-off",
+        },
       ],
     },
     ...overrides,

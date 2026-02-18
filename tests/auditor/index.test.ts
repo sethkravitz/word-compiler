@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   checkKillList,
-  checkSentenceVariance,
   checkParagraphLength,
+  checkSentenceVariance,
   computeMetrics,
-  splitSentences,
   runAudit,
+  splitSentences,
 } from "../../src/auditor/index.js";
 import { createEmptyBible } from "../../src/types/index.js";
 
@@ -41,29 +41,17 @@ describe("checkKillList", () => {
   });
 
   it("case insensitive matching", () => {
-    const flags = checkKillList(
-      "A Sense Of dread filled the room.",
-      [{ pattern: "a sense of", type: "exact" }],
-      "s1",
-    );
+    const flags = checkKillList("A Sense Of dread filled the room.", [{ pattern: "a sense of", type: "exact" }], "s1");
     expect(flags).toHaveLength(1);
   });
 
   it("regex special characters escaped properly", () => {
-    const flags = checkKillList(
-      "The price was $100 (plus tax).",
-      [{ pattern: "$100 (plus", type: "exact" }],
-      "s1",
-    );
+    const flags = checkKillList("The price was $100 (plus tax).", [{ pattern: "$100 (plus", type: "exact" }], "s1");
     expect(flags).toHaveLength(1);
   });
 
   it("structural entries ignored", () => {
-    const flags = checkKillList(
-      "He felt a sense of dread.",
-      [{ pattern: "a sense of", type: "structural" }],
-      "s1",
-    );
+    const flags = checkKillList("He felt a sense of dread.", [{ pattern: "a sense of", type: "structural" }], "s1");
     expect(flags).toHaveLength(0);
   });
 
@@ -152,11 +140,7 @@ describe("checkParagraphLength", () => {
   });
 
   it("under limit → no flags", () => {
-    const flags = checkParagraphLength(
-      "First sentence. Second sentence. Third sentence.",
-      5,
-      "s1",
-    );
+    const flags = checkParagraphLength("First sentence. Second sentence. Third sentence.", 5, "s1");
     expect(flags).toHaveLength(0);
   });
 

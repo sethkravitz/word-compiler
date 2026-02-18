@@ -1,5 +1,5 @@
-import type { RingSection, CompilationConfig, BudgetResult } from "../types/index.js";
 import { countTokens } from "../tokens/index.js";
+import type { BudgetResult, CompilationConfig, RingSection } from "../types/index.js";
 import { assembleSections } from "./helpers.js";
 
 export function enforceBudget(
@@ -125,18 +125,11 @@ export function enforceBudget(
  * Remove non-immune sections by priority (highest priority number = cut first)
  * until totalTokens fits within budget.
  */
-function compressSections(
-  sections: RingSection[],
-  budget: number,
-  log: string[],
-  ringLabel: string,
-): RingSection[] {
+function compressSections(sections: RingSection[], budget: number, log: string[], ringLabel: string): RingSection[] {
   let current = [...sections];
 
   // Sort removable sections by priority descending (cut highest first)
-  const removable = current
-    .filter((s) => !s.immune)
-    .sort((a, b) => b.priority - a.priority);
+  const removable = current.filter((s) => !s.immune).sort((a, b) => b.priority - a.priority);
 
   for (const section of removable) {
     if (countTokens(assembleSections(current)) <= budget) break;
