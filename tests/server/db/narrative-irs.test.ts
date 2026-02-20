@@ -137,10 +137,16 @@ describe("narrative IRs repository", () => {
     expect(verified[0]!.verified).toBe(true);
   });
 
-  it("enforces unique scene_id constraint", () => {
+  it("upserts when same scene_id is inserted twice", () => {
     const { sceneId } = seedSceneAndProject(db);
-    narrativeIRs.createNarrativeIR(db, createEmptyNarrativeIR(sceneId));
-    expect(() => narrativeIRs.createNarrativeIR(db, createEmptyNarrativeIR(sceneId))).toThrow();
+    const ir1 = { ...createEmptyNarrativeIR(sceneId), events: ["Original event"] };
+    narrativeIRs.createNarrativeIR(db, ir1);
+
+    const ir2 = { ...createEmptyNarrativeIR(sceneId), events: ["Updated event"] };
+    expect(() => narrativeIRs.createNarrativeIR(db, ir2)).not.toThrow();
+
+    const retrieved = narrativeIRs.getNarrativeIR(db, sceneId);
+    expect(retrieved!.events).toEqual(["Updated event"]);
   });
 
   it("preserves characterDeltas and nested fields", () => {

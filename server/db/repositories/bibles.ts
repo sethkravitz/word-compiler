@@ -6,7 +6,10 @@ export function createBible(db: Database.Database, bible: Bible): Bible {
   const id = generateId();
   db.prepare(
     `INSERT INTO bibles (id, project_id, version, data, created_at)
-     VALUES (?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(project_id, version) DO UPDATE SET
+       data = excluded.data,
+       created_at = excluded.created_at`,
   ).run(id, bible.projectId, bible.version, JSON.stringify(bible), bible.createdAt);
   return bible;
 }
