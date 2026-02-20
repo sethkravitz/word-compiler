@@ -3,9 +3,10 @@ import { extractIR, type IRLLMClient } from "../../ir/extractor.js";
 import { callLLM, generateStream } from "../../llm/client.js";
 import type { Chunk } from "../../types/index.js";
 import { generateId, getCanonicalText } from "../../types/index.js";
+import type { ApiActions } from "./api-actions.js";
 import type { ProjectStore } from "./project.svelte.js";
 
-export function createGenerationActions(store: ProjectStore) {
+export function createGenerationActions(store: ProjectStore, actions?: ApiActions) {
   async function generateChunk() {
     const plan = store.activeScenePlan;
     if (!store.compiledPayload || !store.bible || !plan) return;
@@ -46,12 +47,19 @@ export function createGenerationActions(store: ProjectStore) {
         },
       });
 
+      // Persist the finalized chunk
+      const finalChunk = store.activeSceneChunks[chunkIndex];
+      if (finalChunk && actions) await actions.saveChunk(finalChunk);
+
       // Run audit on all chunks for this scene
       const allText = [...store.activeSceneChunks.slice(0, chunkIndex), { ...pendingChunk, generatedText: fullText }]
         .map((c) => getCanonicalText(c))
         .join("\n\n");
       const { flags, metrics } = runAudit(allText, store.bible, plan.id);
       store.setAudit(flags, metrics);
+
+      // Persist audit flags
+      if (actions) await actions.saveAuditFlags(flags);
     } catch (err) {
       store.setError(err instanceof Error ? err.message : "Generation failed");
     } finally {
@@ -82,7 +90,11 @@ export function createGenerationActions(store: ProjectStore) {
           callLLM(systemMessage, userMessage, model, maxTokens, outputSchema),
       };
       const ir = await extractIR(prose, plan, store.bible, llmClient);
-      store.setSceneIR(plan.id, ir);
+      if (actions) {
+        await actions.saveSceneIR(plan.id, ir);
+      } else {
+        store.setSceneIR(plan.id, ir);
+      }
       store.setIRInspectorOpen(true);
     } catch (err) {
       store.setError(err instanceof Error ? err.message : "IR extraction failed");

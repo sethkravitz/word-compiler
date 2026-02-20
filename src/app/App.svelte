@@ -1,10 +1,11 @@
 <script lang="ts">
+import { apiCreateProject } from "../api/client.js";
 import { checkChunkReviewGate, checkCompileGate, checkScenePlanGate } from "../gates/index.js";
 import { computeStyleDriftFromProse } from "../metrics/styleDrift.js";
 import { measureVoiceSeparability } from "../metrics/voiceSeparability.js";
 import { countTokens } from "../tokens/index.js";
 import type { Chunk, StyleDriftReport, VoiceSeparabilityReport } from "../types/index.js";
-import { getCanonicalText } from "../types/index.js";
+import { generateId, getCanonicalText } from "../types/index.js";
 import BibleAuthoringModal from "./components/BibleAuthoringModal.svelte";
 import BiblePane from "./components/BiblePane.svelte";
 import BootstrapModal from "./components/BootstrapModal.svelte";
@@ -29,7 +30,7 @@ setupCompilerEffect(store);
 const actions = createApiActions(store);
 
 // Create generation action handlers
-const { generateChunk, runAuditManual, extractSceneIR } = createGenerationActions(store);
+const { generateChunk, runAuditManual, extractSceneIR } = createGenerationActions(store, actions);
 
 // ─── Startup ────────────────────────────────────
 let appReady = $state(false);
@@ -40,6 +41,22 @@ onMount(async () => {
   startupStatus = result;
   appReady = result === "loaded" || result === "no-projects";
 });
+
+async function createFirstProject() {
+  try {
+    const project = await apiCreateProject({
+      id: generateId(),
+      title: "Untitled Novel",
+      status: "bootstrap",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    store.setProject(project);
+    appReady = true;
+  } catch (err) {
+    store.setError(err instanceof Error ? err.message : "Failed to create project");
+  }
+}
 
 // ─── Local UI state ─────────────────────────────
 let showArcEditor = $state(false);
@@ -127,8 +144,23 @@ let voiceReport = $derived.by((): VoiceSeparabilityReport | null => {
 });
 
 // ─── Handlers ──────────────────────────────────
+let editDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 function handleUpdateChunk(index: number, changes: Partial<Chunk>) {
   store.updateChunk(index, changes);
+
+  // Debounce API persistence for text edits
+  if (changes.editedText !== undefined || changes.humanNotes !== undefined) {
+    if (editDebounceTimer) clearTimeout(editDebounceTimer);
+    editDebounceTimer = setTimeout(async () => {
+      const chunk = store.activeSceneChunks[index];
+      if (chunk) await actions.updateChunk(chunk);
+    }, 500);
+  } else {
+    // Non-text changes persist immediately
+    const chunk = store.activeSceneChunks[index];
+    if (chunk) actions.updateChunk(chunk);
+  }
 }
 
 function handleRemoveChunk(index: number) {
@@ -321,6 +353,9 @@ function exportState() {
     <span class="app-title">Word Compiler</span>
     {#if startupStatus === "loading"}
       <p>Loading project...</p>
+    {:else if startupStatus === "no-projects"}
+      <p>Welcome to Word Compiler. Create your first project to get started.</p>
+      <Button onclick={createFirstProject}>Create Project</Button>
     {:else if startupStatus === "error"}
       <ErrorBanner message={store.error ?? "Failed to load"} onDismiss={() => store.setError(null)} />
     {:else if startupStatus === "multiple-projects"}
