@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildIRExtractionPrompt, extractIR, type IRLLMClient } from "../../src/ir/extractor.js";
+import { buildIRExtractionPrompt, extractIR, type IRLLMClient, narrativeIRSchema } from "../../src/ir/extractor.js";
 import { createEmptyBible, createEmptyScenePlan } from "../../src/types/index.js";
 
 function makeMockClient(responseText: string): IRLLMClient {
@@ -135,6 +135,13 @@ describe("extractIR", () => {
     await extractIR("prose", makePlan(), makeBible(), client, "claude-opus-4-6");
     const callArgs = (client.call as ReturnType<typeof vi.fn>).mock.calls[0]!;
     expect(callArgs[2]).toBe("claude-opus-4-6");
+  });
+
+  it("passes narrativeIRSchema as outputSchema to the LLM client", async () => {
+    const client = makeMockClient(VALID_IR_JSON);
+    await extractIR("prose", makePlan(), makeBible(), client);
+    const callArgs = (client.call as ReturnType<typeof vi.fn>).mock.calls[0]!;
+    expect(callArgs[4]).toBe(narrativeIRSchema);
   });
 
   it("returns empty IR when LLM returns unparseable response", async () => {

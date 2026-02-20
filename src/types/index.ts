@@ -220,6 +220,7 @@ export interface CompiledPayload {
   topP: number;
   maxTokens: number;
   model: string;
+  outputSchema?: Record<string, unknown>;
 }
 
 export interface CompilationLog {

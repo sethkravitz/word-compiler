@@ -11,6 +11,58 @@ export {
 
 // ─── Bootstrap Prompt ───────────────────────────────────
 
+export const bootstrapSchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    characters: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          role: { type: "string" },
+          physicalDescription: { type: "string" },
+          backstory: { type: "string" },
+          voiceNotes: { type: "string" },
+          emotionPhysicality: { type: "string" },
+        },
+        required: ["name", "role"],
+      },
+    },
+    locations: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          sensoryPalette: {
+            type: "object",
+            properties: {
+              sounds: { type: "array", items: { type: "string" } },
+              smells: { type: "array", items: { type: "string" } },
+              textures: { type: "array", items: { type: "string" } },
+              lightQuality: { type: "string" },
+              prohibitedDefaults: { type: "array", items: { type: "string" } },
+            },
+          },
+        },
+        required: ["name"],
+      },
+    },
+    suggestedTone: {
+      type: "object",
+      properties: {
+        metaphoricDomains: { type: "array", items: { type: "string" } },
+        prohibitedDomains: { type: "array", items: { type: "string" } },
+        pacingNotes: { type: "string" },
+        interiority: { type: "string" },
+      },
+    },
+    suggestedKillList: { type: "array", items: { type: "string" } },
+  },
+  required: ["characters", "locations"],
+};
+
 export function buildBootstrapPrompt(synopsis: string): CompiledPayload {
   const systemMessage = `You are a literary analyst. Given a synopsis, extract structured elements for a story bible. Be specific and opinionated — generic descriptions are useless.`;
 
@@ -62,6 +114,7 @@ Be ruthlessly specific. If the synopsis doesn't give you enough to be specific, 
     topP: 0.92,
     maxTokens: 16384,
     model: "claude-sonnet-4-6",
+    outputSchema: bootstrapSchema,
   };
 }
 

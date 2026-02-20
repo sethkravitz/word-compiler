@@ -78,7 +78,8 @@ export function createGenerationActions(store: ProjectStore) {
     try {
       const prose = store.activeSceneChunks.map((c) => getCanonicalText(c)).join("\n\n");
       const llmClient: IRLLMClient = {
-        call: (systemMessage, userMessage, model, maxTokens) => callLLM(systemMessage, userMessage, model, maxTokens),
+        call: (systemMessage, userMessage, model, maxTokens, outputSchema) =>
+          callLLM(systemMessage, userMessage, model, maxTokens, outputSchema),
       };
       const ir = await extractIR(prose, plan, store.bible, llmClient);
       store.setSceneIR(plan.id, ir);

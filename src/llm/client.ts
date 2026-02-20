@@ -33,6 +33,7 @@ export async function generate(payload: CompiledPayload): Promise<GenerateRespon
       topP: payload.topP,
       maxTokens: payload.maxTokens,
       model: payload.model,
+      ...(payload.outputSchema && { outputSchema: payload.outputSchema }),
     }),
   });
 
@@ -49,6 +50,7 @@ export async function callLLM(
   userMessage: string,
   model: string,
   maxTokens: number,
+  outputSchema?: Record<string, unknown>,
 ): Promise<string> {
   const payload: CompiledPayload = {
     systemMessage,
@@ -57,6 +59,7 @@ export async function callLLM(
     topP: 1,
     maxTokens,
     model,
+    ...(outputSchema && { outputSchema }),
   };
   const result = await generate(payload);
   return result.text;
@@ -79,6 +82,7 @@ export async function generateStream(payload: CompiledPayload, callbacks: Stream
       topP: payload.topP,
       maxTokens: payload.maxTokens,
       model: payload.model,
+      ...(payload.outputSchema && { outputSchema: payload.outputSchema }),
     }),
   });
 

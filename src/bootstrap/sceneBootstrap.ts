@@ -77,6 +77,82 @@ export interface ParsedSceneBootstrap {
 
 // ─── Prompt Builder ────────────────────────────────────
 
+const readerStateSchema = {
+  type: "object",
+  properties: {
+    knows: { type: "array", items: { type: "string" } },
+    suspects: { type: "array", items: { type: "string" } },
+    wrongAbout: { type: "array", items: { type: "string" } },
+    activeTensions: { type: "array", items: { type: "string" } },
+  },
+};
+
+export const sceneBootstrapSchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    scenes: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          povCharacterId: { type: "string" },
+          povCharacterName: { type: "string" },
+          povDistance: { type: "string" },
+          narrativeGoal: { type: "string" },
+          emotionalBeat: { type: "string" },
+          readerEffect: { type: "string" },
+          failureModeToAvoid: { type: "string" },
+          density: { type: "string" },
+          pacing: { type: "string" },
+          sensoryNotes: { type: "string" },
+          locationId: { type: "string" },
+          locationName: { type: "string" },
+          estimatedWordCount: { type: "array", items: { type: "number" } },
+          chunkCount: { type: "number" },
+          chunkDescriptions: { type: "array", items: { type: "string" } },
+          readerStateEntering: readerStateSchema,
+          readerStateExiting: readerStateSchema,
+          subtext: {
+            type: "object",
+            properties: {
+              surfaceConversation: { type: "string" },
+              actualConversation: { type: "string" },
+              enforcementRule: { type: "string" },
+            },
+          },
+          sceneSpecificProhibitions: { type: "array", items: { type: "string" } },
+          anchorLines: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                text: { type: "string" },
+                placement: { type: "string" },
+                verbatim: { type: "boolean" },
+              },
+            },
+          },
+        },
+        required: ["title", "narrativeGoal", "emotionalBeat"],
+      },
+    },
+    chapterArc: {
+      type: "object",
+      properties: {
+        workingTitle: { type: "string" },
+        narrativeFunction: { type: "string" },
+        dominantRegister: { type: "string" },
+        pacingTarget: { type: "string" },
+        endingPosture: { type: "string" },
+        readerStateEntering: readerStateSchema,
+        readerStateExiting: readerStateSchema,
+      },
+    },
+  },
+  required: ["scenes"],
+};
+
 export function buildSceneBootstrapPrompt(params: SceneBootstrapParams): CompiledPayload {
   const characterList =
     params.characters.length > 0
@@ -168,6 +244,7 @@ CRITICAL: Maintain reader state continuity across scenes. Scene 2's readerStateE
     topP: 0.92,
     maxTokens: 8000,
     model: "claude-sonnet-4-6",
+    outputSchema: sceneBootstrapSchema,
   };
 }
 

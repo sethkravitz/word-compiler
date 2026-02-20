@@ -3,6 +3,7 @@ import {
   buildSceneBootstrapPrompt,
   mapSceneBootstrapToPlans,
   parseSceneBootstrapResponse,
+  sceneBootstrapSchema,
 } from "../../src/bootstrap/sceneBootstrap.js";
 
 const characters = [
@@ -30,6 +31,19 @@ describe("buildSceneBootstrapPrompt", () => {
     expect(payload.systemMessage).toContain("3 scene plans");
     expect(payload.userMessage).toContain("Marcus Cole");
     expect(payload.userMessage).toContain("The Velvet");
+  });
+
+  it("includes outputSchema matching sceneBootstrapSchema", () => {
+    const payload = buildSceneBootstrapPrompt({
+      direction: "A tense confrontation",
+      sceneCount: 2,
+      characters,
+      locations,
+      includeChapterArc: false,
+    });
+    expect(payload.outputSchema).toBe(sceneBootstrapSchema);
+    expect(payload.outputSchema).toHaveProperty("type", "object");
+    expect(payload.outputSchema).toHaveProperty("properties.scenes");
   });
 
   it("includes chapter arc instruction when requested", () => {

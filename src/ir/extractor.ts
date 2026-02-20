@@ -4,8 +4,58 @@ import { parseIRResponse } from "./parser.js";
 // ─── LLM Client Interface ────────────────────────────────
 
 export interface IRLLMClient {
-  call(systemMessage: string, userMessage: string, model: string, maxTokens: number): Promise<string>;
+  call(
+    systemMessage: string,
+    userMessage: string,
+    model: string,
+    maxTokens: number,
+    outputSchema?: Record<string, unknown>,
+  ): Promise<string>;
 }
+
+// ─── JSON Schema for Structured Output ───────────────────
+
+export const narrativeIRSchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    events: { type: "array", items: { type: "string" } },
+    factsIntroduced: { type: "array", items: { type: "string" } },
+    factsRevealedToReader: { type: "array", items: { type: "string" } },
+    factsWithheld: { type: "array", items: { type: "string" } },
+    characterDeltas: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          characterId: { type: "string" },
+          learned: { type: ["string", "null"] },
+          suspicionGained: { type: ["string", "null"] },
+          emotionalShift: { type: ["string", "null"] },
+          relationshipChange: { type: ["string", "null"] },
+        },
+        required: ["characterId"],
+      },
+    },
+    setupsPlanted: { type: "array", items: { type: "string" } },
+    payoffsExecuted: { type: "array", items: { type: "string" } },
+    characterPositions: {
+      type: "object",
+      additionalProperties: { type: "string" },
+    },
+    unresolvedTensions: { type: "array", items: { type: "string" } },
+  },
+  required: [
+    "events",
+    "factsIntroduced",
+    "factsRevealedToReader",
+    "factsWithheld",
+    "characterDeltas",
+    "setupsPlanted",
+    "payoffsExecuted",
+    "characterPositions",
+    "unresolvedTensions",
+  ],
+};
 
 // ─── Prompt Builder ──────────────────────────────────────
 
@@ -72,6 +122,6 @@ export async function extractIR(
   model = "claude-sonnet-4-6",
 ): Promise<NarrativeIR> {
   const userMessage = buildIRExtractionPrompt(prose, plan, bible);
-  const responseText = await llmClient.call(IR_SYSTEM_MESSAGE, userMessage, model, 2000);
+  const responseText = await llmClient.call(IR_SYSTEM_MESSAGE, userMessage, model, 2000, narrativeIRSchema);
   return parseIRResponse(responseText, plan.id);
 }
