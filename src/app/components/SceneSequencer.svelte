@@ -8,11 +8,13 @@ let {
   activeSceneIndex,
   sceneChunks,
   onSelectScene,
+  onAddScene,
 }: {
   scenes: SceneEntry[];
   activeSceneIndex: number;
   sceneChunks: Record<string, Chunk[]>;
   onSelectScene: (index: number) => void;
+  onAddScene?: () => void;
 } = $props();
 
 const STATUS_LABELS: Record<SceneStatus, string> = {
@@ -44,6 +46,18 @@ const STATUS_VARIANTS: Record<SceneStatus, "pending" | "edited" | "accepted"> = 
         </div>
       </button>
     {/each}
+    {#if onAddScene}
+      <button type="button" class="scene-card scene-card-add" onclick={onAddScene} title="Add new scene">
+        <span class="scene-card-add-icon">+</span>
+      </button>
+    {/if}
+  </div>
+{:else if onAddScene}
+  <div class="scene-sequencer">
+    <button type="button" class="scene-card scene-card-add" onclick={onAddScene} title="Add new scene">
+      <span class="scene-card-add-icon">+</span>
+      <span class="scene-card-add-label">New Scene</span>
+    </button>
   </div>
 {/if}
 
@@ -67,4 +81,11 @@ const STATUS_VARIANTS: Record<SceneStatus, "pending" | "edited" | "accepted"> = 
   }
   .scene-card-meta { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
   .scene-card-chunks { font-size: 10px; color: var(--text-muted); }
+  .scene-card-add {
+    border-style: dashed; display: flex; align-items: center; justify-content: center;
+    gap: 4px; color: var(--text-muted);
+  }
+  .scene-card-add:hover { color: var(--accent); border-color: var(--accent); }
+  .scene-card-add-icon { font-size: 16px; line-height: 1; }
+  .scene-card-add-label { font-size: 10px; }
 </style>

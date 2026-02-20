@@ -8,7 +8,8 @@ const meta: Meta<TextArea> = {
     variant: { control: "select", options: ["default", "compact"] },
     placeholder: { control: "text" },
     rows: { control: "number" },
-    resize: { control: "boolean" },
+    resize: { control: "select", options: ["vertical", "none", "both"] },
+    autosize: { control: "boolean" },
   },
 };
 
@@ -25,5 +26,20 @@ export const WithValue: Story = {
   args: { value: "The rain fell in sheets against the window, each drop a tiny percussion." },
 };
 export const Resizable: Story = {
-  args: { placeholder: "Resize me...", resize: true },
+  args: { placeholder: "Resize me...", resize: "both" },
+};
+export const Autosize: Story = {
+  args: {
+    autosize: true,
+    value: [
+      "Station log, day 337. All systems nominal. I am not.",
+      "",
+      "She filed the status report at 0613, same as every morning, the boilerplate affirmations of operational readiness that Control expected and she provided. Air recycling: nominal. Power grid: nominal. Communications array: nominal. Structural integrity: nominal. Crew morale: not applicable.",
+      "",
+      "That last field had been on the form since Meridian was designed for a crew of twelve. She'd stopped finding it funny around day two hundred.",
+      "",
+      "Drone Six hovered at shoulder height, its maintenance arms folded against its chassis in what she'd come to think of as its resting position.",
+    ].join("\n"),
+    placeholder: "Write your scene...",
+  },
 };

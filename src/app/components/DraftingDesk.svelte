@@ -46,6 +46,19 @@ let canGenerateNext = $derived(canGenerate && !isGenerating && gateMessages.leng
 let completionGate = $derived(scenePlan ? checkSceneCompletionGate(chunks, scenePlan) : null);
 let auditGate = $derived(checkAuditResolutionGate(auditFlags));
 let canComplete = $derived(sceneStatus === "drafting" && completionGate?.passed && auditGate.passed);
+
+// Auto-scroll to bottom during streaming
+let bottomSentinel: HTMLDivElement;
+
+$effect(() => {
+  // Track last chunk's text length so this fires on each stream token
+  const lastChunk = chunks[chunks.length - 1];
+  const _len = lastChunk?.generatedText?.length ?? 0;
+
+  if (isGenerating && bottomSentinel) {
+    bottomSentinel.scrollIntoView({ block: "end" });
+  }
+});
 </script>
 
 <Pane title="Drafting Desk">
@@ -57,7 +70,7 @@ let canComplete = $derived(sceneStatus === "drafting" && completionGate?.passed 
           <Button onclick={onOpenIRInspector} title="View/edit IR">IR {sceneIR.verified ? "✓" : "?"}</Button>
         {:else}
           <Button onclick={onExtractIR} disabled={isExtractingIR} title="Extract Narrative IR">
-            {isExtractingIR ? "Extracting..." : "Extract IR"}
+            {#if isExtractingIR}<Spinner size="sm" /> Extracting IR...{:else}Extract IR{/if}
           </Button>
         {/if}
       {/if}
@@ -109,9 +122,10 @@ let canComplete = $derived(sceneStatus === "drafting" && completionGate?.passed 
     {#if isGenerating}
       <div class="loading-indicator">
         <Spinner />
-        Generating chunk {chunks.length + 1}{scenePlan?.chunkDescriptions[chunks.length] ? `: ${scenePlan.chunkDescriptions[chunks.length]}` : ""}...
+        Generating chunk {chunks.length}{scenePlan?.chunkDescriptions[chunks.length - 1] ? `: ${scenePlan.chunkDescriptions[chunks.length - 1]}` : ""}...
       </div>
     {/if}
+    <div bind:this={bottomSentinel}></div>
 </Pane>
 
 <style>

@@ -119,11 +119,12 @@ describe("checkSentenceVariance", () => {
   });
 
   it("3+ consecutive similar-length → flags info", () => {
-    // Three 8-word sentences followed by different lengths
+    // Four similar-length sentences (8, 7, 8, 7 words) followed by different lengths
     const prose = [
       "He walked into the bar that night.",
       "She looked up from her glass slowly.",
       "The room was quiet and very still.",
+      "He set his coat down on it.",
       "Nobody said anything at all in the long dim room that stretched before them like an endless corridor into darkness.",
       "He sat down at the far end of the bar where the shadows were deepest and the light barely reached.",
     ].join(" ");

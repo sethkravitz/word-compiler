@@ -50,6 +50,8 @@ export class ProjectStore {
   isExtractingIR = $state(false);
   selectedChunkIndex = $state<number | null>(null);
   bootstrapModalOpen = $state(false);
+  bibleAuthoringOpen = $state(false);
+  sceneAuthoringOpen = $state(false);
   irInspectorOpen = $state(false);
   error = $state<string | null>(null);
 
@@ -200,6 +202,26 @@ export class ProjectStore {
     this.bootstrapModalOpen = value;
   }
 
+  setBibleAuthoringOpen(value: boolean) {
+    this.bibleAuthoringOpen = value;
+  }
+
+  setSceneAuthoringOpen(value: boolean) {
+    this.sceneAuthoringOpen = value;
+  }
+
+  addMultipleScenePlans(plans: ScenePlan[]) {
+    const newEntries: SceneEntry[] = plans.map((plan, i) => ({
+      plan,
+      status: "planned" as SceneStatus,
+      sceneOrder: this.scenes.length + i,
+    }));
+    this.scenes = [...this.scenes, ...newEntries];
+    if (newEntries.length > 0) {
+      this.activeSceneIndex = this.scenes.length - newEntries.length;
+    }
+  }
+
   setSceneIR(sceneId: string, ir: NarrativeIR) {
     this.sceneIRs = { ...this.sceneIRs, [sceneId]: ir };
   }
@@ -235,6 +257,18 @@ export class ProjectStore {
     const entry: SceneEntry = { plan, status: "planned", sceneOrder: 0 };
     this.scenes = [entry];
     this.activeSceneIndex = 0;
+  }
+
+  addScenePlan(plan: ScenePlan) {
+    // If a scene with this ID already exists, replace it in place
+    const existingIndex = this.scenes.findIndex((s) => s.plan.id === plan.id);
+    if (existingIndex >= 0) {
+      this.scenes = this.scenes.map((s, i) => (i === existingIndex ? { ...s, plan } : s));
+      return;
+    }
+    const entry: SceneEntry = { plan, status: "planned", sceneOrder: this.scenes.length };
+    this.scenes = [...this.scenes, entry];
+    this.activeSceneIndex = this.scenes.length - 1;
   }
 
   loadFromServer(data: {

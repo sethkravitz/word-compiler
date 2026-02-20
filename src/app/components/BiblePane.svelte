@@ -2,16 +2,18 @@
 import { json } from "@codemirror/lang-json";
 import { oneDark } from "@codemirror/theme-one-dark";
 import CodeMirror from "svelte-codemirror-editor";
-import type { Bible, ScenePlan } from "../../types/index.js";
+import type { Bible, ChapterArc, ScenePlan } from "../../types/index.js";
 import { Button, Pane } from "../primitives/index.js";
 import type { ProjectStore } from "../store/project.svelte.js";
 
 let {
   store,
   onBootstrap,
+  onAuthor,
 }: {
   store: ProjectStore;
   onBootstrap: () => void;
+  onAuthor?: () => void;
 } = $props();
 
 let bibleJson = $derived(store.bible ? JSON.stringify(store.bible, null, 2) : "");
@@ -31,7 +33,12 @@ function handleBibleChange(text: string) {
 function handlePlanChange(text: string) {
   try {
     const parsed = JSON.parse(text) as ScenePlan;
-    store.setScenePlan(parsed);
+    if (store.activeScenePlan) {
+      // Update the active scene plan in place
+      store.addScenePlan(parsed);
+    } else {
+      store.setScenePlan(parsed);
+    }
   } catch {
     // Invalid JSON
   }
@@ -54,9 +61,25 @@ async function handleLoadPlan() {
   if (text) {
     try {
       const parsed = JSON.parse(text) as ScenePlan;
-      store.setScenePlan(parsed);
+      if (store.scenes.length > 0) {
+        store.addScenePlan(parsed);
+      } else {
+        store.setScenePlan(parsed);
+      }
     } catch {
       store.setError("Invalid Scene Plan JSON");
+    }
+  }
+}
+
+async function handleLoadArc() {
+  const text = await store.loadFile();
+  if (text) {
+    try {
+      const parsed = JSON.parse(text) as ChapterArc;
+      store.setChapterArc(parsed);
+    } catch {
+      store.setError("Invalid Chapter Arc JSON");
     }
   }
 }
@@ -65,7 +88,11 @@ async function handleLoadPlan() {
 <Pane title="Bible + Plan" contentClass="bible-content">
   {#snippet headerRight()}
     <div class="pane-actions">
-      <Button onclick={onBootstrap}>Bootstrap</Button>
+      {#if onAuthor}
+        <Button onclick={onAuthor}>New Bible</Button>
+      {:else}
+        <Button onclick={onBootstrap}>Bootstrap</Button>
+      {/if}
     </div>
   {/snippet}
     <div class="bible-buttons">
@@ -73,6 +100,7 @@ async function handleLoadPlan() {
       <Button onclick={() => store.bible && store.saveFile(store.bible, "bible.json")} disabled={!store.bible}>Save Bible</Button>
       <Button onclick={handleLoadPlan}>Load Plan</Button>
       <Button onclick={() => store.activeScenePlan && store.saveFile(store.activeScenePlan, "scene-plan.json")} disabled={!store.activeScenePlan}>Save Plan</Button>
+      <Button onclick={handleLoadArc}>Load Arc</Button>
       {#if store.bible}
         <span class="bible-version">v{store.bible.version}</span>
       {/if}
@@ -92,7 +120,7 @@ async function handleLoadPlan() {
 </Pane>
 
 <style>
-  .bible-content { display: flex; flex-direction: column; gap: 8px; }
+  :global(.bible-content) { display: flex; flex-direction: column; gap: 8px; }
   .bible-buttons { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
   .bible-version { font-size: 10px; color: var(--accent-dim); margin-left: auto; }
   .editor-section { display: flex; flex-direction: column; flex: 1; min-height: 0; }

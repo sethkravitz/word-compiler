@@ -97,7 +97,7 @@ export function buildRing3(
     const verbatim = lastNTokens(canonText, config.bridgeVerbatimTokens);
     sections.push({
       name: "CONTINUITY_BRIDGE",
-      text: `=== PRECEDING TEXT (match rhythm and continuity) ===\n${verbatim}`,
+      text: `=== PRECEDING TEXT (continue directly from this point — do not repeat any of it) ===\n${verbatim}`,
       priority: 3,
       immune: false,
     });

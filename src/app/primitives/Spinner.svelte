@@ -7,7 +7,7 @@ let { size = "md" }: { size?: "sm" | "md" } = $props();
 <style>
   .spinner {
     display: inline-block;
-    border: 2px solid var(--border);
+    border: 2px solid var(--text-muted);
     border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;

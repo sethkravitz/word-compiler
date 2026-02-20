@@ -59,7 +59,7 @@ function handleReject() {
   </div>
   <div class="chunk-card-body">
     {#if editing}
-      <TextArea bind:value={editText} variant="compact" resize="vertical" />
+      <TextArea bind:value={editText} autosize />
     {:else}
       {chunk.editedText ?? chunk.generatedText}
     {/if}
@@ -111,8 +111,6 @@ function handleReject() {
     font-size: 13px;
     line-height: 1.7;
     white-space: pre-wrap;
-    max-height: 300px;
-    overflow-y: auto;
   }
   .chunk-card-actions {
     padding: 6px 10px;

@@ -60,7 +60,7 @@ let overBudget = $derived(lintCodes.has("TOTAL_OVER_BUDGET"));
       <!-- Ring Breakdown -->
       <SegmentedBar segments={[
         ...(log.ring1Tokens > 0 ? [{ label: `R1 ${log.ring1Tokens.toLocaleString()}`, flex: r1Pct, variant: "r1", flagged: r1Flagged }] : []),
-        ...(r2Tokens > 0 ? [{ label: `R2 ${r2Tokens.toLocaleString()}`, flex: r2Pct, variant: "r2", flagged: r2Flagged }] : [{ label: "R2 — no chapter arc", flex: 1, variant: "empty" }]),
+        ...(r2Tokens > 0 ? [{ label: `R2 ${r2Tokens.toLocaleString()}`, flex: r2Pct, variant: "r2", flagged: r2Flagged }] : []),
         ...(log.ring3Tokens > 0 ? [{ label: `R3 ${log.ring3Tokens.toLocaleString()}`, flex: r3Pct, variant: "r3", starved: r3Flagged }] : []),
       ]} />
 

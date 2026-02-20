@@ -1,6 +1,14 @@
 import type { Bible, CompiledPayload } from "../types/index.js";
 import { generateId } from "../types/index.js";
 
+export type { ParsedSceneBootstrap, SceneBootstrapParams } from "./sceneBootstrap.js";
+// Re-export scene bootstrap
+export {
+  buildSceneBootstrapPrompt,
+  mapSceneBootstrapToPlans,
+  parseSceneBootstrapResponse,
+} from "./sceneBootstrap.js";
+
 // ─── Bootstrap Prompt ───────────────────────────────────
 
 export function buildBootstrapPrompt(synopsis: string): CompiledPayload {

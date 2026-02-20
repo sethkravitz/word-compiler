@@ -46,8 +46,8 @@ function handleResolve(flagId: string) {
     <div class="signal-meter">
       <SegmentedBar
         segments={[
-          { label: `${stats.actionable} actionable`, flex: stats.actionable, variant: "actionable" },
-          { label: `${stats.nonActionable} noise`, flex: stats.nonActionable, variant: "noise" },
+          ...(stats.actionable > 0 ? [{ label: `${stats.actionable} actionable`, flex: stats.actionable, variant: "actionable" }] : []),
+          ...(stats.nonActionable > 0 ? [{ label: `${stats.nonActionable} noise`, flex: stats.nonActionable, variant: "noise" }] : []),
         ]}
         height={8}
       />

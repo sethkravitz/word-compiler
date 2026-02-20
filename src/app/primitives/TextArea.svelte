@@ -5,6 +5,7 @@ let {
   rows,
   variant = "default",
   resize = "vertical",
+  autosize = false,
   oninput,
 }: {
   value?: string;
@@ -12,17 +13,43 @@ let {
   rows?: number;
   variant?: "default" | "compact";
   resize?: "vertical" | "none" | "both";
+  autosize?: boolean;
   oninput?: (e: Event) => void;
 } = $props();
+
+let el: HTMLTextAreaElement;
+
+function resizeToFit() {
+  if (!autosize || !el) return;
+  el.style.height = "auto";
+  el.style.height = `${el.scrollHeight}px`;
+}
+
+// Resize when value changes (e.g. on mount or external update)
+$effect(() => {
+  if (autosize && el) {
+    // Access value to create reactive dependency
+    const _ = value;
+    // Defer to next microtask so the DOM has updated
+    queueMicrotask(resizeToFit);
+  }
+});
+
+function handleInput(e: Event) {
+  resizeToFit();
+  oninput?.(e);
+}
 </script>
 
 <textarea
+  bind:this={el}
   class="textarea textarea-{variant}"
+  class:textarea-autosize={autosize}
   bind:value
   {placeholder}
   {rows}
-  style:resize
-  {oninput}
+  style:resize={autosize ? "none" : resize}
+  oninput={handleInput}
 ></textarea>
 
 <style>
@@ -43,5 +70,8 @@ let {
     min-height: 32px;
     font-size: 11px;
     padding: 6px 8px;
+  }
+  .textarea-autosize {
+    overflow: hidden;
   }
 </style>

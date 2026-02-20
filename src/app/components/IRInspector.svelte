@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { CharacterDelta, NarrativeIR } from "../../types/index.js";
-import { Badge, Button, Pane } from "../primitives/index.js";
+import { Badge, Button, Pane, Spinner } from "../primitives/index.js";
 
 let {
   ir,
@@ -38,7 +38,7 @@ function hasDeltaData(delta: CharacterDelta): boolean {
         <Badge variant="warning">Unverified</Badge>
       {/if}
       <Button onclick={onExtract} disabled={!canExtract || isExtracting}>
-        {isExtracting ? "Extracting..." : ir ? "Re-extract" : "Extract IR"}
+        {#if isExtracting}<Spinner size="sm" /> Extracting...{:else if ir}Re-extract{:else}Extract IR{/if}
       </Button>
       {#if ir && !ir.verified}
         <Button variant="primary" onclick={onVerify}>Verify</Button>
@@ -47,7 +47,13 @@ function hasDeltaData(delta: CharacterDelta): boolean {
     </div>
   {/snippet}
 
-  {#if !ir}
+  {#if isExtracting}
+    <div class="ir-extracting">
+      <Spinner />
+      <div>Extracting Narrative IR from scene prose...</div>
+      <div class="ir-extracting-hint">This sends the full scene text to the LLM for analysis. Usually takes 10–30 seconds.</div>
+    </div>
+  {:else if !ir}
     <div class="ir-empty">No IR extracted yet. Complete the scene and click "Extract IR" to analyze.</div>
   {:else}
     <div class="ir-body">
@@ -119,6 +125,8 @@ function hasDeltaData(delta: CharacterDelta): boolean {
 
 <style>
   :global(.ir-inspector) { max-height: 80vh; overflow-y: auto; }
+  .ir-extracting { padding: 32px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; color: var(--accent); }
+  .ir-extracting-hint { font-size: 11px; color: var(--text-muted); }
   .ir-empty { padding: 24px; opacity: 0.6; text-align: center; }
   .ir-body { padding: 16px; }
   .ir-heading { margin: 0 0 8px; opacity: 0.7; }

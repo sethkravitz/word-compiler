@@ -1,0 +1,90 @@
+{
+  "id": "scene-signal-002",
+  "projectId": "proj-scifi",
+  "chapterId": null,
+  "title": "Pattern Recognition",
+  "povCharacterId": "sable",
+  "povDistance": "intimate",
+  "narrativeGoal": "Sable's private analysis of the signal deepens. She builds a spectrogram, discovers the signal has internal structure — not random, not mechanical. Her diagnostic tools keep returning UNCLASSIFIED. She begins talking to Drone Six while she works, a habit she's stopped noticing.",
+  "emotionalBeat": "Intellectual obsession masking growing unease",
+  "readerEffect": "Feel Sable's expertise meeting its limit — she's very good at this, and it's not enough. The signal should be explainable. It isn't.",
+  "readerStateEntering": {
+    "knows": [
+      "Sable is alone on Meridian, day 337+",
+      "An anomalous signal appeared during routine maintenance",
+      "She didn't report it — saved it as personal data"
+    ],
+    "suspects": [
+      "The signal might be intentional",
+      "Sable's loneliness is affecting her judgment"
+    ],
+    "wrongAbout": [
+      "That Sable will eventually file the report"
+    ],
+    "activeTensions": [
+      "Unreported protocol violation",
+      "Signal origin unknown"
+    ]
+  },
+  "readerStateExiting": {
+    "knows": [
+      "The signal has internal mathematical structure",
+      "It doesn't match any catalogued phenomenon",
+      "Sable talks to Drone Six as a companion",
+      "She's building analysis tools off-the-books"
+    ],
+    "suspects": [
+      "The signal might be a message",
+      "Sable is lonely enough to want it to be a message",
+      "Her objectivity is compromised"
+    ],
+    "wrongAbout": [
+      "That this is just professional curiosity"
+    ],
+    "activeTensions": [
+      "Unreported protocol violation deepening",
+      "Signal structure implies intent",
+      "Sable's isolation is shaping her analysis"
+    ]
+  },
+  "characterKnowledgeChanges": {
+    "sable": "Discovers the signal has non-random internal structure — a periodicity that doesn't match any known natural source. Her analysis tools categorize it as noise, but the spectrogram tells a different story. She begins building custom classification criteria."
+  },
+  "subtext": {
+    "surfaceConversation": "An engineer running increasingly sophisticated diagnostics on an anomalous reading",
+    "actualConversation": "A lonely person looking for evidence that something out there is paying attention",
+    "enforcementRule": "Sable must never acknowledge she wants the signal to be intentional. All motivation must appear technical. The loneliness enters only through behavior — talking to the drone, the hours she's keeping, what she's not eating."
+  },
+  "dialogueConstraints": {
+    "sable": [
+      "Internal monologue only — technical, clipped",
+      "Addresses Drone Six conversationally without noticing she's doing it",
+      "Uses station log entries as emotional containment"
+    ]
+  },
+  "pacing": "Methodical and tightening. Analysis scenes feel like narrowing focus — each test eliminating possibilities until what's left is impossible. Short bursts of action alternating with stillness.",
+  "density": "dense",
+  "sensoryNotes": "The hum of the spectrogram display. Cold coffee. The click of Drone Six's maintenance joints. Blue-shifted light from analysis screens washing out the station's amber.",
+  "sceneSpecificProhibitions": [
+    "No eureka moment — the realization should creep, not arrive",
+    "Sable must not use the word 'signal' as if it's already significant — it's still 'the reading' or 'the return' to her",
+    "Do not describe Sable's face or expressions — intimate POV, she can't see herself",
+    "No internal monologue about loneliness — show it through what she does"
+  ],
+  "anchorLines": [
+    {
+      "text": "Noise has no opinions. This had opinions.",
+      "placement": "Final third, after the spectrogram reveals structure",
+      "verbatim": true
+    }
+  ],
+  "estimatedWordCount": [900, 1300],
+  "chunkCount": 3,
+  "chunkDescriptions": [
+    "Station log, day 338. Sable returns to the data. She's set up a private analysis workspace — off the main logs. Drone Six hovers nearby as she works. Coffee she forgot to drink.",
+    "The spectrogram. The signal's internal structure becomes visible. It's not random. She runs every classification algorithm she has. Nothing matches. She starts ruling things out — pulsar timing, gravitational lensing, instrument echo. The list of what it isn't grows longer than the list of what it could be.",
+    "The quiet after. Sable sits with what she's found. She writes a station log entry that says nothing about it. She tells Drone Six to maintain position on sector eight. She opens a new file, labels it personal, and begins writing her own classification criteria."
+  ],
+  "failureModeToAvoid": "Making Sable seem irrational or reckless. Her protocol violation should feel like the logical choice of someone whose expertise is telling her something her systems can't confirm.",
+  "locationId": "loc-meridian"
+}

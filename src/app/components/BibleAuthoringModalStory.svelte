@@ -1,0 +1,48 @@
+<script lang="ts">
+import type { Bible } from "../../types/index.js";
+import { createEmptyBible, createEmptyCharacterDossier, generateId } from "../../types/index.js";
+import { ProjectStore } from "../store/project.svelte.js";
+import BibleAuthoringModal from "./BibleAuthoringModal.svelte";
+
+let {
+  mode = "bootstrap",
+  prePopulated = false,
+}: {
+  mode?: "bootstrap" | "form";
+  prePopulated?: boolean;
+} = $props();
+
+const store = new ProjectStore();
+store.setBibleAuthoringOpen(true);
+
+if (prePopulated) {
+  const bible = createEmptyBible("story-proj");
+  bible.characters = [
+    {
+      ...createEmptyCharacterDossier("Marcus Cole"),
+      role: "protagonist",
+      physicalDescription: "Weathered face, silver-threaded temples",
+      backstory: "Ex-homicide detective turned bar owner",
+    },
+  ];
+  bible.locations = [
+    {
+      id: generateId(),
+      name: "The Velvet",
+      description: "Jazz bar in a decaying waterfront district",
+      sensoryPalette: {
+        sounds: ["muted trumpet", "ice clinking"],
+        smells: ["bourbon", "old wood"],
+        textures: ["worn leather", "sticky bar top"],
+        lightQuality: "Amber neon through dirty glass",
+        atmosphere: "Melancholy warmth",
+        prohibitedDefaults: [],
+      },
+    },
+  ];
+  bible.styleGuide.killList = [{ pattern: "a wave of", type: "exact" }];
+  store.setBible(bible);
+}
+</script>
+
+<BibleAuthoringModal {store} />

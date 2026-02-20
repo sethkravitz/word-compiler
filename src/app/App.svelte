@@ -2,8 +2,10 @@
 import { checkChunkReviewGate, checkCompileGate, checkScenePlanGate } from "../gates/index.js";
 import { computeStyleDriftFromProse } from "../metrics/styleDrift.js";
 import { measureVoiceSeparability } from "../metrics/voiceSeparability.js";
+import { countTokens } from "../tokens/index.js";
 import type { Chunk, StyleDriftReport, VoiceSeparabilityReport } from "../types/index.js";
 import { getCanonicalText } from "../types/index.js";
+import BibleAuthoringModal from "./components/BibleAuthoringModal.svelte";
 import BiblePane from "./components/BiblePane.svelte";
 import BootstrapModal from "./components/BootstrapModal.svelte";
 import ChapterArcEditor from "./components/ChapterArcEditor.svelte";
@@ -11,6 +13,7 @@ import CompilerView from "./components/CompilerView.svelte";
 import DraftingDesk from "./components/DraftingDesk.svelte";
 import ForwardSimulator from "./components/ForwardSimulator.svelte";
 import IRInspector from "./components/IRInspector.svelte";
+import SceneAuthoringModal from "./components/SceneAuthoringModal.svelte";
 import SceneSequencer from "./components/SceneSequencer.svelte";
 import StyleDriftPanel from "./components/StyleDriftPanel.svelte";
 import VoiceSeparabilityView from "./components/VoiceSeparabilityView.svelte";
@@ -93,15 +96,20 @@ let styleDriftReports = $derived.by((): StyleDriftReport[] => {
 
 let baselineSceneTitle = $derived(store.scenes.find((s) => s.status === "complete")?.plan.title ?? "Scene 1");
 
+// Scene title lookup for drift panel
+let sceneTitles = $derived(Object.fromEntries(store.scenes.map((s) => [s.plan.id, s.plan.title])));
+
 // Voice separability (computed across all scene prose)
 let voiceReport = $derived.by((): VoiceSeparabilityReport | null => {
   if (!store.bible || store.bible.characters.length < 2) return null;
-  const allProse = store.scenes
-    .map((s) => (store.sceneChunks[s.plan.id] ?? []).map((c) => getCanonicalText(c)).join("\n\n"))
-    .filter(Boolean)
-    .join("\n\n");
-  if (!allProse) return null;
-  return measureVoiceSeparability(allProse, store.bible);
+  const sceneTexts = store.scenes
+    .map((s) => ({
+      sceneId: s.plan.id,
+      prose: (store.sceneChunks[s.plan.id] ?? []).map((c) => getCanonicalText(c)).join("\n\n"),
+    }))
+    .filter((s) => s.prose.length > 0);
+  if (sceneTexts.length === 0) return null;
+  return measureVoiceSeparability(sceneTexts, store.bible);
 });
 
 // ─── Handlers ──────────────────────────────────
@@ -138,6 +146,160 @@ function handleUpdateIR(ir: import("../types/index.js").NarrativeIR) {
     store.setSceneIR(store.activeScenePlan.id, ir);
   }
 }
+
+// ─── Prose Export ────────────────────────────────
+let totalWordCount = $derived(
+  store.scenes.reduce((sum, scene) => {
+    const chunks = store.sceneChunks[scene.plan.id] ?? [];
+    return sum + chunks.reduce((s, c) => s + getCanonicalText(c).split(/\s+/).filter(Boolean).length, 0);
+  }, 0),
+);
+
+let hasAnyProse = $derived(store.scenes.some((scene) => (store.sceneChunks[scene.plan.id] ?? []).length > 0));
+
+function exportProse() {
+  const sceneProse = store.scenes
+    .toSorted((a, b) => a.sceneOrder - b.sceneOrder)
+    .map((scene) => {
+      const chunks = store.sceneChunks[scene.plan.id] ?? [];
+      return chunks.map((c) => getCanonicalText(c)).join("\n\n");
+    })
+    .filter((text) => text.length > 0);
+
+  if (sceneProse.length === 0) {
+    store.setError("No prose to export — generate some chunks first.");
+    return;
+  }
+
+  const prose = sceneProse.join("\n\n* * *\n\n");
+
+  navigator.clipboard
+    .writeText(prose)
+    .then(() => {
+      store.setError(null);
+      const words = prose.split(/\s+/).filter(Boolean).length;
+      alert(
+        `${words.toLocaleString()} words copied to clipboard (${sceneProse.length} scene${sceneProse.length > 1 ? "s" : ""}).`,
+      );
+    })
+    .catch(() => {
+      const title = store.chapterArc?.workingTitle ?? "chapter";
+      const filename = `${title.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}.txt`;
+      const blob = new Blob([prose], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+}
+
+// ─── State Export ────────────────────────────────
+function truncate(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  return `${text.slice(0, maxLen)}… [${text.length} chars total]`;
+}
+
+function exportState() {
+  const plan = store.activeScenePlan;
+  const log = store.compilationLog;
+  const chunks = store.activeSceneChunks;
+  const payload = store.compiledPayload;
+
+  const snapshot = {
+    _format: "word-compiler-state-v1",
+    _exported: new Date().toISOString(),
+    scene: plan
+      ? {
+          title: plan.title,
+          chunkCount: plan.chunkCount,
+          chunkDescriptions: plan.chunkDescriptions,
+          status: store.activeScene?.status,
+        }
+      : null,
+    config: {
+      model: store.compilationConfig.defaultModel,
+      contextWindow: store.compilationConfig.modelContextWindow,
+      reservedForOutput: store.compilationConfig.reservedForOutput,
+      temperature: store.compilationConfig.defaultTemperature,
+      bridgeVerbatimTokens: store.compilationConfig.bridgeVerbatimTokens,
+    },
+    compilation: log
+      ? {
+          ring1Tokens: log.ring1Tokens,
+          ring2Tokens: log.ring2Tokens,
+          ring3Tokens: log.ring3Tokens,
+          totalTokens: log.totalTokens,
+          availableBudget: log.availableBudget,
+          r1Sections: log.ring1Contents,
+          r2Sections: log.ring2Contents,
+          r3Sections: log.ring3Contents,
+        }
+      : null,
+    payload: payload
+      ? {
+          systemMessage: truncate(payload.systemMessage, 500),
+          userMessage: truncate(payload.userMessage, 2000),
+          systemMessageTokens: countTokens(payload.systemMessage),
+          userMessageTokens: countTokens(payload.userMessage),
+        }
+      : null,
+    chunks: chunks.map((c, i) => ({
+      index: i + 1,
+      status: c.status,
+      model: c.model,
+      temperature: c.temperature,
+      textPreview: truncate(getCanonicalText(c), 200),
+      wordCount: getCanonicalText(c).split(/\s+/).length,
+      hasNotes: !!c.humanNotes,
+      notes: c.humanNotes || undefined,
+    })),
+    lint: store.lintResult
+      ? {
+          errors: store.lintResult.issues.filter((i) => i.severity === "error").map((i) => `${i.code}: ${i.message}`),
+          warnings: store.lintResult.issues
+            .filter((i) => i.severity === "warning")
+            .map((i) => `${i.code}: ${i.message}`),
+          infos: store.lintResult.issues.filter((i) => i.severity === "info").map((i) => `${i.code}: ${i.message}`),
+        }
+      : null,
+    audit: {
+      total: store.auditFlags.length,
+      pending: store.auditFlags.filter((f) => !f.resolved).length,
+      flags: store.auditFlags
+        .filter((f) => !f.resolved)
+        .map((f) => ({
+          severity: f.severity,
+          category: f.category,
+          message: f.message,
+        })),
+    },
+    ir: store.activeSceneIR
+      ? {
+          verified: store.activeSceneIR.verified,
+          events: store.activeSceneIR.events.length,
+          factsIntroduced: store.activeSceneIR.factsIntroduced.length,
+          characterDeltas: store.activeSceneIR.characterDeltas.length,
+          setupsPlanted: store.activeSceneIR.setupsPlanted.length,
+          payoffsExecuted: store.activeSceneIR.payoffsExecuted.length,
+          unresolvedTensions: store.activeSceneIR.unresolvedTensions,
+        }
+      : null,
+  };
+
+  const json = JSON.stringify(snapshot, null, 2);
+  navigator.clipboard
+    .writeText(json)
+    .then(() => {
+      store.setError(null);
+      alert("State snapshot copied to clipboard. Paste it into Claude for debugging.");
+    })
+    .catch(() => {
+      // Fallback: download as file
+      store.saveFile(snapshot, `wc-state-${Date.now()}.json`);
+    });
+}
 </script>
 
 <div class="app">
@@ -162,6 +324,10 @@ function handleUpdateIR(ir: import("../types/index.js").NarrativeIR) {
           {/if}
         </Select>
       </label>
+      <Button size="sm" onclick={exportProse} disabled={!hasAnyProse} title="Copy all prose to clipboard">
+        Copy Prose{#if totalWordCount > 0} ({totalWordCount.toLocaleString()}w){/if}
+      </Button>
+      <Button size="sm" onclick={exportState} title="Copy state snapshot to clipboard">Export</Button>
       <Button size="sm" onclick={() => theme.toggle()} title="Toggle dark/light theme">
         {theme.current === "dark" ? "Light" : "Dark"}
       </Button>
@@ -184,12 +350,13 @@ function handleUpdateIR(ir: import("../types/index.js").NarrativeIR) {
     activeSceneIndex={store.activeSceneIndex}
     sceneChunks={store.sceneChunks}
     onSelectScene={(i) => store.setActiveScene(i)}
+    onAddScene={() => store.setSceneAuthoringOpen(true)}
   />
 
   <Tabs items={tabItems} active={activeTab} onSelect={(id) => { activeTab = id as typeof activeTab; }} />
 
   <div class="cockpit">
-    <BiblePane {store} onBootstrap={() => store.setBootstrapOpen(true)} />
+    <BiblePane {store} onBootstrap={() => store.setBootstrapOpen(true)} onAuthor={() => store.setBibleAuthoringOpen(true)} />
     <DraftingDesk
       chunks={store.activeSceneChunks}
       scenePlan={store.activeScenePlan}
@@ -238,13 +405,15 @@ function handleUpdateIR(ir: import("../types/index.js").NarrativeIR) {
         onSelectScene={(i) => store.setActiveScene(i)}
       />
     {:else if activeTab === "drift"}
-      <StyleDriftPanel reports={styleDriftReports} {baselineSceneTitle} />
+      <StyleDriftPanel reports={styleDriftReports} {baselineSceneTitle} {sceneTitles} />
     {:else if activeTab === "voice"}
       <VoiceSeparabilityView report={voiceReport} />
     {/if}
   </div>
 
   <BootstrapModal {store} />
+  <BibleAuthoringModal {store} />
+  <SceneAuthoringModal {store} />
 
   {#if showArcEditor && store.chapterArc}
     <ChapterArcEditor arc={store.chapterArc} {store} onClose={() => { showArcEditor = false; }} />

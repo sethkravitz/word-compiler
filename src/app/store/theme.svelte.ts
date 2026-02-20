@@ -13,22 +13,26 @@ function getInitialTheme(): Theme {
   return "dark";
 }
 
+function applyTheme(t: Theme) {
+  document.documentElement.setAttribute("data-theme", t);
+  localStorage.setItem(STORAGE_KEY, t);
+}
+
 class ThemeStore {
   current = $state<Theme>(getInitialTheme());
 
   constructor() {
-    $effect(() => {
-      document.documentElement.setAttribute("data-theme", this.current);
-      localStorage.setItem(STORAGE_KEY, this.current);
-    });
+    applyTheme(this.current);
   }
 
   toggle() {
     this.current = this.current === "dark" ? "light" : "dark";
+    applyTheme(this.current);
   }
 
   set(theme: Theme) {
     this.current = theme;
+    applyTheme(this.current);
   }
 }
 

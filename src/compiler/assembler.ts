@@ -80,9 +80,15 @@ export function compilePayload(
   const chunkDesc = plan.chunkDescriptions[chunkNumber] ?? "";
   const wordTarget = Math.round((plan.estimatedWordCount[0] + plan.estimatedWordCount[1]) / 2 / plan.chunkCount);
 
+  const continuationNote =
+    chunkNumber > 0
+      ? `Continue directly from where the preceding text ends — do not repeat, summarize, or re-establish what was already written. Pick up mid-scene. `
+      : "";
+
   const genInstruction =
     `Write the next section of this scene (~${wordTarget} words). ` +
     `This is section ${chunkNumber + 1} of ${plan.chunkCount}${chunkDesc ? `: ${chunkDesc}` : ""}. ` +
+    continuationNote +
     `Follow all constraints in the scene contract and voice specifications. ` +
     `Do not summarize. Do not resolve tension unless the plan calls for it. ` +
     `Do not make subtext into text. Do not explain what characters are feeling — show it.`;

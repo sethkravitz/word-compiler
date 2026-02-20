@@ -42,17 +42,17 @@ describe("ForwardSimulator", () => {
     expect(screen.getByText("Scene 2")).toBeInTheDocument();
   });
 
-  it("shows facts revealed count for verified IR", () => {
+  it("shows facts count for verified IR", () => {
     const ir = { ...createEmptyNarrativeIR("s1"), verified: true, factsRevealedToReader: ["fact 1", "fact 2"] };
     const scenes = [makeScene("s1", "Opening", ir)];
     render(ForwardSimulator, { scenes, activeSceneIndex: 0, onSelectScene: vi.fn() });
-    expect(screen.getByText(/2 facts revealed/)).toBeInTheDocument();
+    expect(screen.getByText(/2 facts/)).toBeInTheDocument();
   });
 
-  it("renders arrow separators between scenes", () => {
+  it("renders connector separators between scenes", () => {
     const scenes = [makeScene("s1", "A"), makeScene("s2", "B"), makeScene("s3", "C")];
     render(ForwardSimulator, { scenes, activeSceneIndex: 0, onSelectScene: vi.fn() });
-    const arrows = screen.getAllByText("→");
+    const arrows = screen.getAllByText("↓");
     expect(arrows).toHaveLength(2);
   });
 });
