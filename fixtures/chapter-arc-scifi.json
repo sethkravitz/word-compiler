@@ -1,0 +1,37 @@
+{
+  "id": "arc-scifi-ch1",
+  "projectId": "proj-scifi",
+  "chapterNumber": 1,
+  "workingTitle": "Signal Acquisition",
+  "narrativeFunction": "Transform Sable from an isolated engineer running routine maintenance into a person harboring humanity's first contact — one she can't prove and won't report. By chapter end, something has spoken through her drone, and she has chosen silence.",
+  "dominantRegister": "Technical precision eroding into uncertainty. Station-log formality giving way to fragments. The language should mirror Sable's composure — controlled, then cracking.",
+  "pacingTarget": "Three-scene arc. Scene 1 is slow — routine, isolation, the comfortable weight of solitude. Scene 2 tightens — the signal has structure, her tools can't explain it. Scene 3 breaks — something speaks, and she can't explain it away.",
+  "endingPosture": "Sable alone with a maintenance log she's falsified and an audio file she can't stop replaying. The last image is a choice: she did not file a maintenance ticket.",
+  "readerStateEntering": {
+    "knows": [],
+    "suspects": [],
+    "wrongAbout": ["That this is a standard day-in-the-life space story", "That contact will be dramatic and unambiguous"],
+    "activeTensions": []
+  },
+  "readerStateExiting": {
+    "knows": [
+      "Sable is alone on Meridian station, day 340+",
+      "An anomalous signal appeared with internal mathematical structure",
+      "Something spoke through Drone Six's speaker using fragments of Sable's own language",
+      "Sable has not reported any of this"
+    ],
+    "suspects": [
+      "Echo is learning from Sable's logs",
+      "Echo has been listening longer than Sable has been analyzing",
+      "Sable won't report this because she doesn't want it to stop",
+      "Sable's isolation has compromised her objectivity"
+    ],
+    "wrongAbout": ["That Echo is simply repeating — it's recombining"],
+    "activeTensions": [
+      "First contact is happening and only one person knows",
+      "The protocol violation is now potentially catastrophic",
+      "Echo is learning faster than Sable realizes",
+      "Sable's emotional state is compromised"
+    ]
+  }
+}

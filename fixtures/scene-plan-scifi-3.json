@@ -1,0 +1,105 @@
+{
+  "id": "scene-signal-003",
+  "projectId": "proj-scifi",
+  "chapterId": null,
+  "title": "Echo Location",
+  "povCharacterId": "sable",
+  "povDistance": "intimate",
+  "narrativeGoal": "Echo makes first contact. Not as a dramatic event — as an anomaly in Drone Six's speaker grille. A fragment of sound that shouldn't be there. Sable spends most of the scene convincing herself it's a malfunction. She fails.",
+  "emotionalBeat": "The moment loneliness becomes fear becomes something she doesn't have a word for",
+  "readerEffect": "The reader should understand what's happening before Sable does. The dread should come from watching her explain it away, knowing she can't.",
+  "readerStateEntering": {
+    "knows": [
+      "The signal has internal mathematical structure",
+      "It doesn't match any catalogued phenomenon",
+      "Sable is analyzing it off-the-books",
+      "She talks to Drone Six as a companion"
+    ],
+    "suspects": [
+      "The signal might be a message",
+      "Sable's objectivity is compromised"
+    ],
+    "wrongAbout": [
+      "That contact will be dramatic and unambiguous"
+    ],
+    "activeTensions": [
+      "Unreported protocol violation",
+      "Signal structure implies intent",
+      "Sable's isolation is shaping her analysis"
+    ]
+  },
+  "readerStateExiting": {
+    "knows": [
+      "Something spoke through Drone Six's speaker",
+      "It used fragments of Sable's own language",
+      "Sable heard it and could not explain it away",
+      "She still hasn't reported any of this"
+    ],
+    "suspects": [
+      "Echo is learning from Sable's logs",
+      "Echo has been listening longer than Sable has been analyzing",
+      "Sable is not going to report this because she doesn't want it to stop"
+    ],
+    "wrongAbout": [
+      "That Echo is simply repeating — it's recombining"
+    ],
+    "activeTensions": [
+      "First contact is happening and only one person knows",
+      "Sable's emotional state is compromised",
+      "Echo is learning faster than Sable realizes",
+      "The protocol violation is now potentially catastrophic"
+    ]
+  },
+  "characterKnowledgeChanges": {
+    "sable": "Hears a sound from Drone Six that is not a malfunction. It contains phonemes. It might contain her own words reflected back. She cannot classify it and she cannot dismiss it. For the first time, she is afraid — not of the signal, but of wanting it to be real."
+  },
+  "subtext": {
+    "surfaceConversation": "An engineer troubleshooting a drone speaker malfunction",
+    "actualConversation": "A person hearing a voice answer her and trying to convince herself she didn't",
+    "enforcementRule": "Sable must run every diagnostic. She must try every rational explanation. She must fail to explain it. She must not say 'it spoke to me.' The reader must be the one who names what happened."
+  },
+  "dialogueConstraints": {
+    "sable": [
+      "Technical, increasingly fragmented as composure erodes",
+      "Addresses Drone Six — and for the first time wonders if something addresses her back",
+      "Log entries become shorter, less complete"
+    ],
+    "echo": [
+      "Maximum three words at a time",
+      "Only fragments — never a complete sentence",
+      "Must use vocabulary Sable has used in previous scenes",
+      "Should feel like hearing your own voice from another room"
+    ]
+  },
+  "pacing": "Slow build to a single moment of rupture. Long quiet stretches of routine diagnostic work, then — something. Then a longer stretch of Sable explaining it away. Then it happens again and the explanation doesn't hold.",
+  "density": "sparse",
+  "sensoryNotes": "The specific sound of Drone Six's speaker activating — a click Sable has never heard it make. The quality of the sound — not mechanical, not quite voice. The silence after, which is different from the silence before.",
+  "sceneSpecificProhibitions": [
+    "Do not confirm or deny that Echo is intelligent — maintain ambiguity",
+    "No dramatic music-swell moment — the contact should feel like a glitch",
+    "Sable must not immediately accept what she hears — she's a scientist",
+    "Do not use the word 'alien' or 'entity' or 'being'",
+    "Echo must not say anything that unambiguously demonstrates understanding"
+  ],
+  "anchorLines": [
+    {
+      "text": "Drone Six's speaker clicked. Sable had never heard it click before.",
+      "placement": "The moment — roughly one-third through",
+      "verbatim": true
+    },
+    {
+      "text": "She did not file a maintenance ticket.",
+      "placement": "Final line",
+      "verbatim": true
+    }
+  ],
+  "estimatedWordCount": [1000, 1400],
+  "chunkCount": 3,
+  "chunkDescriptions": [
+    "Station log, day 340. Sable is deep in her private analysis. The spectrogram data is open on three screens. Drone Six is positioned on the relay array as instructed. Routine maintenance sounds. The rhythm of a person who has organized her life around a secret.",
+    "The click. Drone Six's speaker activates. A sound that is not in its operational parameters. Sable freezes — hands stop. She runs diagnostics on the drone. Everything checks nominal. She replays the audio capture. She runs it again. She cross-references the waveform against the signal data. The match is not perfect. It's close enough.",
+    "The aftermath. Sable sits in the observation deck. She writes a maintenance log for Drone Six that says 'intermittent speaker artifact — monitoring.' She does not file the report. She does not close her private analysis file. She pulls up the audio capture one more time and listens to something that might be her own voice, reflected back from somewhere that should be empty."
+  ],
+  "failureModeToAvoid": "Making first contact feel like a movie. It should feel like a bug report that keeps getting stranger. The horror and wonder should be indistinguishable from each other.",
+  "locationId": "loc-meridian"
+}

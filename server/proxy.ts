@@ -46,7 +46,7 @@ app.get("/api/models", async (_req, res) => {
 
 app.post("/api/generate", async (req, res) => {
   try {
-    const { systemMessage, userMessage, temperature, topP, maxTokens, model } = req.body;
+    const { systemMessage, userMessage, temperature, topP, maxTokens, model, outputSchema } = req.body;
 
     // Anthropic API forbids sending both temperature and top_p together.
     // Prefer temperature; only use top_p when temperature is absent.
@@ -59,6 +59,9 @@ app.post("/api/generate", async (req, res) => {
       ...samplingParams,
       system: systemMessage,
       messages: [{ role: "user", content: userMessage }],
+      ...(outputSchema && {
+        output_config: { format: { type: "json_schema" as const, schema: outputSchema } },
+      }),
     });
 
     const textBlock = response.content.find((b: { type: string }) => b.type === "text");
@@ -76,7 +79,7 @@ app.post("/api/generate", async (req, res) => {
 
 // Streaming endpoint — SSE
 app.post("/api/generate/stream", async (req, res) => {
-  const { systemMessage, userMessage, temperature, topP, maxTokens, model } = req.body;
+  const { systemMessage, userMessage, temperature, topP, maxTokens, model, outputSchema } = req.body;
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -92,6 +95,9 @@ app.post("/api/generate/stream", async (req, res) => {
       ...samplingParams,
       system: systemMessage,
       messages: [{ role: "user", content: userMessage }],
+      ...(outputSchema && {
+        output_config: { format: { type: "json_schema" as const, schema: outputSchema } },
+      }),
     });
 
     stream.on("text", (text: string) => {
@@ -119,7 +125,11 @@ app.post("/api/generate/stream", async (req, res) => {
   }
 });
 
+export { app };
+
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Proxy listening on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== "test") {
+  app.listen(PORT, () => {
+    console.log(`Proxy listening on http://localhost:${PORT}`);
+  });
+}

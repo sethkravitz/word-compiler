@@ -1,6 +1,16 @@
 import { countWords } from "../tokens/index.js";
-import type { AuditFlag, AuditStats, Bible, KillListEntry, ProseMetrics } from "../types/index.js";
+import type {
+  AuditFlag,
+  AuditStats,
+  Bible,
+  KillListEntry,
+  NarrativeIR,
+  ProseMetrics,
+  ScenePlan,
+} from "../types/index.js";
 import { generateId } from "../types/index.js";
+import { checkEpistemicLeaks } from "./epistemic.js";
+import { checkSetupPayoff } from "./setupPayoff.js";
 
 // ─── Kill List ──────────────────────────────────────────
 
@@ -93,20 +103,27 @@ export function checkSentenceVariance(prose: string, sceneId: string): AuditFlag
     });
   }
 
-  // Check 3+ consecutive similar-length sentences
-  for (let i = 0; i < lengths.length - 2; i++) {
-    if (Math.abs(lengths[i]! - lengths[i + 1]!) <= 2 && Math.abs(lengths[i + 1]! - lengths[i + 2]!) <= 2) {
+  // Check 4+ consecutive similar-length sentences (within ±3 words)
+  const MAX_RHYTHM_FLAGS = 3;
+  let rhythmFlagCount = 0;
+  for (let i = 0; i < lengths.length - 3 && rhythmFlagCount < MAX_RHYTHM_FLAGS; i++) {
+    const window = lengths.slice(i, i + 4);
+    const minLen = Math.min(...window);
+    const maxLen = Math.max(...window);
+    if (maxLen - minLen <= 3) {
       flags.push({
         id: generateId(),
         sceneId,
         severity: "info",
         category: "rhythm_monotony",
-        message: `3+ consecutive sentences of similar length near: "${sentences[i]!.slice(0, 50)}..."`,
+        message: `4+ consecutive sentences of similar length (${window.join(", ")} words) near: "${sentences[i]!.slice(0, 50)}..."`,
         lineReference: getLineReference(prose, prose.indexOf(sentences[i]!)),
         resolved: false,
         resolvedAction: null,
         wasActionable: null,
       });
+      rhythmFlagCount++;
+      i += 3; // skip past this window to avoid overlapping flags
     }
   }
 
@@ -124,10 +141,11 @@ export function checkParagraphLength(prose: string, maxSentences: number | null,
   for (const para of paragraphs) {
     const sentenceCount = splitSentences(para).length;
     if (sentenceCount > maxSentences) {
+      const overBy = sentenceCount - maxSentences;
       flags.push({
         id: generateId(),
         sceneId,
-        severity: "warning",
+        severity: overBy >= 2 ? "warning" : "info",
         category: "paragraph_length",
         message: `Paragraph has ${sentenceCount} sentences (max: ${maxSentences}): "${para.slice(0, 60)}..."`,
         lineReference: getLineReference(prose, prose.indexOf(para)),
@@ -202,14 +220,33 @@ export function getAuditStats(flags: AuditFlag[]): AuditStats {
   };
 }
 
+// ─── IR Audit Options ───────────────────────────────────
+
+export interface IRAuditContext {
+  sceneIR: NarrativeIR;
+  allPriorIRs: NarrativeIR[];
+  plan: ScenePlan;
+}
+
 // ─── Convenience ────────────────────────────────────────
 
-export function runAudit(prose: string, bible: Bible, sceneId: string): { flags: AuditFlag[]; metrics: ProseMetrics } {
+export function runAudit(
+  prose: string,
+  bible: Bible,
+  sceneId: string,
+  irContext?: IRAuditContext,
+): { flags: AuditFlag[]; metrics: ProseMetrics } {
   const flags: AuditFlag[] = [
     ...checkKillList(prose, bible.styleGuide.killList, sceneId),
     ...checkSentenceVariance(prose, sceneId),
     ...checkParagraphLength(prose, bible.styleGuide.paragraphPolicy?.maxSentences ?? null, sceneId),
   ];
+
+  // IR-driven checks (only when IR context is provided with verified IRs)
+  if (irContext?.sceneIR?.verified) {
+    flags.push(...checkEpistemicLeaks(irContext.sceneIR, irContext.allPriorIRs, bible));
+    flags.push(...checkSetupPayoff(irContext.sceneIR, irContext.plan, bible));
+  }
 
   const metrics = computeMetrics(prose);
 

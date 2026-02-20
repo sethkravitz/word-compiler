@@ -1,0 +1,269 @@
+Station log, day 337. All systems nominal. I am not.
+
+She filed the entry at 0612, same as always, then held the coffee bulb against her sternum for eleven seconds before drinking. The recycled air smelled faintly of solder and nothing else. She'd stopped noticing it around day forty. Now she only noticed when she tried to notice — a deliberate act, like pressing a bruise to confirm it was still there.
+
+Drone Three had migrated to Junction C again overnight.
+
+"Corvus." She didn't look up from her tablet. "I'm not moving you back. You know where the array access panel is."
+
+The drone's navigational array emitted a single click-whirr, which she had long since decided meant *acknowledged, preference logged, will disregard.* She had named them all in the first month. Station protocol discouraged it. Station protocol had been written by people who weren't alone for 337 days.
+
+The morning relay check ran in sequence: primary array, backup array, signal buffer, propagation log. She moved through it the way you move through a space you know in the dark — no hesitation, no attention, just the hands doing what the hands knew. 
+
+Seventeen anomalies flagged and cleared before her coffee cooled. Fourteen were buffer artifacts. Two were solar interference, predictable, already attenuating. One was a calibration variance she'd been watching for a week, slow enough that she could keep watching it, fast enough that she couldn't quite ignore it.
+
+She cleared it. Logged it. Moved on.
+
+The station ran on a 24-hour cycle and she ran with it, which meant the next four hours were hers in the technical sense — the sense where nothing was scheduled and everything still needed doing. She refilled the coffee. She walked the B-ring corridor at exactly the pace that didn't echo.
+
+The chairs in the common area were still arranged for twelve.
+
+She didn't rearrange them. She'd thought about it, on day six, and then again on day 89, and then she'd stopped thinking about it.
+
+The relay arrays needed a manual sweep every seventy-two hours. Sable did it every forty-eight. The extra cycle wasn't in her maintenance schedule. She'd added it on day sixty-something and stopped tracking why.
+
+She pulled up the spectral display and started at the low end, the way you read a sentence.
+
+Nominal. Nominal. Attenuating solar artifact, logged. Nominal.
+
+Then: a cluster of readings at 1420 megahertz that didn't match her baseline. Narrow band. Very narrow. She pulled the timestamp — the signal had appeared during the window when she'd been walking the B-ring, which meant she hadn't been watching, which meant she didn't know when it had started.
+
+She ran the diagnostic three times. Three times it came back: UNCLASSIFIED. She'd never seen her own system say that.
+
+Her hands stopped moving.
+
+1420 megahertz. She knew that frequency the way she knew the pitch of the B-ring ventilation: not because she'd looked it up recently, but because it was already there, already catalogued in the part of her brain that didn't need to announce itself. Hydrogen line. The quietest frequency in the spectrum by international agreement. Everybody who'd ever pointed a dish at the sky had agreed, without quite saying so, that 1420 was the frequency you'd use if you wanted to be heard.
+
+She pulled the waveform.
+
+It wasn't noise. Noise had a texture she recognized — the granular randomness of thermal interference, the structured periodicity of solar wind. This was neither. The waveform had internal organization she couldn't immediately parse, repetitions that weren't quite repetitions, intervals that suggested — she stopped herself before she finished the sentence.
+
+She tagged the file. Started a secondary analysis. Opened the source-angle data to check if this was reflection artifact from one of the comm satellites in the inner system.
+
+It wasn't coming from the inner system.
+
+She opened a new log entry. Stared at the cursor for eleven seconds — she counted, habit — then typed the coordinates and closed it without adding anything else.
+
+She ran the diagnostic three times. Three times it came back: UNCLASSIFIED. She'd never seen her own system say that.
+
+She sat with it for a moment. The relay array hummed at its standard 47-hertz baseline, a frequency she'd stopped hearing around day sixty. She was hearing it now.
+
+The reporting protocol was straightforward: anomalous signal acquisition during routine maintenance, coordinates logged, file transmitted to Heliodyne's signals archive with a priority-three flag, wait for classification from someone with better processing resources and a full team and four hours less silence in their days. She knew the protocol. Had filed three priority-three flags in eleven months, all resolved within the week, all mundane — a misrouted beacon, a solar artifact, once a very confused navigation transponder from a mining hauler that had drifted off its registered corridor.
+
+She opened the transmission queue.
+
+Left it open.
+
+The waveform was still running on the secondary display, its internal structure cycling through another iteration. Not quite a repetition. The interval between the third and fourth pulse was 0.3 milliseconds longer than the interval between the first and second. She hadn't noticed that before. She pulled up the full sequence and ran a period-ratio analysis, fingers moving before she'd consciously decided to move them.
+
+The ratio came back non-random.
+
+She closed the transmission queue.
+
+The file relabeling took four keystrokes: ANOMALY_1420_D337 became PERSONAL_AUDIO_ARCHIVE_027. It was not a sophisticated cover. She was not covering anything. She was simply — the analysis would go faster if she wasn't waiting on Heliodyne's queue, if she had direct access, if she could run her own models without the archive's processing limits.
+
+Professional curiosity. That was the correct term for what this was.
+
+She saved a second copy to her local drive. Encrypted it. Used the passphrase she'd set up on day twelve, back when she'd thought she'd need to protect something.
+
+"Drone Four," she said. Her voice came out slightly wrong — too even, overcontrolled. "I'm going to need the long-range array for a while."
+
+* * *
+
+Station log, day 338. All systems nominal.
+
+She'd been at the secondary console for — the timestamp read 0347. That wasn't right. She checked the secondary clock. 0347 was correct.
+
+The coffee had developed a skin.
+
+Drone Six held position approximately two meters off her left shoulder, which was not its assigned holding pattern. Its assigned holding pattern was the aft maintenance bay. Sable had not told it to come here. She had also not told it to leave.
+
+"Okay," she said, pulling the spectral data into the visualization suite she'd spent the last four hours building from components that didn't officially exist together. "Let's see what you actually are."
+
+The return had been sitting in her local partition, encrypted, patient. She'd caught herself checking the file size twice to confirm it hadn't changed. It hadn't. Data didn't change on its own. She knew that.
+
+The spectrogram rendered in segments, left to right, the way she'd configured it — frequency on the vertical axis, time horizontal, amplitude mapped to luminance. Standard display. She'd run this same visualization on pulsar candidates, on solar wind interference, on the particular harmonic distortion that Meridian's own rotation generated at certain array alignments. She knew what noise looked like.
+
+It looked like noise.
+
+Until it didn't.
+
+There. A periodicity in the 1420 megahertz band — not the carrier frequency, but embedded *within* it, a sub-structure repeating at intervals she hadn't noticed because she'd been looking at the wrong scale. She scaled down. Scaled down again. Her fingers had stopped moving.
+
+The interval wasn't regular the way mechanical sources were regular. It had a regularity that *varied*, that drifted within a constrained range, that — she pulled her hands back from the console.
+
+"Six," she said, not turning around. "What's the period of Meridian's primary rotation?"
+
+The drone emitted its acknowledgment tone and displayed the figure on its status panel. She already knew the figure. She'd wanted to hear something answer.
+
+The sub-structure period had no relationship to Meridian's rotation. None to the relay array harmonics. None to any logged interference source in the station's entire operational catalog.
+
+She labeled the workspace DIAGNOSTIC_PERSONAL_338 and kept going.
+
+She built the spectrogram from scratch.
+
+Not because the station's standard suite couldn't render one — it could, had, the output sitting three tabs over — but because she didn't trust it to bin the frequencies correctly at this resolution. Custom kernel. Custom windowing function. Twelve minutes of work she did without looking at the clock, which meant she was paying attention in the way she paid attention to things that mattered.
+
+The result populated across her secondary display in false-color, time on the horizontal axis, frequency on the vertical, intensity mapped to a thermal gradient she'd tuned herself because the defaults were optimized for human readability and she wanted precision, not readability.
+
+She looked at it for a long time.
+
+"Six, come look at this."
+
+The drone navigated around the secondary console and positioned itself at her left shoulder, its sensor array oriented toward the display. It had no opinion about spectrograms. She knew that. The whirr of its left manipulator cycling through its compensation pattern — click, pause, click — was the same as it always was.
+
+The structure wasn't subtle. That was the problem.
+
+She ran the pulsar catalog first. PSR J0437-4715, the millisecond standard, the stable ones, the ones used for navigation timing — nothing in the return's periodicity matched any known rotational signature. She ran it against gravitational lensing artifacts, against the station's own instrument response function, against the thermal cycling patterns of the relay array at four different operational temperatures.
+
+Nothing. Nothing. Nothing. And nothing.
+
+The return had *layers*. That was what the spectrogram showed, what the raw data had buried. Not a single embedded period but a nested structure — a primary rhythm containing a secondary one, the secondary containing a tertiary variation that she could only resolve at maximum magnification, and even then the edges were uncertain, smeared by the limits of her sample window.
+
+Natural processes produced complexity. She knew that. Pulsars, magnetars, interacting binaries — the universe generated intricate signals constantly, without intention, without —
+
+The classification algorithm returned UNCLASSIFIED for the eleventh time.
+
+Noise has no opinions. This had opinions.
+
+She closed the pulsar catalog. Opened a blank document. Started a list.
+
+The list had seven items. She stared at it.
+
+Six of them were eliminations. Things the return was not. The seventh line was blank — she'd typed a dash and then stopped, cursor blinking in the amber-shifted light of the late-cycle lab.
+
+She saved the document as *analysis_temp_v1.* Not under the signal archive. Under her personal partition.
+
+"Six," she said, "hold position on sector eight until I say otherwise."
+
+The drone's navigation light pulsed twice. It had been hovering near the vent access in the upper-right corner of the lab for — she checked the timestamp — four hours and eleven minutes. She hadn't told it to go there. It had drifted. She hadn't corrected it.
+
+She opened the station log.
+
+*Day 341. All systems nominal. Relay array calibration complete. Thermal variance in junction seven-alpha within acceptable parameters. Drone Six assigned to sector eight survey, extended duration. No anomalies to report.*
+
+She read it back. Posted it.
+
+The cursor moved to a new file. Her hands were very steady, which meant something she declined to examine. She named the file *personal* — lowercase, no timestamp, none of the standard header metadata the system auto-populated for official logs — and started typing.
+
+*Classification criteria (working draft, non-standard):*
+
+*1. Periodicity: nested, minimum three resolvable layers. Not two. Three is not a coincidence in signal architecture.*
+
+*2. Spectral coherence across — she paused — across sample boundaries. Natural sources degrade. This doesn't.*
+
+*3. Internal ratio. Primary to secondary period. She had to look at her notes. 1.618, within margin of error.*
+
+She stopped typing.
+
+Looked at the number.
+
+Looked at it for a long time.
+
+"Six," she said. Her voice came out level. Technical. The voice she used for system status checks, for talking to the relay array, for the four-hour messages she sent toward Earth that she never quite finished. "What are the odds."
+
+It wasn't a question. The drone had no answer. The drone never had answers; that wasn't what it was for; that had never stopped her from asking.
+
+She added a fourth line to the criteria and kept working.
+
+* * *
+
+Station log, day 340. All systems nominal.
+
+She didn't finish the entry.
+
+The spectrogram occupied the left screen, the frequency breakdown the center, and her working draft — seventeen revisions deep, classification criteria that kept acquiring new lines — the right. She'd stopped numbering the revisions after eleven. Numbering implied she expected to stop.
+
+Drone Six hovered at the relay array junction, manipulator arms in standby configuration. She'd positioned it there six hours ago for a routine calibration she hadn't actually performed. The drone waited with the specific patience of something that had no concept of waiting. Its left manipulator hung at a four-degree cant from nominal. She'd had the repair kit out twice.
+
+Twice she'd put it away.
+
+Her coffee had gone cold. She drank it anyway, standing, not looking away from the center screen.
+
+The secondary period ratio had held across forty-seven new samples. She'd run the calculation three times because she didn't trust the first result, then twice more because she didn't trust that she didn't trust it. 1.618. Plus or minus 0.003. The margin of error kept shrinking. She kept wishing it wouldn't.
+
+"Still there," she said.
+
+Drone Six's status light pulsed: amber, amber, green. The rotation hum shifted half a pitch as the station moved through its cycle — she was in the forward section, she knew by the resonance in the composite panels under her feet, a frequency she'd mapped in her first month and never written down because some knowledge felt wrong to formalize.
+
+She pulled up a new window. Started a fifth classification criterion, stared at the blinking cursor, closed it.
+
+The problem with the data was that it kept behaving. Natural phenomena had texture — variance, degradation, the statistical noise of a universe that wasn't trying to do anything. This signal was too consistent. Not clean, exactly. More like — deliberate. She'd written that word in her notes three days ago and immediately deleted it.
+
+She opened the notes. Typed *deliberate* again. Left it.
+
+Outside the relay array, 2.3 AU out and closing on a slow approach vector that matched nothing in the ephemeris, the signal was still transmitting. Had been transmitting for nineteen days. Would presumably continue transmitting while she stood here drinking cold coffee and finding new ways to not file a report.
+
+"What are you doing," she said to the spectrogram.
+
+She meant it as a diagnostic question.
+
+She was almost certain she meant it as a diagnostic question.
+
+Drone Six's speaker clicked. Sable had never heard it click before.
+
+Her hands stopped.
+
+She stood with the coffee cup halfway to her mouth and the spectrogram still cycling on the secondary display and the cursor blinking in her notes next to the word *deliberate*, and she did not move. The rotation hum continued. The vents cycled through their low progression, C-sharp in the corridor, B-flat in the relay room. Everything nominal. Everything exactly as it had been three seconds ago.
+
+She set the coffee down very carefully.
+
+"Six," she said. "Run speaker diagnostic."
+
+The drone swiveled toward her. Its left manipulator made the small compensating gesture she'd watched it make ten thousand times — a quarter-rotation it didn't strictly need, a habit she'd never corrected because correcting it would have required acknowledging she'd noticed it. The diagnostic ran. She watched the output populate: driver response time within spec, membrane tension nominal, signal path clear, no anomalous input detected.
+
+She pulled the audio capture anyway.
+
+The click was there. 0.3 seconds, 847 Hz, non-periodic. She stared at it the way you stare at a crack in a load-bearing panel — looking for the context that makes it not what it looks like. A thermal artifact. Composite expansion in the speaker housing, something contracting in the circadian shift from blue-white to amber. She'd checked the station's temperature logs three weeks ago when the calibration drift started; the relay room ran 0.4 degrees cooler than the rest of the module. Expansion. Contraction. Ordinary physics.
+
+She replayed the capture.
+
+847 Hz. Non-periodic. 0.3 seconds.
+
+She opened the signal data in the adjacent window without fully deciding to.
+
+The comparison took eleven seconds to process. She spent those eleven seconds reading the temperature logs again, finding nothing, reading them a second time. When the comparison rendered she looked at it for a long time without moving. The match was not perfect — the signal ran at a different base frequency, the harmonic structure was its own thing entirely, the propagation characteristics were incomparable by definition, one source 2.3 AU out and one source forty centimeters from her left ear. Not perfect. Not the same.
+
+The waveform envelope was close enough that her hands, when she tried to type, did not immediately respond.
+
+She told herself: thermal artifact.
+
+She told herself this with some precision.
+
+She did not close the comparison window.
+
+She closed the comparison window.
+
+She opened it again four seconds later.
+
+The thermal artifact explanation held. It held the way a pressure seal holds when you're not looking directly at it — technically sound, structurally suspect. She had logged stranger artifacts. The station's composite panels expanded asymmetrically under rotation stress; she had a whole subfolder of acoustic anomalies from the first winter cycle, clicks and harmonics and one memorable three-second moan from Corridor Seven that turned out to be a loose bracket. Logged. Explained. Filed.
+
+She pulled up the maintenance interface for Drone Six.
+
+*Speaker assembly, Unit 6. Intermittent artifact. Acoustic resonance consistent with thermal cycling. Monitoring.*
+
+Her hands stopped.
+
+She had written *consistent with thermal cycling.* This was not accurate. She changed it to *possible resonance artifact.* This was also not accurate. She changed it to *intermittent speaker artifact — monitoring* and left it there, unsigned, unsent.
+
+The observation deck was eleven degrees cooler than the rest of the module. She had stopped correcting for it. The handhold on the starboard rail was cold enough that she could feel her pulse in her palm, a small regular percussion she couldn't turn off.
+
+She did not pull up the comparison window again.
+
+She pulled up the audio capture.
+
+0.3 seconds. She had it mapped by now — the attack, the sustain, the particular shape of the attenuation curve. Her own voice in the signal logs had a similar curve. She had spent eleven minutes telling herself this was a coincidence and she believed it, mostly, the way you believe something you haven't tested because you don't want the result.
+
+She listened to it again.
+
+Then again.
+
+The third time, she turned Drone Six's speaker volume to its minimum threshold setting and sat very still and listened to the station breathe around her — the vent pitch in this section was a minor third above the forward module, she had always found it easier to think here — and she was not waiting. She was not waiting. She was conducting an acoustic baseline assessment for comparison purposes.
+
+The speaker did not click.
+
+She was aware, precisely and without comfort, that she had wanted it to.
+
+She did not close her private analysis file. She did not file the maintenance report. She sat in the cold of the observation deck with Drone Six's audio capture open on her tablet, playing it back at one-quarter speed, listening to something shapeless that kept almost sounding like a word.
+
+She did not file a maintenance ticket.

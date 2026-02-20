@@ -1,7 +1,67 @@
 import type { Bible, CompiledPayload } from "../types/index.js";
 import { generateId } from "../types/index.js";
 
+export type { ParsedSceneBootstrap, SceneBootstrapParams } from "./sceneBootstrap.js";
+// Re-export scene bootstrap
+export {
+  buildSceneBootstrapPrompt,
+  mapSceneBootstrapToPlans,
+  parseSceneBootstrapResponse,
+} from "./sceneBootstrap.js";
+
 // ─── Bootstrap Prompt ───────────────────────────────────
+
+export const bootstrapSchema: Record<string, unknown> = {
+  type: "object",
+  properties: {
+    characters: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          role: { type: "string" },
+          physicalDescription: { type: "string" },
+          backstory: { type: "string" },
+          voiceNotes: { type: "string" },
+          emotionPhysicality: { type: "string" },
+        },
+        required: ["name", "role"],
+      },
+    },
+    locations: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          name: { type: "string" },
+          sensoryPalette: {
+            type: "object",
+            properties: {
+              sounds: { type: "array", items: { type: "string" } },
+              smells: { type: "array", items: { type: "string" } },
+              textures: { type: "array", items: { type: "string" } },
+              lightQuality: { type: "string" },
+              prohibitedDefaults: { type: "array", items: { type: "string" } },
+            },
+          },
+        },
+        required: ["name"],
+      },
+    },
+    suggestedTone: {
+      type: "object",
+      properties: {
+        metaphoricDomains: { type: "array", items: { type: "string" } },
+        prohibitedDomains: { type: "array", items: { type: "string" } },
+        pacingNotes: { type: "string" },
+        interiority: { type: "string" },
+      },
+    },
+    suggestedKillList: { type: "array", items: { type: "string" } },
+  },
+  required: ["characters", "locations"],
+};
 
 export function buildBootstrapPrompt(synopsis: string): CompiledPayload {
   const systemMessage = `You are a literary analyst. Given a synopsis, extract structured elements for a story bible. Be specific and opinionated — generic descriptions are useless.`;
@@ -52,8 +112,9 @@ Be ruthlessly specific. If the synopsis doesn't give you enough to be specific, 
     userMessage,
     temperature: 0.7,
     topP: 0.92,
-    maxTokens: 4000,
+    maxTokens: 16384,
     model: "claude-sonnet-4-6",
+    outputSchema: bootstrapSchema,
   };
 }
 
@@ -95,7 +156,7 @@ export function parseBootstrapResponse(response: string): ParsedBootstrap | { er
     // continue
   }
 
-  // Try 2: strip markdown code fences
+  // Try 2: strip markdown code fences (closed)
   const fenceMatch = response.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
   if (fenceMatch?.[1]) {
     try {
@@ -105,16 +166,27 @@ export function parseBootstrapResponse(response: string): ParsedBootstrap | { er
     }
   }
 
+  // Try 2b: strip opening fence even if unclosed (LLM ran out of tokens)
+  const stripped = response.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+  if (stripped !== response) {
+    try {
+      return JSON.parse(stripped) as ParsedBootstrap;
+    } catch {
+      // continue — fall through to brace-depth counting on stripped text
+    }
+  }
+
   // Try 3: extract first {...} block by brace-depth counting
-  const startIdx = response.indexOf("{");
+  const text = stripped !== response ? stripped : response;
+  const startIdx = text.indexOf("{");
   if (startIdx !== -1) {
     let depth = 0;
-    for (let i = startIdx; i < response.length; i++) {
-      if (response[i] === "{") depth++;
-      if (response[i] === "}") depth--;
+    for (let i = startIdx; i < text.length; i++) {
+      if (text[i] === "{") depth++;
+      if (text[i] === "}") depth--;
       if (depth === 0) {
         try {
-          return JSON.parse(response.slice(startIdx, i + 1)) as ParsedBootstrap;
+          return JSON.parse(text.slice(startIdx, i + 1)) as ParsedBootstrap;
         } catch {
           break;
         }

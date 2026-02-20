@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  bootstrapSchema,
   bootstrapToBible,
   buildBootstrapPrompt,
   type ParsedBootstrap,
@@ -12,7 +13,15 @@ describe("buildBootstrapPrompt", () => {
     expect(payload.userMessage).toContain("A story about two old friends meeting in a bar.");
     expect(payload.systemMessage).toContain("literary analyst");
     expect(payload.temperature).toBe(0.7);
-    expect(payload.maxTokens).toBe(4000);
+    expect(payload.maxTokens).toBe(16384);
+  });
+
+  it("includes outputSchema matching bootstrapSchema", () => {
+    const payload = buildBootstrapPrompt("Any synopsis");
+    expect(payload.outputSchema).toBe(bootstrapSchema);
+    expect(payload.outputSchema).toHaveProperty("type", "object");
+    expect(payload.outputSchema).toHaveProperty("properties.characters");
+    expect(payload.outputSchema).toHaveProperty("properties.locations");
   });
 });
 
