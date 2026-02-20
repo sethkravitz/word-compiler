@@ -60,7 +60,7 @@ Be ruthlessly specific. If the synopsis doesn't give you enough to be specific, 
     userMessage,
     temperature: 0.7,
     topP: 0.92,
-    maxTokens: 4000,
+    maxTokens: 16384,
     model: "claude-sonnet-4-6",
   };
 }
@@ -103,7 +103,7 @@ export function parseBootstrapResponse(response: string): ParsedBootstrap | { er
     // continue
   }
 
-  // Try 2: strip markdown code fences
+  // Try 2: strip markdown code fences (closed)
   const fenceMatch = response.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
   if (fenceMatch?.[1]) {
     try {
@@ -113,16 +113,27 @@ export function parseBootstrapResponse(response: string): ParsedBootstrap | { er
     }
   }
 
+  // Try 2b: strip opening fence even if unclosed (LLM ran out of tokens)
+  const stripped = response.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+  if (stripped !== response) {
+    try {
+      return JSON.parse(stripped) as ParsedBootstrap;
+    } catch {
+      // continue — fall through to brace-depth counting on stripped text
+    }
+  }
+
   // Try 3: extract first {...} block by brace-depth counting
-  const startIdx = response.indexOf("{");
+  const text = stripped !== response ? stripped : response;
+  const startIdx = text.indexOf("{");
   if (startIdx !== -1) {
     let depth = 0;
-    for (let i = startIdx; i < response.length; i++) {
-      if (response[i] === "{") depth++;
-      if (response[i] === "}") depth--;
+    for (let i = startIdx; i < text.length; i++) {
+      if (text[i] === "{") depth++;
+      if (text[i] === "}") depth--;
       if (depth === 0) {
         try {
-          return JSON.parse(response.slice(startIdx, i + 1)) as ParsedBootstrap;
+          return JSON.parse(text.slice(startIdx, i + 1)) as ParsedBootstrap;
         } catch {
           break;
         }

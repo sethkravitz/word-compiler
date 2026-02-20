@@ -12,7 +12,7 @@ describe("buildBootstrapPrompt", () => {
     expect(payload.userMessage).toContain("A story about two old friends meeting in a bar.");
     expect(payload.systemMessage).toContain("literary analyst");
     expect(payload.temperature).toBe(0.7);
-    expect(payload.maxTokens).toBe(4000);
+    expect(payload.maxTokens).toBe(16384);
   });
 });
 
