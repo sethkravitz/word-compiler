@@ -49,8 +49,8 @@ describe("LearnerPanel", () => {
       sceneOrder: new Map([["s1", 0]]),
       projectId: "p1",
     });
-    // Should show the suggestion (title and action both contain "kill list")
-    expect(screen.getAllByText(/kill list/i).length).toBeGreaterThanOrEqual(1);
+    // Should show the suggestion (title and action both contain "avoid list")
+    expect(screen.getAllByText(/avoid list/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Accept")).toBeTruthy();
     expect(screen.getByText("Reject")).toBeTruthy();
   });

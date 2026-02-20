@@ -30,7 +30,7 @@ let warningsByScene = $derived(
 );
 </script>
 
-<Pane title={scenes.length === 0 ? "Forward Simulator" : "Reader State Trace"}>
+<Pane title={scenes.length === 0 ? "Reader Journey" : "Reader State Trace"}>
   {#snippet headerRight()}
     {#if scenes.length > 0}
       <div class="fwd-header-info">

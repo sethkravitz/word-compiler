@@ -100,7 +100,7 @@ async function handleBootstrap() {
   {#snippet header()}Bootstrap Bible from Synopsis{/snippet}
 
   <p class="modal-instructions">
-    Paste your story synopsis. The system will extract characters, locations, tone, and a suggested kill list.
+    Paste your story synopsis. The system will extract characters, locations, tone, and a suggested avoid list.
     You'll need to add dialogue samples manually.
   </p>
 

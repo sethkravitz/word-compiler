@@ -27,7 +27,7 @@ function hasDeltaData(delta: CharacterDelta): boolean {
 }
 </script>
 
-<Pane title="IR Inspector — {sceneTitle}" extraClass="ir-inspector">
+<Pane title="Scene Blueprint — {sceneTitle}" extraClass="ir-inspector">
   {#snippet headerRight()}
     <div class="pane-actions">
       {#if !ir}
@@ -38,7 +38,7 @@ function hasDeltaData(delta: CharacterDelta): boolean {
         <Badge variant="warning">Unverified</Badge>
       {/if}
       <Button onclick={onExtract} disabled={!canExtract || isExtracting}>
-        {#if isExtracting}<Spinner size="sm" /> Extracting...{:else if ir}Re-extract{:else}Extract IR{/if}
+        {#if isExtracting}<Spinner size="sm" /> Extracting...{:else if ir}Re-extract{:else}Extract Blueprint{/if}
       </Button>
       {#if ir && !ir.verified}
         <Button variant="primary" onclick={onVerify}>Verify</Button>
@@ -50,11 +50,11 @@ function hasDeltaData(delta: CharacterDelta): boolean {
   {#if isExtracting}
     <div class="ir-extracting">
       <Spinner />
-      <div>Extracting Narrative IR from scene prose...</div>
+      <div>Extracting scene blueprint from prose...</div>
       <div class="ir-extracting-hint">This sends the full scene text to the LLM for analysis. Usually takes 10–30 seconds.</div>
     </div>
   {:else if !ir}
-    <div class="ir-empty">No IR extracted yet. Complete the scene and click "Extract IR" to analyze.</div>
+    <div class="ir-empty">No blueprint extracted yet. Complete the scene and click "Extract Blueprint" to analyze.</div>
   {:else}
     <div class="ir-body">
       <section>

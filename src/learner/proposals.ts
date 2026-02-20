@@ -168,7 +168,7 @@ function resolveSection(target: string): BibleSection {
 function buildTitle(group: PatternGroup): string {
   switch (group.patternType) {
     case "CUT_FILLER":
-      return `Add "${group.key}" to kill list`;
+      return `Add "${group.key}" to avoid list`;
     case "DIALOGUE_VOICE":
       return `Update dialogue voice notes`;
     case "SHOW_DONT_TELL":

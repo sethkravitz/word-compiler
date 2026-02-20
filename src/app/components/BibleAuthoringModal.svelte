@@ -277,7 +277,7 @@ function removeVocabPref(index: number) {
   {#if activeTab === "bootstrap"}
     <!-- ─── AI Bootstrap Tab (migrated from BootstrapModal) ─── -->
     <p class="modal-instructions">
-      Paste your story synopsis. The system will extract characters, locations, tone, and a suggested kill list.
+      Paste your story synopsis. The system will extract characters, locations, tone, and a suggested avoid list.
     </p>
 
     {#if !bsLoading}
@@ -477,11 +477,11 @@ function removeVocabPref(index: number) {
             />
           </FormField>
 
-          <CollapsibleSection summary="Kill List">
+          <CollapsibleSection summary="Avoid List">
             <CardList
               items={bible.styleGuide.killList}
-              addLabel="Add Kill Entry"
-              emptyMessage="No kill list entries."
+              addLabel="Add Entry"
+              emptyMessage="No avoid list entries."
               onAdd={addKillEntry}
               onRemove={removeKillEntry}
             >
@@ -545,7 +545,7 @@ function removeVocabPref(index: number) {
           <div class="review-summary">
             <div class="review-stat">Characters: {bible.characters.length}</div>
             <div class="review-stat">Locations: {bible.locations.length}</div>
-            <div class="review-stat">Kill List: {bible.styleGuide.killList.length} entries</div>
+            <div class="review-stat">Avoid List: {bible.styleGuide.killList.length} entries</div>
             <div class="review-stat">POV: {bible.narrativeRules.pov.default} / {bible.narrativeRules.pov.distance}</div>
           </div>
           <pre class="json-preview">{JSON.stringify(bible, null, 2)}</pre>

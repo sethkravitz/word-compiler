@@ -47,7 +47,7 @@ export class ProjectStore {
 
   // ─── UI state ──────────────────────────────────
   isGenerating = $state(false);
-  isExtractingIR = $state(false);
+  extractingIRSceneId = $state<string | null>(null);
   selectedChunkIndex = $state<number | null>(null);
   bootstrapModalOpen = $state(false);
   bibleAuthoringOpen = $state(false);
@@ -80,6 +80,10 @@ export class ProjectStore {
   get activeSceneIR(): NarrativeIR | null {
     const id = this.activeScenePlan?.id;
     return id ? (this.sceneIRs[id] ?? null) : null;
+  }
+
+  get isExtractingIR(): boolean {
+    return this.extractingIRSceneId !== null && this.extractingIRSceneId === this.activeScenePlan?.id;
   }
 
   // ─── Initialization ───────────────────────────
@@ -194,8 +198,8 @@ export class ProjectStore {
     this.isGenerating = value;
   }
 
-  setExtractingIR(value: boolean) {
-    this.isExtractingIR = value;
+  setExtractingIR(sceneId: string | null) {
+    this.extractingIRSceneId = sceneId;
   }
 
   setBootstrapOpen(value: boolean) {

@@ -95,7 +95,7 @@ function directionLabel(m: MetricRow): string {
 let flaggedCount = $derived(reports.filter((r) => r.flagged).length);
 </script>
 
-<Pane title="Style Drift">
+<Pane title="Voice Consistency">
   {#snippet headerRight()}
     {#if reports.length > 0}
       <span class="drift-baseline">vs. {baselineSceneTitle}</span>

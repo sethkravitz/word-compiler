@@ -34,7 +34,7 @@ export const MixedFlags: Story = {
       makeAuditFlag({
         severity: "critical",
         category: "kill-list",
-        message: '"A shiver ran down her spine" — kill list violation',
+        message: '"A shiver ran down her spine" — avoid list violation',
         lineReference: "P2",
       }),
       makeAuditFlag({
@@ -127,7 +127,7 @@ export const SingleCritical: Story = {
       makeAuditFlag({
         severity: "critical",
         category: "kill-list",
-        message: '"eyes widened in shock" — cliché kill list violation',
+        message: '"eyes widened in shock" — cliché avoid list violation',
         lineReference: "P1 S3",
       }),
     ],

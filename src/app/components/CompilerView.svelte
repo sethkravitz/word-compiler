@@ -39,7 +39,7 @@ let r3Flagged = $derived(lintCodes.has("R3_STARVED"));
 let overBudget = $derived(lintCodes.has("TOTAL_OVER_BUDGET"));
 </script>
 
-<Pane title="Compiler View">
+<Pane title="Draft Engine">
   {#snippet headerRight()}
     {#if log}
       <span class="header-tokens">{total.toLocaleString()} / {log.availableBudget.toLocaleString()} tokens</span>

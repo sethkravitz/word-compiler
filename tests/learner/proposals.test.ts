@@ -110,7 +110,7 @@ describe("generateProposals", () => {
     const p = proposals[0]!;
     expect(p.projectId).toBe("p1");
     expect(p.title).toContain("a sense of");
-    expect(p.title).toContain("kill list");
+    expect(p.title).toContain("avoid list");
     expect(p.action.target).toBe("killList");
     expect(p.action.value).toBe("a sense of");
     expect(p.status).toBe("pending");
@@ -151,7 +151,7 @@ describe("applyProposal", () => {
       id: "prop-1",
       projectId: "p1",
       patternType: "CUT_FILLER",
-      title: 'Add "well" to kill list',
+      title: 'Add "well" to avoid list',
       description: "test",
       evidence: { occurrences: 6, confidence: 0.65, examples: [], sceneCount: 2 },
       action: { target: "killList", value: "well", section: "killList" },

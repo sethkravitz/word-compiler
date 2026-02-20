@@ -81,7 +81,7 @@ export function createGenerationActions(store: ProjectStore, actions?: ApiAction
     const plan = store.activeScenePlan;
     if (!store.bible || !plan || store.activeSceneChunks.length === 0) return;
 
-    store.setExtractingIR(true);
+    store.setExtractingIR(plan.id);
     store.setError(null);
 
     try {
@@ -100,7 +100,7 @@ export function createGenerationActions(store: ProjectStore, actions?: ApiAction
     } catch (err) {
       store.setError(err instanceof Error ? err.message : "IR extraction failed");
     } finally {
-      store.setExtractingIR(false);
+      store.setExtractingIR(null);
     }
   }
 

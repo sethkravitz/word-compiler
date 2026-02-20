@@ -9,7 +9,7 @@ let {
 } = $props();
 </script>
 
-<Pane title="Voice Separability">
+<Pane title="Character Voices">
   {#snippet headerRight()}
     {#if report}
       <span class="voice-status">

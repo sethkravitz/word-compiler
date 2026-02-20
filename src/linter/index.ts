@@ -110,7 +110,7 @@ export function lintPayload(
     issues.push({
       code: "EMPTY_KILL_LIST",
       severity: "info",
-      message: `No kill list entries. Consider adding banned phrases for voice consistency.`,
+      message: `No avoid list entries. Consider adding banned phrases for voice consistency.`,
     });
   }
 

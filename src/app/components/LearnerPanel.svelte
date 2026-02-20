@@ -41,7 +41,7 @@ function formatConfidence(c: number): string {
 function formatAction(proposal: BibleProposal): string {
   switch (proposal.action.section) {
     case "killList":
-      return `Add "${proposal.action.value}" to kill list`;
+      return `Add "${proposal.action.value}" to avoid list`;
     case "characters":
       return `Update character voice notes`;
     case "styleGuide":

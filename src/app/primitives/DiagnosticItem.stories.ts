@@ -26,7 +26,7 @@ export const Info: Story = {
 };
 
 export const Critical: Story = {
-  args: { severity: "critical", message: 'Kill list violation: "a shiver ran down her spine" in paragraph 2' },
+  args: { severity: "critical", message: 'Avoid list violation: "a shiver ran down her spine" in paragraph 2' },
 };
 
 export const WithCode: Story = {

@@ -64,11 +64,11 @@ let showArcEditor = $state(false);
 let activeTab = $state<"compiler" | "ir" | "simulator" | "drift" | "voice" | "setups">("compiler");
 
 const tabItems = [
-  { id: "compiler", label: "Compiler" },
-  { id: "ir", label: "IR Inspector" },
-  { id: "simulator", label: "Forward Sim" },
-  { id: "drift", label: "Style Drift" },
-  { id: "voice", label: "Voice Sep" },
+  { id: "compiler", label: "Draft Engine" },
+  { id: "ir", label: "Scene Blueprint" },
+  { id: "simulator", label: "Reader Journey" },
+  { id: "drift", label: "Voice Consistency" },
+  { id: "voice", label: "Character Voices" },
   { id: "setups", label: "Setups" },
 ];
 

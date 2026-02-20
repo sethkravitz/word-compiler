@@ -54,7 +54,7 @@ describe("BibleAuthoringModal", () => {
     await fireEvent.click(screen.getByText("Review"));
     expect(screen.getByText("Characters: 0")).toBeInTheDocument();
     expect(screen.getByText("Locations: 0")).toBeInTheDocument();
-    expect(screen.getByText("Kill List: 0 entries")).toBeInTheDocument();
+    expect(screen.getByText("Avoid List: 0 entries")).toBeInTheDocument();
   });
 
   it("Footer shows Cancel and Next buttons on first step", async () => {

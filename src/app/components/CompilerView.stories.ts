@@ -149,7 +149,7 @@ export const WithAuditFlags: Story = {
       makeAuditFlag({
         severity: "critical",
         category: "kill-list",
-        message: 'Kill list violation: "a shiver ran down her spine" in paragraph 2',
+        message: 'Avoid list violation: "a shiver ran down her spine" in paragraph 2',
       }),
       makeAuditFlag({
         severity: "warning",
@@ -214,7 +214,7 @@ export const FullWorkload: Story = {
       makeAuditFlag({
         severity: "critical",
         category: "kill-list",
-        message: 'Kill list violation: "suddenly" in paragraph 3',
+        message: 'Avoid list violation: "suddenly" in paragraph 3',
       }),
       makeAuditFlag({
         severity: "warning",

@@ -99,7 +99,7 @@ test.describe("Error handling", () => {
     await expect(page.locator("text=Bible + Plan")).toBeVisible();
 
     // Navigate through all tabs
-    for (const tab of ["IR Inspector", "Forward Sim", "Style Drift", "Voice Sep", "Compiler"]) {
+    for (const tab of ["Scene Blueprint", "Reader Journey", "Voice Consistency", "Character Voices", "Draft Engine"]) {
       await page.locator("button", { hasText: tab }).click();
       await page.waitForTimeout(200);
     }
