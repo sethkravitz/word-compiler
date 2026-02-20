@@ -1,6 +1,7 @@
 <script lang="ts">
 import type { NarrativeIR, ScenePlan } from "../../types/index.js";
-import { CollapsibleSection, Pane } from "../primitives/index.js";
+import { accumulateReaderState, detectEpistemicIssues, type SceneInput } from "../../simulator/readerState.js";
+import { Badge, CollapsibleSection, DiagnosticItem, Pane } from "../primitives/index.js";
 
 interface SceneNode {
   plan: ScenePlan;
@@ -18,27 +19,26 @@ let {
   onSelectScene: (index: number) => void;
 } = $props();
 
-interface ReaderStateDiff {
-  newKnowledge: string[];
-  newTensions: string[];
-  resolvedTensions: string[];
-}
-
-function computeDiff(prevIR: NarrativeIR | null, currentIR: NarrativeIR): ReaderStateDiff {
-  const prevTensions = new Set(prevIR?.unresolvedTensions ?? []);
-  const currentTensions = new Set(currentIR.unresolvedTensions);
-  return {
-    newKnowledge: currentIR.factsRevealedToReader,
-    newTensions: currentIR.unresolvedTensions.filter((t) => !prevTensions.has(t)),
-    resolvedTensions: [...prevTensions].filter((t) => !currentTensions.has(t)),
-  };
-}
+let sceneInputs = $derived<SceneInput[]>(scenes.map((s) => ({ plan: s.plan, ir: s.ir, sceneOrder: s.sceneOrder })));
+let readerStates = $derived(accumulateReaderState(sceneInputs));
+let warnings = $derived(detectEpistemicIssues(sceneInputs, readerStates));
+let warningsByScene = $derived(
+  warnings.reduce<Record<string, typeof warnings>>((acc, w) => {
+    (acc[w.sceneId] ??= []).push(w);
+    return acc;
+  }, {}),
+);
 </script>
 
 <Pane title={scenes.length === 0 ? "Forward Simulator" : "Reader State Trace"}>
   {#snippet headerRight()}
     {#if scenes.length > 0}
-      <span class="fwd-note">Only verified IRs contribute to state diff.</span>
+      <div class="fwd-header-info">
+        {#if warnings.length > 0}
+          <Badge variant="warning">{warnings.length} issue{warnings.length > 1 ? "s" : ""}</Badge>
+        {/if}
+        <span class="fwd-note">Only verified IRs contribute to state.</span>
+      </div>
     {/if}
   {/snippet}
 
@@ -46,17 +46,18 @@ function computeDiff(prevIR: NarrativeIR | null, currentIR: NarrativeIR): Reader
     <div class="fwd-empty">No scenes added yet.</div>
   {:else}
     <div class="fwd-timeline">
-      {#each scenes as node, i (node.plan.id)}
-        {@const hasIR = node.ir !== null}
-        {@const isVerified = node.ir?.verified ?? false}
-        {@const diff = hasIR && isVerified ? computeDiff(i > 0 ? (scenes[i - 1]?.ir ?? null) : null, node.ir!) : null}
+      {#each readerStates as rs, i (rs.sceneId)}
+        {@const scene = scenes.find((s) => s.plan.id === rs.sceneId)}
+        {@const hasIR = scene?.ir !== null && scene?.ir !== undefined}
+        {@const isVerified = scene?.ir?.verified ?? false}
+        {@const sceneWarnings = warningsByScene[rs.sceneId] ?? []}
 
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="fwd-node" class:fwd-node-active={i === activeSceneIndex} onclick={() => onSelectScene(i)}>
+        <div class="fwd-node" class:fwd-node-active={scenes.indexOf(scene!) === activeSceneIndex} onclick={() => { if (scene) onSelectScene(scenes.indexOf(scene)); }}>
           <div class="fwd-node-header">
             <span class="fwd-scene-num">Scene {i + 1}</span>
-            <span class="fwd-scene-title">{node.plan.title || "(untitled)"}</span>
+            <span class="fwd-scene-title">{scene?.plan.title || "(untitled)"}</span>
             {#if !hasIR}
               <span class="fwd-tag fwd-tag-empty">No IR</span>
             {:else if !isVerified}
@@ -64,54 +65,88 @@ function computeDiff(prevIR: NarrativeIR | null, currentIR: NarrativeIR): Reader
             {:else}
               <span class="fwd-tag fwd-tag-verified">Verified</span>
             {/if}
+            {#if sceneWarnings.length > 0}
+              <Badge variant="warning">{sceneWarnings.length}</Badge>
+            {/if}
           </div>
 
-          {#if diff}
+          <!-- Epistemic warnings for this scene -->
+          {#if sceneWarnings.length > 0}
+            <div class="fwd-warnings">
+              {#each sceneWarnings as warning}
+                <DiagnosticItem severity="warning" message={warning.message} />
+              {/each}
+            </div>
+          {/if}
+
+          <!-- Scene diff summary -->
+          {#if rs.newFacts.length > 0 || rs.newTensions.length > 0 || rs.resolvedTensions.length > 0}
             <div class="fwd-diff-summary">
-              {#if diff.newKnowledge.length > 0}
-                <span class="fwd-facts">+{diff.newKnowledge.length} facts</span>
+              {#if rs.newFacts.length > 0}
+                <span class="fwd-facts">+{rs.newFacts.length} facts</span>
               {/if}
-              {#if diff.newTensions.length > 0}
-                <span class="fwd-tensions">+{diff.newTensions.length} tensions</span>
+              {#if rs.newTensions.length > 0}
+                <span class="fwd-tensions">+{rs.newTensions.length} tensions</span>
               {/if}
-              {#if diff.resolvedTensions.length > 0}
-                <span class="fwd-resolved">{diff.resolvedTensions.length} resolved</span>
+              {#if rs.resolvedTensions.length > 0}
+                <span class="fwd-resolved">{rs.resolvedTensions.length} resolved</span>
               {/if}
             </div>
+          {/if}
 
-            {#if diff.newKnowledge.length > 0}
-              <CollapsibleSection summary="Reader now knows ({diff.newKnowledge.length})">
-                <ul class="fwd-list fwd-list-facts">
-                  {#each diff.newKnowledge as fact}
-                    <li>{fact}</li>
-                  {/each}
-                </ul>
-              </CollapsibleSection>
-            {/if}
+          <!-- Cumulative reader state -->
+          {#if rs.state.knownFacts.size > 0}
+            <CollapsibleSection summary="Reader knows ({rs.state.knownFacts.size})">
+              <ul class="fwd-list fwd-list-facts">
+                {#each [...rs.state.knownFacts] as fact}
+                  <li>{#if rs.newFacts.includes(fact)}<strong>{fact}</strong>{:else}{fact}{/if}</li>
+                {/each}
+              </ul>
+            </CollapsibleSection>
+          {/if}
 
-            {#if diff.newTensions.length > 0}
-              <CollapsibleSection summary="New tensions ({diff.newTensions.length})">
-                <ul class="fwd-list fwd-list-tensions">
-                  {#each diff.newTensions as tension}
-                    <li>{tension}</li>
-                  {/each}
-                </ul>
-              </CollapsibleSection>
-            {/if}
+          {#if rs.state.suspicions.size > 0}
+            <CollapsibleSection summary="Reader suspects ({rs.state.suspicions.size})">
+              <ul class="fwd-list fwd-list-suspicions">
+                {#each [...rs.state.suspicions] as suspicion}
+                  <li>{suspicion}</li>
+                {/each}
+              </ul>
+            </CollapsibleSection>
+          {/if}
 
-            {#if diff.resolvedTensions.length > 0}
-              <CollapsibleSection summary="Resolved ({diff.resolvedTensions.length})">
-                <ul class="fwd-list fwd-list-resolved">
-                  {#each diff.resolvedTensions as tension}
-                    <li>{tension}</li>
-                  {/each}
-                </ul>
-              </CollapsibleSection>
-            {/if}
+          {#if rs.state.unresolvedTensions.size > 0}
+            <CollapsibleSection summary="Active tensions ({rs.state.unresolvedTensions.size})">
+              <ul class="fwd-list fwd-list-tensions">
+                {#each [...rs.state.unresolvedTensions] as tension}
+                  <li>{#if rs.newTensions.includes(tension)}<strong>{tension}</strong>{:else}{tension}{/if}</li>
+                {/each}
+              </ul>
+            </CollapsibleSection>
+          {/if}
+
+          {#if rs.state.wrongBeliefs.size > 0}
+            <CollapsibleSection summary="Reader wrong about ({rs.state.wrongBeliefs.size})">
+              <ul class="fwd-list fwd-list-wrong">
+                {#each [...rs.state.wrongBeliefs] as belief}
+                  <li>{belief}</li>
+                {/each}
+              </ul>
+            </CollapsibleSection>
+          {/if}
+
+          {#if rs.resolvedTensions.length > 0}
+            <CollapsibleSection summary="Resolved this scene ({rs.resolvedTensions.length})">
+              <ul class="fwd-list fwd-list-resolved">
+                {#each rs.resolvedTensions as tension}
+                  <li>{tension}</li>
+                {/each}
+              </ul>
+            </CollapsibleSection>
           {/if}
         </div>
 
-        {#if i < scenes.length - 1}
+        {#if i < readerStates.length - 1}
           <div class="fwd-connector">↓</div>
         {/if}
       {/each}
@@ -120,6 +155,7 @@ function computeDiff(prevIR: NarrativeIR | null, currentIR: NarrativeIR): Reader
 </Pane>
 
 <style>
+  .fwd-header-info { display: flex; align-items: center; gap: 8px; }
   .fwd-note { font-size: 0.8em; opacity: 0.5; }
   .fwd-empty { padding: 24px; opacity: 0.5; text-align: center; }
   .fwd-timeline { display: flex; flex-direction: column; gap: 0; padding: 8px; }
@@ -136,13 +172,16 @@ function computeDiff(prevIR: NarrativeIR | null, currentIR: NarrativeIR): Reader
   .fwd-tag-empty { color: var(--text-muted); border: 1px solid var(--border); }
   .fwd-tag-unverified { color: var(--warning); border: 1px solid var(--warning); }
   .fwd-tag-verified { color: var(--success); border: 1px solid var(--success); }
+  .fwd-warnings { margin-top: 6px; }
   .fwd-diff-summary { display: flex; gap: 10px; margin-top: 6px; font-size: 11px; }
   .fwd-facts { color: var(--success); }
   .fwd-tensions { color: var(--warning); }
   .fwd-resolved { color: var(--text-muted); text-decoration: line-through; }
   .fwd-list { margin: 0; padding: 0 0 0 16px; font-size: 11px; line-height: 1.5; }
   .fwd-list-facts { color: var(--success); }
+  .fwd-list-suspicions { color: var(--accent); }
   .fwd-list-tensions { color: var(--warning); }
+  .fwd-list-wrong { color: var(--error, #e85050); }
   .fwd-list-resolved { color: var(--text-muted); }
   .fwd-connector { text-align: center; opacity: 0.2; font-size: 14px; line-height: 1; padding: 2px 0; }
 </style>
