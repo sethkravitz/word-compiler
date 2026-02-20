@@ -18,6 +18,7 @@ let {
   onUpdateChunk,
   onRemoveChunk,
   onRunAudit,
+  onRunDeepAudit,
   onCompleteScene,
   onOpenIRInspector,
   onExtractIR,
@@ -35,6 +36,7 @@ let {
   onUpdateChunk: (index: number, changes: Partial<Chunk>) => void;
   onRemoveChunk: (index: number) => void;
   onRunAudit: () => void;
+  onRunDeepAudit?: () => void;
   onCompleteScene: () => void;
   onOpenIRInspector: () => void;
   onExtractIR: () => void;
@@ -75,6 +77,9 @@ $effect(() => {
         {/if}
       {/if}
       <Button onclick={onRunAudit} disabled={chunks.length === 0}>Run Audit</Button>
+      {#if onRunDeepAudit}
+        <Button onclick={onRunDeepAudit} disabled={chunks.length === 0} title="LLM-assisted subtext compliance check">Deep Audit</Button>
+      {/if}
       {#if sceneStatus !== "complete"}
         <Button
           variant="primary"

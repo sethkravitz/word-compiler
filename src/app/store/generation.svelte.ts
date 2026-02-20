@@ -1,4 +1,5 @@
 import { runAudit } from "../../auditor/index.js";
+import { checkSubtext } from "../../auditor/subtext.js";
 import { extractIR, type IRLLMClient } from "../../ir/extractor.js";
 import { callLLM, generateStream } from "../../llm/client.js";
 import type { Chunk } from "../../types/index.js";
@@ -103,5 +104,30 @@ export function createGenerationActions(store: ProjectStore, actions?: ApiAction
     }
   }
 
-  return { generateChunk, runAuditManual, extractSceneIR };
+  async function runDeepAudit() {
+    const plan = store.activeScenePlan;
+    if (!store.bible || !plan || store.activeSceneChunks.length === 0) return;
+
+    store.setError(null);
+
+    try {
+      const prose = store.activeSceneChunks.map((c) => getCanonicalText(c)).join("\n\n");
+      const subtextClient = {
+        call: (systemMessage: string, userMessage: string, model: string, maxTokens: number) =>
+          callLLM(systemMessage, userMessage, model, maxTokens),
+      };
+      const subtextFlags = await checkSubtext(prose, plan, subtextClient);
+
+      if (subtextFlags.length > 0) {
+        // Append subtext flags to existing audit flags
+        const combined = [...store.auditFlags, ...subtextFlags];
+        store.setAudit(combined, store.metrics);
+        if (actions) await actions.saveAuditFlags(combined);
+      }
+    } catch (err) {
+      store.setError(err instanceof Error ? err.message : "Deep audit failed");
+    }
+  }
+
+  return { generateChunk, runAuditManual, runDeepAudit, extractSceneIR };
 }

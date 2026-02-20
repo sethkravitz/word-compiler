@@ -16,6 +16,7 @@ import ForwardSimulator from "./components/ForwardSimulator.svelte";
 import IRInspector from "./components/IRInspector.svelte";
 import SceneAuthoringModal from "./components/SceneAuthoringModal.svelte";
 import SceneSequencer from "./components/SceneSequencer.svelte";
+import SetupPayoffPanel from "./components/SetupPayoffPanel.svelte";
 import StyleDriftPanel from "./components/StyleDriftPanel.svelte";
 import VoiceSeparabilityView from "./components/VoiceSeparabilityView.svelte";
 import { onMount } from "svelte";
@@ -30,7 +31,7 @@ setupCompilerEffect(store);
 const actions = createApiActions(store);
 
 // Create generation action handlers
-const { generateChunk, runAuditManual, extractSceneIR } = createGenerationActions(store, actions);
+const { generateChunk, runAuditManual, runDeepAudit, extractSceneIR } = createGenerationActions(store, actions);
 
 // ─── Startup ────────────────────────────────────
 let appReady = $state(false);
@@ -60,7 +61,7 @@ async function createFirstProject() {
 
 // ─── Local UI state ─────────────────────────────
 let showArcEditor = $state(false);
-let activeTab = $state<"compiler" | "ir" | "simulator" | "drift" | "voice">("compiler");
+let activeTab = $state<"compiler" | "ir" | "simulator" | "drift" | "voice" | "setups">("compiler");
 
 const tabItems = [
   { id: "compiler", label: "Compiler" },
@@ -68,6 +69,7 @@ const tabItems = [
   { id: "simulator", label: "Forward Sim" },
   { id: "drift", label: "Style Drift" },
   { id: "voice", label: "Voice Sep" },
+  { id: "setups", label: "Setups" },
 ];
 
 // ─── Derived values ─────────────────────────────
@@ -170,6 +172,8 @@ function handleRemoveChunk(index: number) {
 async function handleCompleteScene() {
   if (store.activeScenePlan) {
     await actions.completeScene(store.activeScenePlan.id);
+    // Auto-extract IR in the background after scene completion
+    extractSceneIR();
   }
 }
 
@@ -432,6 +436,7 @@ function exportState() {
       onUpdateChunk={handleUpdateChunk}
       onRemoveChunk={handleRemoveChunk}
       onRunAudit={runAuditManual}
+      onRunDeepAudit={runDeepAudit}
       onCompleteScene={handleCompleteScene}
       onOpenIRInspector={() => { activeTab = 'ir'; }}
       onExtractIR={extractSceneIR}
@@ -469,6 +474,8 @@ function exportState() {
       <StyleDriftPanel reports={styleDriftReports} {baselineSceneTitle} {sceneTitles} />
     {:else if activeTab === "voice"}
       <VoiceSeparabilityView report={voiceReport} />
+    {:else if activeTab === "setups"}
+      <SetupPayoffPanel sceneIRs={store.sceneIRs} {sceneTitles} />
     {/if}
   </div>
 
