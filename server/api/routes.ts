@@ -14,6 +14,21 @@ import * as scenePlans from "../db/repositories/scene-plans.js";
 export function createApiRouter(db: Database.Database): Router {
   const router = Router();
 
+  /** Ensure a project row exists (no-op if it already does). */
+  function ensureProject(projectId: string): void {
+    const existing = projects.getProject(db, projectId);
+    if (!existing) {
+      const now = new Date().toISOString();
+      projects.createProject(db, {
+        id: projectId,
+        title: "Untitled Project",
+        status: "drafting",
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
   // ─── Projects ───────────────────────────────────────
   router.get("/projects", (_req, res) => {
     res.json(projects.listProjects(db));
@@ -60,6 +75,7 @@ export function createApiRouter(db: Database.Database): Router {
   });
 
   router.post("/projects/:projectId/bibles", (req, res) => {
+    ensureProject(req.params.projectId);
     const bible = bibles.createBible(db, req.body);
     res.status(201).json(bible);
   });
@@ -76,6 +92,7 @@ export function createApiRouter(db: Database.Database): Router {
   });
 
   router.post("/chapters", (req, res) => {
+    if (req.body.projectId) ensureProject(req.body.projectId);
     const arc = chapterArcs.createChapterArc(db, req.body);
     res.status(201).json(arc);
   });
@@ -98,6 +115,7 @@ export function createApiRouter(db: Database.Database): Router {
 
   router.post("/scenes", (req, res) => {
     const { plan, sceneOrder } = req.body;
+    if (plan.projectId) ensureProject(plan.projectId);
     const created = scenePlans.createScenePlan(db, plan, sceneOrder ?? 0);
     res.status(201).json(created);
   });
