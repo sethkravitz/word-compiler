@@ -1,6 +1,6 @@
 <script lang="ts">
-import type { NarrativeIR, ScenePlan } from "../../types/index.js";
 import { accumulateReaderState, detectEpistemicIssues, type SceneInput } from "../../simulator/readerState.js";
+import type { NarrativeIR, ScenePlan } from "../../types/index.js";
 import { Badge, CollapsibleSection, DiagnosticItem, Pane } from "../primitives/index.js";
 
 interface SceneNode {
@@ -20,11 +20,13 @@ let {
 } = $props();
 
 let sceneInputs = $derived<SceneInput[]>(scenes.map((s) => ({ plan: s.plan, ir: s.ir, sceneOrder: s.sceneOrder })));
+let sceneLookup = $derived(new Map(scenes.map((s, idx) => [s.plan.id, { scene: s, index: idx }])));
 let readerStates = $derived(accumulateReaderState(sceneInputs));
 let warnings = $derived(detectEpistemicIssues(sceneInputs, readerStates));
 let warningsByScene = $derived(
   warnings.reduce<Record<string, typeof warnings>>((acc, w) => {
-    (acc[w.sceneId] ??= []).push(w);
+    if (!acc[w.sceneId]) acc[w.sceneId] = [];
+    acc[w.sceneId].push(w);
     return acc;
   }, {}),
 );
@@ -47,14 +49,15 @@ let warningsByScene = $derived(
   {:else}
     <div class="fwd-timeline">
       {#each readerStates as rs, i (rs.sceneId)}
-        {@const scene = scenes.find((s) => s.plan.id === rs.sceneId)}
+        {@const entry = sceneLookup.get(rs.sceneId)}
+        {@const scene = entry?.scene}
         {@const hasIR = scene?.ir !== null && scene?.ir !== undefined}
         {@const isVerified = scene?.ir?.verified ?? false}
         {@const sceneWarnings = warningsByScene[rs.sceneId] ?? []}
 
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div class="fwd-node" class:fwd-node-active={scenes.indexOf(scene!) === activeSceneIndex} onclick={() => { if (scene) onSelectScene(scenes.indexOf(scene)); }}>
+        <div class="fwd-node" class:fwd-node-active={entry?.index === activeSceneIndex} onclick={() => { if (entry) onSelectScene(entry.index); }}>
           <div class="fwd-node-header">
             <span class="fwd-scene-num">Scene {i + 1}</span>
             <span class="fwd-scene-title">{scene?.plan.title || "(untitled)"}</span>

@@ -13,6 +13,7 @@ function createMockStore(overrides = {}) {
   return {
     bible: null,
     activeScenePlan: null,
+    activeSceneIndex: 0,
     scenes: [],
     loadFile: vi.fn(),
     saveFile: vi.fn(),
@@ -25,15 +26,38 @@ function createMockStore(overrides = {}) {
   };
 }
 
+function createMockCommands() {
+  return {
+    saveBible: vi.fn().mockResolvedValue({ ok: true }),
+    saveScenePlan: vi.fn().mockResolvedValue({ ok: true }),
+    updateScenePlan: vi.fn().mockResolvedValue({ ok: true }),
+    saveMultipleScenePlans: vi.fn().mockResolvedValue({ ok: true }),
+    saveChapterArc: vi.fn().mockResolvedValue({ ok: true }),
+    updateChapterArc: vi.fn().mockResolvedValue({ ok: true }),
+    saveChunk: vi.fn().mockResolvedValue({ ok: true }),
+    updateChunk: vi.fn().mockResolvedValue({ ok: true }),
+    persistChunk: vi.fn().mockResolvedValue({ ok: true }),
+    removeChunk: vi.fn().mockResolvedValue({ ok: true }),
+    completeScene: vi.fn().mockResolvedValue({ ok: true }),
+    saveAuditFlags: vi.fn().mockResolvedValue({ ok: true }),
+    resolveAuditFlag: vi.fn().mockResolvedValue({ ok: true }),
+    dismissAuditFlag: vi.fn().mockResolvedValue({ ok: true }),
+    saveSceneIR: vi.fn().mockResolvedValue({ ok: true }),
+    verifySceneIR: vi.fn().mockResolvedValue({ ok: true }),
+    saveCompilationLog: vi.fn().mockResolvedValue({ ok: true }),
+  };
+}
+
 describe("BiblePane", () => {
   it("renders 'Bible + Plan' title", () => {
-    render(BiblePane, { store: createMockStore(), onBootstrap: vi.fn() });
+    render(BiblePane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
     expect(screen.getByText("Bible + Plan")).toBeInTheDocument();
   });
 
   it("shows 'New Bible' button when onAuthor is provided", () => {
     render(BiblePane, {
       store: createMockStore(),
+      commands: createMockCommands(),
       onBootstrap: vi.fn(),
       onAuthor: vi.fn(),
     });
@@ -41,17 +65,17 @@ describe("BiblePane", () => {
   });
 
   it("shows 'Bootstrap' button when onAuthor is not provided", () => {
-    render(BiblePane, { store: createMockStore(), onBootstrap: vi.fn() });
+    render(BiblePane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
     expect(screen.getByText("Bootstrap")).toBeInTheDocument();
   });
 
   it("shows 'Load Bible' button", () => {
-    render(BiblePane, { store: createMockStore(), onBootstrap: vi.fn() });
+    render(BiblePane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
     expect(screen.getByText("Load Bible")).toBeInTheDocument();
   });
 
   it("Save Bible button is disabled when no bible", () => {
-    render(BiblePane, { store: createMockStore(), onBootstrap: vi.fn() });
+    render(BiblePane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
     expect(screen.getByText("Save Bible")).toBeDisabled();
   });
 });

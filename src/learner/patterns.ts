@@ -150,8 +150,9 @@ export function groupPatterns(edits: EditPattern[], sceneOrder: Map<string, numb
     const [patternType, ...keyParts] = compositeKey.split("::");
     const key = keyParts.join("::");
     const weightedCount = computeWeightedCount(groupEdits, sceneOrder);
-    const subTypeTotal = subTypeTotals.get(patternType!) ?? weightedCount;
-    const confidence = wilsonLowerBound(weightedCount, Math.max(subTypeTotal, weightedCount));
+    // Use raw integer counts for Wilson (statistically valid), weighted counts for ranking
+    const subTypeTotal = subTypeTotals.get(patternType!) ?? groupEdits.length;
+    const confidence = wilsonLowerBound(groupEdits.length, Math.max(subTypeTotal, groupEdits.length));
 
     result.push({
       patternType: patternType as EditSubType,

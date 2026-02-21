@@ -156,7 +156,10 @@ export class ProjectStore {
   updateChunk(index: number, changes: Partial<Chunk>) {
     const scene = this.activeScene;
     if (!scene) return;
-    const sceneId = scene.plan.id;
+    this.updateChunkForScene(scene.plan.id, index, changes);
+  }
+
+  updateChunkForScene(sceneId: string, index: number, changes: Partial<Chunk>) {
     const chunks = [...(this.sceneChunks[sceneId] ?? [])];
     const existing = chunks[index];
     if (existing) {
@@ -169,7 +172,9 @@ export class ProjectStore {
     const scene = this.activeScene;
     if (!scene) return;
     const sceneId = scene.plan.id;
-    const chunks = (this.sceneChunks[sceneId] ?? []).filter((_, i) => i !== index);
+    const chunks = (this.sceneChunks[sceneId] ?? [])
+      .filter((_, i) => i !== index)
+      .map((c, i) => ({ ...c, sequenceNumber: i }));
     this.sceneChunks = { ...this.sceneChunks, [sceneId]: chunks };
   }
 

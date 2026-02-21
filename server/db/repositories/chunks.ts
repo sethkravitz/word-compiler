@@ -5,7 +5,12 @@ export function createChunk(db: Database.Database, chunk: Chunk): Chunk {
   const now = new Date().toISOString();
   db.prepare(
     `INSERT INTO chunks (id, scene_id, sequence_number, data, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       scene_id = excluded.scene_id,
+       sequence_number = excluded.sequence_number,
+       data = excluded.data,
+       updated_at = excluded.updated_at`,
   ).run(chunk.id, chunk.sceneId, chunk.sequenceNumber, JSON.stringify(chunk), now, now);
   return chunk;
 }

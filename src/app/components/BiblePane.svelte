@@ -4,17 +4,17 @@ import { oneDark } from "@codemirror/theme-one-dark";
 import CodeMirror from "svelte-codemirror-editor";
 import type { Bible, ChapterArc, ScenePlan } from "../../types/index.js";
 import { Button, Pane } from "../primitives/index.js";
-import type { ApiActions } from "../store/api-actions.js";
+import type { Commands } from "../store/commands.js";
 import type { ProjectStore } from "../store/project.svelte.js";
 
 let {
   store,
-  actions,
+  commands,
   onBootstrap,
   onAuthor,
 }: {
   store: ProjectStore;
-  actions?: ApiActions;
+  commands: Commands;
   onBootstrap: () => void;
   onAuthor?: () => void;
 } = $props();
@@ -25,14 +25,16 @@ let arcJson = $derived(store.chapterArc ? JSON.stringify(store.chapterArc, null,
 
 const extensions = [json(), oneDark];
 
+// Debounce timers for JSON editor saves
+let bibleDebounce: ReturnType<typeof setTimeout> | undefined;
+let arcDebounce: ReturnType<typeof setTimeout> | undefined;
+let planDebounce: ReturnType<typeof setTimeout> | undefined;
+
 function handleBibleChange(text: string) {
   try {
     const parsed = JSON.parse(text) as Bible;
-    if (actions) {
-      actions.saveBible(parsed);
-    } else {
-      store.setBible(parsed);
-    }
+    clearTimeout(bibleDebounce);
+    bibleDebounce = setTimeout(() => commands.saveBible(parsed), 500);
   } catch {
     // Invalid JSON — don't update state until valid
   }
@@ -41,11 +43,8 @@ function handleBibleChange(text: string) {
 function handleArcChange(text: string) {
   try {
     const parsed = JSON.parse(text) as ChapterArc;
-    if (actions) {
-      actions.updateChapterArc(parsed);
-    } else {
-      store.setChapterArc(parsed);
-    }
+    clearTimeout(arcDebounce);
+    arcDebounce = setTimeout(() => commands.updateChapterArc(parsed), 500);
   } catch {
     // Invalid JSON
   }
@@ -54,13 +53,8 @@ function handleArcChange(text: string) {
 function handlePlanChange(text: string) {
   try {
     const parsed = JSON.parse(text) as ScenePlan;
-    if (actions) {
-      actions.saveScenePlan(parsed, store.activeSceneIndex);
-    } else if (store.activeScenePlan) {
-      store.addScenePlan(parsed);
-    } else {
-      store.setScenePlan(parsed);
-    }
+    clearTimeout(planDebounce);
+    planDebounce = setTimeout(() => commands.updateScenePlan(parsed), 500);
   } catch {
     // Invalid JSON
   }
@@ -71,11 +65,7 @@ async function handleLoadBible() {
   if (text) {
     try {
       const parsed = JSON.parse(text) as Bible;
-      if (actions) {
-        await actions.saveBible(parsed);
-      } else {
-        store.setBible(parsed);
-      }
+      await commands.saveBible(parsed);
     } catch {
       store.setError("Invalid Bible JSON");
     }
@@ -87,13 +77,7 @@ async function handleLoadPlan() {
   if (text) {
     try {
       const parsed = JSON.parse(text) as ScenePlan;
-      if (actions) {
-        await actions.saveScenePlan(parsed, store.scenes.length);
-      } else if (store.scenes.length > 0) {
-        store.addScenePlan(parsed);
-      } else {
-        store.setScenePlan(parsed);
-      }
+      await commands.saveScenePlan(parsed, store.scenes.length);
     } catch {
       store.setError("Invalid Scene Plan JSON");
     }
@@ -105,11 +89,7 @@ async function handleLoadArc() {
   if (text) {
     try {
       const parsed = JSON.parse(text) as ChapterArc;
-      if (actions) {
-        await actions.saveChapterArc(parsed);
-      } else {
-        store.setChapterArc(parsed);
-      }
+      await commands.saveChapterArc(parsed);
     } catch {
       store.setError("Invalid Chapter Arc JSON");
     }

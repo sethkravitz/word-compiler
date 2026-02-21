@@ -4,23 +4,30 @@ import { extractIR, type IRLLMClient } from "../../ir/extractor.js";
 import { callLLM, generateStream } from "../../llm/client.js";
 import type { Chunk } from "../../types/index.js";
 import { generateId, getCanonicalText } from "../../types/index.js";
-import type { ApiActions } from "./api-actions.js";
+import type { Commands } from "./commands.js";
 import type { ProjectStore } from "./project.svelte.js";
 
-export function createGenerationActions(store: ProjectStore, actions?: ApiActions) {
-  async function generateChunk() {
+export function createGenerationActions(store: ProjectStore, commands: Commands) {
+  /** Helper: get chunks for a specific scene (avoids activeSceneIndex dependency) */
+  function chunksForScene(sceneId: string): Chunk[] {
+    return store.sceneChunks[sceneId] ?? [];
+  }
+
+  async function generateChunk(pinnedSceneId?: string) {
     const plan = store.activeScenePlan;
     if (!store.compiledPayload || !store.bible || !plan) return;
+
+    const sceneId = pinnedSceneId ?? plan.id;
 
     store.setGenerating(true);
     store.setError(null);
 
     try {
       const chunkId = generateId();
-      const chunkIndex = store.activeSceneChunks.length;
+      const chunkIndex = chunksForScene(sceneId).length;
       const pendingChunk: Chunk = {
         id: chunkId,
-        sceneId: plan.id,
+        sceneId,
         sequenceNumber: chunkIndex,
         generatedText: "",
         payloadHash: generateId(),
@@ -38,10 +45,10 @@ export function createGenerationActions(store: ProjectStore, actions?: ApiAction
       await generateStream(store.compiledPayload, {
         onToken: (text) => {
           fullText += text;
-          store.updateChunk(chunkIndex, { generatedText: fullText });
+          store.updateChunkForScene(sceneId, chunkIndex, { generatedText: fullText });
         },
         onDone: () => {
-          store.updateChunk(chunkIndex, { generatedText: fullText });
+          store.updateChunkForScene(sceneId, chunkIndex, { generatedText: fullText });
         },
         onError: (err) => {
           store.setError(`Generation failed: ${err}`);
@@ -49,18 +56,18 @@ export function createGenerationActions(store: ProjectStore, actions?: ApiAction
       });
 
       // Persist the finalized chunk
-      const finalChunk = store.activeSceneChunks[chunkIndex];
-      if (finalChunk && actions) await actions.saveChunk(finalChunk);
+      const finalChunk = chunksForScene(sceneId)[chunkIndex];
+      if (finalChunk) await commands.saveChunk(finalChunk);
 
       // Run audit on all chunks for this scene
-      const allText = [...store.activeSceneChunks.slice(0, chunkIndex), { ...pendingChunk, generatedText: fullText }]
+      const allText = [...chunksForScene(sceneId).slice(0, chunkIndex), { ...pendingChunk, generatedText: fullText }]
         .map((c) => getCanonicalText(c))
         .join("\n\n");
-      const { flags, metrics } = runAudit(allText, store.bible, plan.id);
+      const { flags, metrics } = runAudit(allText, store.bible, sceneId);
       store.setAudit(flags, metrics);
 
       // Persist audit flags
-      if (actions) await actions.saveAuditFlags(flags);
+      await commands.saveAuditFlags(flags);
     } catch (err) {
       store.setError(err instanceof Error ? err.message : "Generation failed");
     } finally {
@@ -68,34 +75,41 @@ export function createGenerationActions(store: ProjectStore, actions?: ApiAction
     }
   }
 
-  function runAuditManual() {
+  function runAuditManual(pinnedSceneId?: string) {
     const plan = store.activeScenePlan;
-    if (!store.bible || !plan || store.activeSceneChunks.length === 0) return;
+    if (!store.bible || !plan) return;
 
-    const allText = store.activeSceneChunks.map((c) => getCanonicalText(c)).join("\n\n");
-    const { flags, metrics } = runAudit(allText, store.bible, plan.id);
+    const sceneId = pinnedSceneId ?? plan.id;
+    const chunks = chunksForScene(sceneId);
+    if (chunks.length === 0) return;
+
+    const allText = chunks.map((c) => getCanonicalText(c)).join("\n\n");
+    const { flags, metrics } = runAudit(allText, store.bible, sceneId);
     store.setAudit(flags, metrics);
   }
 
-  async function extractSceneIR() {
+  async function extractSceneIR(pinnedSceneId?: string) {
     const plan = store.activeScenePlan;
-    if (!store.bible || !plan || store.activeSceneChunks.length === 0) return;
+    if (!store.bible || !plan) return;
 
-    store.setExtractingIR(plan.id);
+    const sceneId = pinnedSceneId ?? plan.id;
+    const chunks = chunksForScene(sceneId);
+    if (chunks.length === 0) return;
+
+    // Find the plan for the pinned scene (may differ from active)
+    const scenePlan = store.scenes.find((s) => s.plan.id === sceneId)?.plan ?? plan;
+
+    store.setExtractingIR(sceneId);
     store.setError(null);
 
     try {
-      const prose = store.activeSceneChunks.map((c) => getCanonicalText(c)).join("\n\n");
+      const prose = chunks.map((c) => getCanonicalText(c)).join("\n\n");
       const llmClient: IRLLMClient = {
         call: (systemMessage, userMessage, model, maxTokens, outputSchema) =>
           callLLM(systemMessage, userMessage, model, maxTokens, outputSchema),
       };
-      const ir = await extractIR(prose, plan, store.bible, llmClient);
-      if (actions) {
-        await actions.saveSceneIR(plan.id, ir);
-      } else {
-        store.setSceneIR(plan.id, ir);
-      }
+      const ir = await extractIR(prose, scenePlan, store.bible, llmClient);
+      await commands.saveSceneIR(sceneId, ir);
       store.setIRInspectorOpen(true);
     } catch (err) {
       store.setError(err instanceof Error ? err.message : "IR extraction failed");
@@ -104,56 +118,69 @@ export function createGenerationActions(store: ProjectStore, actions?: ApiAction
     }
   }
 
-  async function runDeepAudit() {
+  async function runDeepAudit(pinnedSceneId?: string) {
     const plan = store.activeScenePlan;
-    if (!store.bible || !plan || store.activeSceneChunks.length === 0) return;
+    if (!store.bible || !plan) return;
+
+    const sceneId = pinnedSceneId ?? plan.id;
+    const chunks = chunksForScene(sceneId);
+    if (chunks.length === 0) return;
+
+    const scenePlan = store.scenes.find((s) => s.plan.id === sceneId)?.plan ?? plan;
 
     store.setError(null);
 
     try {
-      const prose = store.activeSceneChunks.map((c) => getCanonicalText(c)).join("\n\n");
+      const prose = chunks.map((c) => getCanonicalText(c)).join("\n\n");
       const subtextClient = {
         call: (systemMessage: string, userMessage: string, model: string, maxTokens: number) =>
           callLLM(systemMessage, userMessage, model, maxTokens),
       };
-      const subtextFlags = await checkSubtext(prose, plan, subtextClient);
+      const subtextFlags = await checkSubtext(prose, scenePlan, subtextClient);
 
       if (subtextFlags.length > 0) {
-        // Append subtext flags to existing audit flags
         const combined = [...store.auditFlags, ...subtextFlags];
         store.setAudit(combined, store.metrics);
-        if (actions) await actions.saveAuditFlags(combined);
+        await commands.saveAuditFlags(combined);
       }
     } catch (err) {
       store.setError(err instanceof Error ? err.message : "Deep audit failed");
     }
   }
 
-  async function runAutopilot(completeScene: () => Promise<void>) {
+  async function runAutopilot() {
     const plan = store.activeScenePlan;
     if (!plan || !store.compiledPayload || !store.bible) return;
+
+    // Pin the scene context so switching scenes mid-autopilot can't break the loop
+    const sceneId = plan.id;
 
     store.setAutopilot(true);
     const maxChunks = plan.chunkCount ?? 3;
 
     try {
-      while (store.activeSceneChunks.length < maxChunks) {
+      while (chunksForScene(sceneId).length < maxChunks) {
         if (store.autopilotCancelled) break;
 
-        // Generate next chunk
-        await generateChunk();
+        // Generate next chunk (pinned to this scene)
+        await generateChunk(sceneId);
         if (store.autopilotCancelled) break;
 
         // Auto-accept the chunk we just generated
-        const chunkIndex = store.activeSceneChunks.length - 1;
-        store.updateChunk(chunkIndex, { status: "accepted" });
-        const accepted = store.activeSceneChunks[chunkIndex];
-        if (accepted && actions) await actions.updateChunk(accepted);
+        const chunks = chunksForScene(sceneId);
+        const chunkIndex = chunks.length - 1;
+        await commands.updateChunk(sceneId, chunkIndex, { status: "accepted" });
       }
 
       if (!store.autopilotCancelled) {
-        // Complete scene (which also triggers blueprint extraction)
-        await completeScene();
+        // Gate check + complete via commands (gates enforced inside)
+        const result = await commands.completeScene(sceneId);
+        if (!result.ok) {
+          store.setError(`Autopilot finished but scene cannot be completed: ${result.error}`);
+        } else {
+          // Auto-extract IR after successful scene completion
+          await extractSceneIR(sceneId);
+        }
       }
     } catch (err) {
       store.setError(err instanceof Error ? err.message : "Autopilot failed");

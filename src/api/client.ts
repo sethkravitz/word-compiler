@@ -147,6 +147,10 @@ export function apiUpdateChunk(chunk: Chunk): Promise<Chunk> {
   });
 }
 
+export function apiDeleteChunk(id: string): Promise<void> {
+  return fetchJson(`${BASE}/chunks/${id}`, { method: "DELETE" });
+}
+
 // ─── Audit Flags ─────────────────────────────────────
 
 export function apiListAuditFlags(sceneId: string): Promise<AuditFlag[]> {

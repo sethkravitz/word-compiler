@@ -32,12 +32,10 @@ describe("createApiActions", () => {
       expect(store.bible).toEqual(saved);
     });
 
-    it("sets store error on failure", async () => {
+    it("propagates errors to caller (command layer handles reporting)", async () => {
       mockedApi.apiSaveBible.mockRejectedValue(new Error("DB error"));
 
-      await actions.saveBible(createEmptyBible("proj-1"));
-
-      expect(store.error).toBe("DB error");
+      await expect(actions.saveBible(createEmptyBible("proj-1"))).rejects.toThrow("DB error");
     });
   });
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { EditPattern } from "../../learner/diff.js";
 import { accumulatePatterns, mapToProposedAction, type PatternGroup } from "../../learner/patterns.js";
-import { generateProposals, type BibleProposal } from "../../learner/proposals.js";
+import { type BibleProposal, generateProposals } from "../../learner/proposals.js";
 import { Badge, Button, CollapsibleSection, Pane, ProgressBar } from "../primitives/index.js";
 
 let {

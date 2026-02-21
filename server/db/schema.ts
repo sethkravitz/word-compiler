@@ -107,8 +107,8 @@ export function createSchema(db: Database.Database): void {
     -- Edit Patterns (raw diff-classified edits)
     CREATE TABLE IF NOT EXISTS edit_patterns (
       id TEXT PRIMARY KEY,
-      chunk_id TEXT NOT NULL,
-      scene_id TEXT NOT NULL,
+      chunk_id TEXT NOT NULL REFERENCES chunks(id),
+      scene_id TEXT NOT NULL REFERENCES scene_plans(id),
       project_id TEXT NOT NULL REFERENCES projects(id),
       edit_type TEXT NOT NULL,
       sub_type TEXT NOT NULL,

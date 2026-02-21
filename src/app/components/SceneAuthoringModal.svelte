@@ -22,15 +22,15 @@ import {
   TagInput,
   TextArea,
 } from "../primitives/index.js";
-import type { ApiActions } from "../store/api-actions.js";
+import type { Commands } from "../store/commands.js";
 import type { ProjectStore } from "../store/project.svelte.js";
 
 let {
   store,
-  actions,
+  commands,
 }: {
   store: ProjectStore;
-  actions?: ApiActions;
+  commands: Commands;
 } = $props();
 
 // ─── Tab state ──────────────────────────────────
@@ -226,18 +226,10 @@ function acceptAll() {
 async function commitAccepted() {
   const plans = generatedPlans.filter((_, i) => acceptedIndices.has(i));
   if (plans.length > 0) {
-    if (actions) {
-      await actions.saveMultipleScenePlans(plans);
-    } else {
-      store.addMultipleScenePlans(plans);
-    }
+    await commands.saveMultipleScenePlans(plans);
   }
   if (generatedArc) {
-    if (actions) {
-      await actions.saveChapterArc(generatedArc);
-    } else {
-      store.setChapterArc(generatedArc);
-    }
+    await commands.saveChapterArc(generatedArc);
   }
   handleClose();
 }
@@ -262,11 +254,7 @@ function prevFormStep() {
 }
 
 async function saveFormPlan() {
-  if (actions) {
-    await actions.saveScenePlan(formPlan, store.scenes.length);
-  } else {
-    store.addScenePlan(formPlan);
-  }
+  await commands.saveScenePlan(formPlan, store.scenes.length);
   formPlan = createEmptyScenePlan(store.project?.id ?? "");
   formStep = "core";
   handleClose();

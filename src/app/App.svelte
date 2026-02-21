@@ -1,4 +1,5 @@
 <script lang="ts">
+import { onMount } from "svelte";
 import { apiCreateProject } from "../api/client.js";
 import { checkChunkReviewGate, checkCompileGate, checkScenePlanGate } from "../gates/index.js";
 import { computeStyleDriftFromProse } from "../metrics/styleDrift.js";
@@ -19,9 +20,15 @@ import SceneSequencer from "./components/SceneSequencer.svelte";
 import SetupPayoffPanel from "./components/SetupPayoffPanel.svelte";
 import StyleDriftPanel from "./components/StyleDriftPanel.svelte";
 import VoiceSeparabilityView from "./components/VoiceSeparabilityView.svelte";
-import { onMount } from "svelte";
 import { Button, ErrorBanner, Select, Tabs } from "./primitives/index.js";
-import { createApiActions, createGenerationActions, initializeApp, setupCompilerEffect, store } from "./store/index.svelte.js";
+import {
+  createApiActions,
+  createCommands,
+  createGenerationActions,
+  initializeApp,
+  setupCompilerEffect,
+  store,
+} from "./store/index.svelte.js";
 import { theme } from "./store/theme.svelte.js";
 
 // Set up compiler auto-recompile effect
@@ -29,9 +36,13 @@ setupCompilerEffect(store);
 
 // Create persisted action handlers
 const actions = createApiActions(store);
+const commands = createCommands(store, actions);
 
 // Create generation action handlers
-const { generateChunk, runAuditManual, runDeepAudit, extractSceneIR, runAutopilot } = createGenerationActions(store, actions);
+const { generateChunk, runAuditManual, runDeepAudit, extractSceneIR, runAutopilot } = createGenerationActions(
+  store,
+  commands,
+);
 
 // ─── Startup ────────────────────────────────────
 let appReady = $state(false);
@@ -40,7 +51,7 @@ let startupStatus = $state<string>("loading");
 onMount(async () => {
   const result = await initializeApp(store);
   startupStatus = result;
-  appReady = result === "loaded" || result === "no-projects";
+  appReady = result === "loaded";
 });
 
 async function createFirstProject() {
@@ -146,55 +157,64 @@ let voiceReport = $derived.by((): VoiceSeparabilityReport | null => {
 });
 
 // ─── Handlers ──────────────────────────────────
-let editDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let editDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 function handleUpdateChunk(index: number, changes: Partial<Chunk>) {
-  store.updateChunk(index, changes);
+  const sceneId = store.activeScenePlan?.id;
+  if (!sceneId) return;
 
-  // Debounce API persistence for text edits
+  // Immediate store mutation for UI responsiveness
+  store.updateChunkForScene(sceneId, index, changes);
+
+  // Debounce API persistence for text edits, keyed per scene
   if (changes.editedText !== undefined || changes.humanNotes !== undefined) {
-    if (editDebounceTimer) clearTimeout(editDebounceTimer);
-    editDebounceTimer = setTimeout(async () => {
-      const chunk = store.activeSceneChunks[index];
-      if (chunk) await actions.updateChunk(chunk);
-    }, 500);
+    const key = `${sceneId}:${index}`;
+    const existing = editDebounceTimers.get(key);
+    if (existing) clearTimeout(existing);
+    editDebounceTimers.set(
+      key,
+      setTimeout(() => {
+        commands.persistChunk(sceneId, index);
+        editDebounceTimers.delete(key);
+      }, 500),
+    );
   } else {
     // Non-text changes persist immediately
-    const chunk = store.activeSceneChunks[index];
-    if (chunk) actions.updateChunk(chunk);
+    commands.persistChunk(sceneId, index);
   }
 }
 
 function handleRemoveChunk(index: number) {
-  store.removeChunk(index);
+  const sceneId = store.activeScenePlan?.id;
+  if (!sceneId) return;
+  commands.removeChunk(sceneId, index);
 }
 
 async function handleCompleteScene() {
-  if (store.activeScenePlan) {
-    await actions.completeScene(store.activeScenePlan.id);
-    // Auto-extract IR in the background after scene completion
-    extractSceneIR();
+  const sceneId = store.activeScenePlan?.id;
+  if (!sceneId) return;
+  const result = await commands.completeScene(sceneId);
+  if (result.ok) {
+    extractSceneIR(sceneId);
   }
 }
 
 async function handleResolveFlag(flagId: string, action: string) {
-  await actions.resolveAuditFlag(flagId, action, true);
+  await commands.resolveAuditFlag(flagId, action, true);
 }
 
 async function handleDismissFlag(flagId: string) {
-  await actions.dismissAuditFlag(flagId);
+  await commands.dismissAuditFlag(flagId);
 }
 
 async function handleVerifyIR() {
-  if (store.activeScenePlan) {
-    await actions.verifySceneIR(store.activeScenePlan.id);
-  }
+  const sceneId = store.activeScenePlan?.id;
+  if (sceneId) await commands.verifySceneIR(sceneId);
 }
 
 async function handleUpdateIR(ir: import("../types/index.js").NarrativeIR) {
-  if (store.activeScenePlan) {
-    await actions.saveSceneIR(store.activeScenePlan.id, ir);
-  }
+  const sceneId = store.activeScenePlan?.id;
+  if (sceneId) await commands.saveSceneIR(sceneId, ir);
 }
 
 // ─── Prose Export ────────────────────────────────
@@ -421,7 +441,7 @@ function exportState() {
   <Tabs items={tabItems} active={activeTab} onSelect={(id) => { activeTab = id as typeof activeTab; }} />
 
   <div class="cockpit">
-    <BiblePane {store} {actions} onBootstrap={() => store.setBootstrapOpen(true)} onAuthor={() => store.setBibleAuthoringOpen(true)} />
+    <BiblePane {store} {commands} onBootstrap={() => store.setBootstrapOpen(true)} onAuthor={() => store.setBibleAuthoringOpen(true)} />
     <DraftingDesk
       chunks={store.activeSceneChunks}
       scenePlan={store.activeScenePlan}
@@ -439,7 +459,7 @@ function exportState() {
       onRunAudit={runAuditManual}
       onRunDeepAudit={runDeepAudit}
       onCompleteScene={handleCompleteScene}
-      onAutopilot={() => runAutopilot(handleCompleteScene)}
+      onAutopilot={() => runAutopilot()}
       onCancelAutopilot={() => store.cancelAutopilot()}
       onOpenIRInspector={() => { activeTab = 'ir'; }}
       onExtractIR={extractSceneIR}
@@ -482,12 +502,12 @@ function exportState() {
     {/if}
   </div>
 
-  <BootstrapModal {store} {actions} />
-  <BibleAuthoringModal {store} {actions} />
-  <SceneAuthoringModal {store} {actions} />
+  <BootstrapModal {store} {commands} />
+  <BibleAuthoringModal {store} {commands} />
+  <SceneAuthoringModal {store} {commands} />
 
   {#if showArcEditor && store.chapterArc}
-    <ChapterArcEditor arc={store.chapterArc} {store} {actions} onClose={() => { showArcEditor = false; }} />
+    <ChapterArcEditor arc={store.chapterArc} {store} {commands} onClose={() => { showArcEditor = false; }} />
   {/if}
 </div>
 {/if}

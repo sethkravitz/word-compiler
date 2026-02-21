@@ -1,12 +1,14 @@
 import Database from "better-sqlite3";
 import { beforeEach, describe, expect, it } from "vitest";
+import { createChunk } from "../../../server/db/repositories/chunks.js";
 import * as editPatternsRepo from "../../../server/db/repositories/edit-patterns.js";
 import * as learnedPatternsRepo from "../../../server/db/repositories/learned-patterns.js";
 import * as projects from "../../../server/db/repositories/projects.js";
+import { createScenePlan } from "../../../server/db/repositories/scene-plans.js";
 import { createSchema } from "../../../server/db/schema.js";
 import type { EditPattern } from "../../../src/learner/diff.js";
 import type { PatternData } from "../../../src/learner/patterns.js";
-import { generateId } from "../../../src/types/index.js";
+import { createEmptyScenePlan, generateId } from "../../../src/types/index.js";
 
 let db: Database.Database;
 
@@ -26,11 +28,34 @@ function makeEditPattern(overrides: Partial<EditPattern> = {}): EditPattern {
   };
 }
 
+function seedScenePlan(id: string) {
+  createScenePlan(db, { ...createEmptyScenePlan("proj-1"), id }, 0);
+}
+
+function seedChunk(id: string, sceneId: string) {
+  createChunk(db, {
+    id,
+    sceneId,
+    sequenceNumber: 0,
+    generatedText: "test",
+    payloadHash: "",
+    model: "test",
+    temperature: 0.7,
+    topP: 1,
+    generatedAt: new Date().toISOString(),
+    status: "accepted",
+    editedText: null,
+    humanNotes: null,
+  });
+}
+
 beforeEach(() => {
   db = new Database(":memory:");
   createSchema(db);
-  // Seed a project for FK constraints
+  // Seed parent records for FK constraints
   projects.createProject(db, { id: "proj-1", title: "Test Project", status: "drafting", createdAt: "", updatedAt: "" });
+  seedScenePlan("scene-1");
+  seedChunk("chunk-1", "scene-1");
 });
 
 describe("edit-patterns repository", () => {
@@ -49,8 +74,12 @@ describe("edit-patterns repository", () => {
   });
 
   it("lists by scene", () => {
-    const p1 = makeEditPattern({ sceneId: "s1" });
-    const p2 = makeEditPattern({ id: generateId(), sceneId: "s2" });
+    seedScenePlan("s1");
+    seedScenePlan("s2");
+    seedChunk("cs1", "s1");
+    seedChunk("cs2", "s2");
+    const p1 = makeEditPattern({ chunkId: "cs1", sceneId: "s1" });
+    const p2 = makeEditPattern({ id: generateId(), chunkId: "cs2", sceneId: "s2" });
     editPatternsRepo.createEditPatterns(db, [p1, p2]);
     const result = editPatternsRepo.listEditPatternsForScene(db, "s1");
     expect(result).toHaveLength(1);
@@ -58,6 +87,8 @@ describe("edit-patterns repository", () => {
   });
 
   it("deletes by chunk", () => {
+    seedChunk("c1", "scene-1");
+    seedChunk("c2", "scene-1");
     const p1 = makeEditPattern({ chunkId: "c1" });
     const p2 = makeEditPattern({ id: generateId(), chunkId: "c2" });
     editPatternsRepo.createEditPatterns(db, [p1, p2]);

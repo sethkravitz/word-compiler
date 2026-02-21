@@ -158,10 +158,10 @@ export function applyProposal(bible: Bible, proposal: BibleProposal): Bible {
 
 function resolveSection(target: string): BibleSection {
   if (target === "killList") return "killList";
-  if (target.startsWith("characters")) return "characters";
-  if (target.startsWith("suggestedTone") || target.startsWith("compilationNotes")) return "styleGuide";
-  if (target.startsWith("locations")) return "locations";
   if (target === "compilationNotes") return "compilationNotes";
+  if (target.startsWith("characters")) return "characters";
+  if (target.startsWith("suggestedTone")) return "styleGuide";
+  if (target.startsWith("locations")) return "locations";
   return "styleGuide";
 }
 

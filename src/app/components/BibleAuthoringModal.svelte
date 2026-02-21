@@ -19,15 +19,15 @@ import {
   TagInput,
   TextArea,
 } from "../primitives/index.js";
-import type { ApiActions } from "../store/api-actions.js";
+import type { Commands } from "../store/commands.js";
 import type { ProjectStore } from "../store/project.svelte.js";
 
 let {
   store,
-  actions,
+  commands,
 }: {
   store: ProjectStore;
-  actions?: ApiActions;
+  commands: Commands;
 } = $props();
 
 // ─── Tab state ──────────────────────────────────
@@ -57,8 +57,8 @@ const stepDefs = [
 let currentStep = $state("foundations");
 let completedSteps = $state<string[]>([]);
 
-// The working Bible — start from store or empty
-let bible = $state<Bible>(store.bible ? $state.snapshot(store.bible) : createEmptyBible(store.project?.id ?? ""));
+// The working Bible — initialized in $effect when modal opens
+let bible = $state<Bible>(createEmptyBible(""));
 
 // Re-init when modal opens with existing Bible
 $effect(() => {
@@ -123,11 +123,7 @@ async function handleBootstrap() {
 
     const result = bootstrapToBible(parsed, store.project?.id ?? `proj-${Date.now()}`);
     bsStatus = "Done!";
-    if (actions) {
-      await actions.saveBible(result);
-    } else {
-      store.setBible(result);
-    }
+    await commands.saveBible(result);
 
     setTimeout(() => {
       handleClose();
@@ -171,11 +167,7 @@ function prevStep() {
 }
 
 async function saveBible() {
-  if (actions) {
-    await actions.saveBible(bible);
-  } else {
-    store.setBible(bible);
-  }
+  await commands.saveBible(bible);
   handleClose();
 }
 
@@ -397,19 +389,19 @@ function removeVocabPref(index: number) {
               <CollapsibleSection summary="Behavior">
                 <div class="char-section">
                   <FormField label="Stress Response">
-                    <TextArea value={char.behavior?.stressResponse ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { stressResponse: (e.target as HTMLTextAreaElement).value || null, socialPosture: char.behavior?.socialPosture ?? null, noticesFirst: char.behavior?.noticesFirst ?? null, lyingStyle: char.behavior?.lyingStyle ?? null, emotionPhysicality: char.behavior?.emotionPhysicality ?? null } })} />
+                    <TextArea value={char.behavior?.stressResponse ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...char.behavior, stressResponse: (e.target as HTMLTextAreaElement).value || null } })} />
                   </FormField>
                   <FormField label="Social Posture">
-                    <TextArea value={char.behavior?.socialPosture ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { stressResponse: char.behavior?.stressResponse ?? null, socialPosture: (e.target as HTMLTextAreaElement).value || null, noticesFirst: char.behavior?.noticesFirst ?? null, lyingStyle: char.behavior?.lyingStyle ?? null, emotionPhysicality: char.behavior?.emotionPhysicality ?? null } })} />
+                    <TextArea value={char.behavior?.socialPosture ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...char.behavior, socialPosture: (e.target as HTMLTextAreaElement).value || null } })} />
                   </FormField>
                   <FormField label="Notices First">
-                    <TextArea value={char.behavior?.noticesFirst ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { stressResponse: char.behavior?.stressResponse ?? null, socialPosture: char.behavior?.socialPosture ?? null, noticesFirst: (e.target as HTMLTextAreaElement).value || null, lyingStyle: char.behavior?.lyingStyle ?? null, emotionPhysicality: char.behavior?.emotionPhysicality ?? null } })} />
+                    <TextArea value={char.behavior?.noticesFirst ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...char.behavior, noticesFirst: (e.target as HTMLTextAreaElement).value || null } })} />
                   </FormField>
                   <FormField label="Lying Style">
-                    <TextArea value={char.behavior?.lyingStyle ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { stressResponse: char.behavior?.stressResponse ?? null, socialPosture: char.behavior?.socialPosture ?? null, noticesFirst: char.behavior?.noticesFirst ?? null, lyingStyle: (e.target as HTMLTextAreaElement).value || null, emotionPhysicality: char.behavior?.emotionPhysicality ?? null } })} />
+                    <TextArea value={char.behavior?.lyingStyle ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...char.behavior, lyingStyle: (e.target as HTMLTextAreaElement).value || null } })} />
                   </FormField>
                   <FormField label="Emotion Physicality">
-                    <TextArea value={char.behavior?.emotionPhysicality ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { stressResponse: char.behavior?.stressResponse ?? null, socialPosture: char.behavior?.socialPosture ?? null, noticesFirst: char.behavior?.noticesFirst ?? null, lyingStyle: char.behavior?.lyingStyle ?? null, emotionPhysicality: (e.target as HTMLTextAreaElement).value || null } })} />
+                    <TextArea value={char.behavior?.emotionPhysicality ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...char.behavior, emotionPhysicality: (e.target as HTMLTextAreaElement).value || null } })} />
                   </FormField>
                 </div>
               </CollapsibleSection>

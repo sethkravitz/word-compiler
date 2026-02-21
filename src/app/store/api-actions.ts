@@ -2,141 +2,98 @@ import * as api from "../../api/client.js";
 import type { AuditFlag, Bible, ChapterArc, Chunk, CompilationLog, NarrativeIR, ScenePlan } from "../../types/index.js";
 import type { ProjectStore } from "./project.svelte.js";
 
+/**
+ * Low-level API + store mutation pairs. Errors propagate to the caller
+ * (the command layer) which is responsible for user-facing error reporting
+ * via `store.setError()` and returning `CommandResult`.
+ */
 export function createApiActions(store: ProjectStore) {
-  function handleError(err: unknown) {
-    store.setError(err instanceof Error ? err.message : String(err));
-  }
-
   async function saveBible(bible: Bible): Promise<void> {
-    try {
-      const saved = await api.apiSaveBible(bible);
-      store.setBible(saved);
-    } catch (err) {
-      handleError(err);
-    }
+    const saved = await api.apiSaveBible(bible);
+    store.setBible(saved);
   }
 
   async function saveScenePlan(plan: ScenePlan, sceneOrder: number): Promise<void> {
-    try {
-      const saved = await api.apiSaveScenePlan(plan, sceneOrder);
-      store.addScenePlan(saved);
-    } catch (err) {
-      handleError(err);
-    }
+    const saved = await api.apiSaveScenePlan(plan, sceneOrder);
+    store.addScenePlan(saved);
+  }
+
+  async function updateScenePlan(plan: ScenePlan): Promise<void> {
+    const saved = await api.apiUpdateScenePlan(plan);
+    store.addScenePlan(saved); // addScenePlan replaces by id if it already exists
   }
 
   async function saveMultipleScenePlans(plans: ScenePlan[]): Promise<void> {
-    try {
-      const saved = await Promise.all(plans.map((plan, i) => api.apiSaveScenePlan(plan, store.scenes.length + i)));
-      store.addMultipleScenePlans(saved);
-    } catch (err) {
-      handleError(err);
-    }
+    const saved = await Promise.all(plans.map((plan, i) => api.apiSaveScenePlan(plan, store.scenes.length + i)));
+    store.addMultipleScenePlans(saved);
   }
 
   async function saveChapterArc(arc: ChapterArc): Promise<void> {
-    try {
-      const saved = await api.apiSaveChapterArc(arc);
-      store.setChapterArc(saved);
-    } catch (err) {
-      handleError(err);
-    }
+    const saved = await api.apiSaveChapterArc(arc);
+    store.setChapterArc(saved);
   }
 
   async function updateChapterArc(arc: ChapterArc): Promise<void> {
-    try {
-      const saved = await api.apiUpdateChapterArc(arc);
-      store.setChapterArc(saved);
-    } catch (err) {
-      handleError(err);
-    }
+    const saved = await api.apiUpdateChapterArc(arc);
+    store.setChapterArc(saved);
   }
 
   async function saveChunk(chunk: Chunk): Promise<void> {
-    try {
-      await api.apiSaveChunk(chunk);
-    } catch (err) {
-      handleError(err);
-    }
+    await api.apiSaveChunk(chunk);
   }
 
   async function updateChunk(chunk: Chunk): Promise<void> {
-    try {
-      await api.apiUpdateChunk(chunk);
-    } catch (err) {
-      handleError(err);
-    }
+    await api.apiUpdateChunk(chunk);
+  }
+
+  async function deleteChunk(id: string): Promise<void> {
+    await api.apiDeleteChunk(id);
   }
 
   async function completeScene(sceneId: string): Promise<void> {
-    try {
-      await api.apiUpdateSceneStatus(sceneId, "complete");
-      store.completeScene(sceneId);
-    } catch (err) {
-      handleError(err);
-    }
+    await api.apiUpdateSceneStatus(sceneId, "complete");
+    store.completeScene(sceneId);
   }
 
   async function saveSceneIR(sceneId: string, ir: NarrativeIR): Promise<void> {
-    try {
-      const saved = await api.apiCreateSceneIR(sceneId, ir);
-      store.setSceneIR(sceneId, saved);
-    } catch (err) {
-      handleError(err);
-    }
+    // apiCreateSceneIR uses ON CONFLICT(scene_id) DO UPDATE — safe for re-extraction
+    const saved = await api.apiCreateSceneIR(sceneId, ir);
+    store.setSceneIR(sceneId, saved);
   }
 
   async function verifySceneIR(sceneId: string): Promise<void> {
-    try {
-      await api.apiVerifySceneIR(sceneId);
-      store.verifySceneIR(sceneId);
-    } catch (err) {
-      handleError(err);
-    }
+    await api.apiVerifySceneIR(sceneId);
+    store.verifySceneIR(sceneId);
   }
 
   async function saveAuditFlags(flags: AuditFlag[]): Promise<void> {
-    try {
-      await api.apiSaveAuditFlags(flags);
-    } catch (err) {
-      handleError(err);
-    }
+    await api.apiSaveAuditFlags(flags);
   }
 
   async function resolveAuditFlag(flagId: string, action: string, wasActionable: boolean): Promise<void> {
-    try {
-      await api.apiResolveAuditFlag(flagId, action, wasActionable);
-      store.resolveAuditFlag(flagId, action, wasActionable);
-    } catch (err) {
-      handleError(err);
-    }
+    await api.apiResolveAuditFlag(flagId, action, wasActionable);
+    store.resolveAuditFlag(flagId, action, wasActionable);
   }
 
   async function dismissAuditFlag(flagId: string): Promise<void> {
-    try {
-      await api.apiResolveAuditFlag(flagId, "", false);
-      store.dismissAuditFlag(flagId);
-    } catch (err) {
-      handleError(err);
-    }
+    await api.apiResolveAuditFlag(flagId, "", false);
+    store.dismissAuditFlag(flagId);
   }
 
   async function saveCompilationLog(log: CompilationLog): Promise<void> {
-    try {
-      await api.apiSaveCompilationLog(log);
-    } catch (err) {
-      handleError(err);
-    }
+    await api.apiSaveCompilationLog(log);
   }
 
   return {
     saveBible,
     saveScenePlan,
+    updateScenePlan,
     saveMultipleScenePlans,
     saveChapterArc,
     updateChapterArc,
     saveChunk,
     updateChunk,
+    deleteChunk,
     completeScene,
     saveSceneIR,
     verifySceneIR,

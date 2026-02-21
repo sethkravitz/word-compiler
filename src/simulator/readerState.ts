@@ -141,11 +141,12 @@ export function accumulateReaderState(scenes: SceneInput[]): SceneReaderState[] 
 export function detectEpistemicIssues(scenes: SceneInput[], readerStates: SceneReaderState[]): EpistemicWarning[] {
   const warnings: EpistemicWarning[] = [];
   const allSetups = new Set<string>();
+  const stateByScene = new Map(readerStates.map((rs) => [rs.sceneId, rs]));
+  const sorted = [...scenes].sort((a, b) => a.sceneOrder - b.sceneOrder);
 
-  for (let i = 0; i < scenes.length; i++) {
-    const scene = scenes[i]!;
+  for (const scene of sorted) {
     const ir = scene.ir;
-    const readerState = readerStates[i];
+    const readerState = stateByScene.get(scene.plan.id);
     if (!ir || !ir.verified || !readerState) continue;
 
     // Check: character acts on knowledge reader doesn't have
