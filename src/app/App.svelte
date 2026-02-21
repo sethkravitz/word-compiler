@@ -1,10 +1,12 @@
 <script lang="ts">
+import { onMount } from "svelte";
+import { apiCreateProject } from "../api/client.js";
 import { checkChunkReviewGate, checkCompileGate, checkScenePlanGate } from "../gates/index.js";
 import { computeStyleDriftFromProse } from "../metrics/styleDrift.js";
 import { measureVoiceSeparability } from "../metrics/voiceSeparability.js";
 import { countTokens } from "../tokens/index.js";
 import type { Chunk, StyleDriftReport, VoiceSeparabilityReport } from "../types/index.js";
-import { getCanonicalText } from "../types/index.js";
+import { generateId, getCanonicalText } from "../types/index.js";
 import BibleAuthoringModal from "./components/BibleAuthoringModal.svelte";
 import BiblePane from "./components/BiblePane.svelte";
 import BootstrapModal from "./components/BootstrapModal.svelte";
@@ -15,28 +17,70 @@ import ForwardSimulator from "./components/ForwardSimulator.svelte";
 import IRInspector from "./components/IRInspector.svelte";
 import SceneAuthoringModal from "./components/SceneAuthoringModal.svelte";
 import SceneSequencer from "./components/SceneSequencer.svelte";
+import SetupPayoffPanel from "./components/SetupPayoffPanel.svelte";
 import StyleDriftPanel from "./components/StyleDriftPanel.svelte";
 import VoiceSeparabilityView from "./components/VoiceSeparabilityView.svelte";
 import { Button, ErrorBanner, Select, Tabs } from "./primitives/index.js";
-import { createGenerationActions, setupCompilerEffect, store } from "./store/index.svelte.js";
+import {
+  createApiActions,
+  createCommands,
+  createGenerationActions,
+  initializeApp,
+  setupCompilerEffect,
+  store,
+} from "./store/index.svelte.js";
 import { theme } from "./store/theme.svelte.js";
 
 // Set up compiler auto-recompile effect
 setupCompilerEffect(store);
 
+// Create persisted action handlers
+const actions = createApiActions(store);
+const commands = createCommands(store, actions);
+
 // Create generation action handlers
-const { generateChunk, runAuditManual, extractSceneIR } = createGenerationActions(store);
+const { generateChunk, runAuditManual, runDeepAudit, extractSceneIR, runAutopilot } = createGenerationActions(
+  store,
+  commands,
+);
+
+// ─── Startup ────────────────────────────────────
+let appReady = $state(false);
+let startupStatus = $state<string>("loading");
+
+onMount(async () => {
+  const result = await initializeApp(store);
+  startupStatus = result;
+  appReady = result === "loaded";
+});
+
+async function createFirstProject() {
+  try {
+    const project = await apiCreateProject({
+      id: generateId(),
+      title: "Untitled Novel",
+      status: "bootstrap",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    store.setProject(project);
+    appReady = true;
+  } catch (err) {
+    store.setError(err instanceof Error ? err.message : "Failed to create project");
+  }
+}
 
 // ─── Local UI state ─────────────────────────────
 let showArcEditor = $state(false);
-let activeTab = $state<"compiler" | "ir" | "simulator" | "drift" | "voice">("compiler");
+let activeTab = $state<"compiler" | "ir" | "simulator" | "drift" | "voice" | "setups">("compiler");
 
 const tabItems = [
-  { id: "compiler", label: "Compiler" },
-  { id: "ir", label: "IR Inspector" },
-  { id: "simulator", label: "Forward Sim" },
-  { id: "drift", label: "Style Drift" },
-  { id: "voice", label: "Voice Sep" },
+  { id: "compiler", label: "Draft Engine" },
+  { id: "ir", label: "Scene Blueprint" },
+  { id: "simulator", label: "Reader Journey" },
+  { id: "drift", label: "Voice Consistency" },
+  { id: "voice", label: "Character Voices" },
+  { id: "setups", label: "Setups" },
 ];
 
 // ─── Derived values ─────────────────────────────
@@ -113,38 +157,64 @@ let voiceReport = $derived.by((): VoiceSeparabilityReport | null => {
 });
 
 // ─── Handlers ──────────────────────────────────
+let editDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
 function handleUpdateChunk(index: number, changes: Partial<Chunk>) {
-  store.updateChunk(index, changes);
+  const sceneId = store.activeScenePlan?.id;
+  if (!sceneId) return;
+
+  // Immediate store mutation for UI responsiveness
+  store.updateChunkForScene(sceneId, index, changes);
+
+  // Debounce API persistence for text edits, keyed per scene
+  if (changes.editedText !== undefined || changes.humanNotes !== undefined) {
+    const key = `${sceneId}:${index}`;
+    const existing = editDebounceTimers.get(key);
+    if (existing) clearTimeout(existing);
+    editDebounceTimers.set(
+      key,
+      setTimeout(() => {
+        commands.persistChunk(sceneId, index);
+        editDebounceTimers.delete(key);
+      }, 500),
+    );
+  } else {
+    // Non-text changes persist immediately
+    commands.persistChunk(sceneId, index);
+  }
 }
 
 function handleRemoveChunk(index: number) {
-  store.removeChunk(index);
+  const sceneId = store.activeScenePlan?.id;
+  if (!sceneId) return;
+  commands.removeChunk(sceneId, index);
 }
 
-function handleCompleteScene() {
-  if (store.activeScenePlan) {
-    store.completeScene(store.activeScenePlan.id);
+async function handleCompleteScene() {
+  const sceneId = store.activeScenePlan?.id;
+  if (!sceneId) return;
+  const result = await commands.completeScene(sceneId);
+  if (result.ok) {
+    extractSceneIR(sceneId);
   }
 }
 
-function handleResolveFlag(flagId: string, action: string) {
-  store.resolveAuditFlag(flagId, action, true);
+async function handleResolveFlag(flagId: string, action: string) {
+  await commands.resolveAuditFlag(flagId, action, true);
 }
 
-function handleDismissFlag(flagId: string) {
-  store.dismissAuditFlag(flagId);
+async function handleDismissFlag(flagId: string) {
+  await commands.dismissAuditFlag(flagId);
 }
 
-function handleVerifyIR() {
-  if (store.activeScenePlan) {
-    store.verifySceneIR(store.activeScenePlan.id);
-  }
+async function handleVerifyIR() {
+  const sceneId = store.activeScenePlan?.id;
+  if (sceneId) await commands.verifySceneIR(sceneId);
 }
 
-function handleUpdateIR(ir: import("../types/index.js").NarrativeIR) {
-  if (store.activeScenePlan) {
-    store.setSceneIR(store.activeScenePlan.id, ir);
-  }
+async function handleUpdateIR(ir: import("../types/index.js").NarrativeIR) {
+  const sceneId = store.activeScenePlan?.id;
+  if (sceneId) await commands.saveSceneIR(sceneId, ir);
 }
 
 // ─── Prose Export ────────────────────────────────
@@ -302,6 +372,21 @@ function exportState() {
 }
 </script>
 
+{#if !appReady}
+  <div class="app loading-screen">
+    <span class="app-title">Word Compiler</span>
+    {#if startupStatus === "loading"}
+      <p>Loading project...</p>
+    {:else if startupStatus === "no-projects"}
+      <p>Welcome to Word Compiler. Create your first project to get started.</p>
+      <Button onclick={createFirstProject}>Create Project</Button>
+    {:else if startupStatus === "error"}
+      <ErrorBanner message={store.error ?? "Failed to load"} onDismiss={() => store.setError(null)} />
+    {:else if startupStatus === "multiple-projects"}
+      <p>Multiple projects found. Project list coming in Phase 3.</p>
+    {/if}
+  </div>
+{:else}
 <div class="app">
   <div class="app-header">
     <span class="app-title">Word Compiler</span>
@@ -356,12 +441,13 @@ function exportState() {
   <Tabs items={tabItems} active={activeTab} onSelect={(id) => { activeTab = id as typeof activeTab; }} />
 
   <div class="cockpit">
-    <BiblePane {store} onBootstrap={() => store.setBootstrapOpen(true)} onAuthor={() => store.setBibleAuthoringOpen(true)} />
+    <BiblePane {store} {commands} onBootstrap={() => store.setBootstrapOpen(true)} onAuthor={() => store.setBibleAuthoringOpen(true)} />
     <DraftingDesk
       chunks={store.activeSceneChunks}
       scenePlan={store.activeScenePlan}
       sceneStatus={store.activeScene?.status ?? null}
       isGenerating={store.isGenerating}
+      isAutopilot={store.isAutopilot}
       {canGenerate}
       {gateMessages}
       auditFlags={store.auditFlags}
@@ -371,7 +457,10 @@ function exportState() {
       onUpdateChunk={handleUpdateChunk}
       onRemoveChunk={handleRemoveChunk}
       onRunAudit={runAuditManual}
+      onRunDeepAudit={runDeepAudit}
       onCompleteScene={handleCompleteScene}
+      onAutopilot={() => runAutopilot()}
+      onCancelAutopilot={() => store.cancelAutopilot()}
       onOpenIRInspector={() => { activeTab = 'ir'; }}
       onExtractIR={extractSceneIR}
     />
@@ -408,17 +497,20 @@ function exportState() {
       <StyleDriftPanel reports={styleDriftReports} {baselineSceneTitle} {sceneTitles} />
     {:else if activeTab === "voice"}
       <VoiceSeparabilityView report={voiceReport} />
+    {:else if activeTab === "setups"}
+      <SetupPayoffPanel sceneIRs={store.sceneIRs} {sceneTitles} sceneOrders={Object.fromEntries(store.scenes.map((s) => [s.plan.id, s.sceneOrder]))} />
     {/if}
   </div>
 
-  <BootstrapModal {store} />
-  <BibleAuthoringModal {store} />
-  <SceneAuthoringModal {store} />
+  <BootstrapModal {store} {commands} />
+  <BibleAuthoringModal {store} {commands} />
+  <SceneAuthoringModal {store} {commands} />
 
   {#if showArcEditor && store.chapterArc}
-    <ChapterArcEditor arc={store.chapterArc} {store} onClose={() => { showArcEditor = false; }} />
+    <ChapterArcEditor arc={store.chapterArc} {store} {commands} onClose={() => { showArcEditor = false; }} />
   {/if}
 </div>
+{/if}
 
 <style>
   .header-right { display: flex; align-items: center; gap: 12px; }
@@ -426,4 +518,5 @@ function exportState() {
     display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary);
   }
   .error-margin { margin: 0 8px; }
+  .loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 200px; }
 </style>

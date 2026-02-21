@@ -4,41 +4,57 @@ import { oneDark } from "@codemirror/theme-one-dark";
 import CodeMirror from "svelte-codemirror-editor";
 import type { Bible, ChapterArc, ScenePlan } from "../../types/index.js";
 import { Button, Pane } from "../primitives/index.js";
+import type { Commands } from "../store/commands.js";
 import type { ProjectStore } from "../store/project.svelte.js";
 
 let {
   store,
+  commands,
   onBootstrap,
   onAuthor,
 }: {
   store: ProjectStore;
+  commands: Commands;
   onBootstrap: () => void;
   onAuthor?: () => void;
 } = $props();
 
 let bibleJson = $derived(store.bible ? JSON.stringify(store.bible, null, 2) : "");
 let planJson = $derived(store.activeScenePlan ? JSON.stringify(store.activeScenePlan, null, 2) : "");
+let arcJson = $derived(store.chapterArc ? JSON.stringify(store.chapterArc, null, 2) : "");
 
 const extensions = [json(), oneDark];
+
+// Debounce timers for JSON editor saves
+let bibleDebounce: ReturnType<typeof setTimeout> | undefined;
+let arcDebounce: ReturnType<typeof setTimeout> | undefined;
+let planDebounce: ReturnType<typeof setTimeout> | undefined;
 
 function handleBibleChange(text: string) {
   try {
     const parsed = JSON.parse(text) as Bible;
-    store.setBible(parsed);
+    clearTimeout(bibleDebounce);
+    bibleDebounce = setTimeout(() => commands.saveBible(parsed), 500);
   } catch {
     // Invalid JSON — don't update state until valid
+  }
+}
+
+function handleArcChange(text: string) {
+  try {
+    const parsed = JSON.parse(text) as ChapterArc;
+    clearTimeout(arcDebounce);
+    arcDebounce = setTimeout(() => commands.updateChapterArc(parsed), 500);
+  } catch {
+    // Invalid JSON
   }
 }
 
 function handlePlanChange(text: string) {
   try {
     const parsed = JSON.parse(text) as ScenePlan;
-    if (store.activeScenePlan) {
-      // Update the active scene plan in place
-      store.addScenePlan(parsed);
-    } else {
-      store.setScenePlan(parsed);
-    }
+    clearTimeout(planDebounce);
+    planDebounce = setTimeout(() => commands.updateScenePlan(parsed), 500);
   } catch {
     // Invalid JSON
   }
@@ -49,7 +65,7 @@ async function handleLoadBible() {
   if (text) {
     try {
       const parsed = JSON.parse(text) as Bible;
-      store.setBible(parsed);
+      await commands.saveBible(parsed);
     } catch {
       store.setError("Invalid Bible JSON");
     }
@@ -61,11 +77,7 @@ async function handleLoadPlan() {
   if (text) {
     try {
       const parsed = JSON.parse(text) as ScenePlan;
-      if (store.scenes.length > 0) {
-        store.addScenePlan(parsed);
-      } else {
-        store.setScenePlan(parsed);
-      }
+      await commands.saveScenePlan(parsed, store.scenes.length);
     } catch {
       store.setError("Invalid Scene Plan JSON");
     }
@@ -77,7 +89,7 @@ async function handleLoadArc() {
   if (text) {
     try {
       const parsed = JSON.parse(text) as ChapterArc;
-      store.setChapterArc(parsed);
+      await commands.saveChapterArc(parsed);
     } catch {
       store.setError("Invalid Chapter Arc JSON");
     }
@@ -101,6 +113,7 @@ async function handleLoadArc() {
       <Button onclick={handleLoadPlan}>Load Plan</Button>
       <Button onclick={() => store.activeScenePlan && store.saveFile(store.activeScenePlan, "scene-plan.json")} disabled={!store.activeScenePlan}>Save Plan</Button>
       <Button onclick={handleLoadArc}>Load Arc</Button>
+      <Button onclick={() => store.chapterArc && store.saveFile(store.chapterArc, "chapter-arc.json")} disabled={!store.chapterArc}>Save Arc</Button>
       {#if store.bible}
         <span class="bible-version">v{store.bible.version}</span>
       {/if}
@@ -117,6 +130,14 @@ async function handleLoadArc() {
         <CodeMirror value={planJson} on:change={(e) => handlePlanChange(e.detail)} {extensions} />
       </div>
     </div>
+    {#if arcJson}
+      <div class="editor-section">
+        <div class="editor-label">Chapter Arc JSON</div>
+        <div class="editor-wrapper">
+          <CodeMirror value={arcJson} on:change={(e) => handleArcChange(e.detail)} {extensions} />
+        </div>
+      </div>
+    {/if}
 </Pane>
 
 <style>

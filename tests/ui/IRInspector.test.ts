@@ -24,9 +24,9 @@ describe("IRInspector", () => {
     expect(screen.getByText(/The Confrontation/)).toBeInTheDocument();
   });
 
-  it("shows 'Extract IR' button when no IR and canExtract", () => {
+  it("shows 'Extract Blueprint' button when no IR and canExtract", () => {
     render(IRInspector, defaultProps);
-    expect(screen.getByText("Extract IR")).toBeInTheDocument();
+    expect(screen.getByText("Extract Blueprint")).toBeInTheDocument();
   });
 
   it("shows 'Re-extract' when IR already exists", () => {
@@ -41,14 +41,14 @@ describe("IRInspector", () => {
 
   it("disables extract button when canExtract is false", () => {
     render(IRInspector, { ...defaultProps, canExtract: false });
-    const btn = screen.getByText("Extract IR");
+    const btn = screen.getByText("Extract Blueprint");
     expect(btn).toBeDisabled();
   });
 
-  it("calls onExtract when Extract IR clicked", async () => {
+  it("calls onExtract when Extract Blueprint clicked", async () => {
     const onExtract = vi.fn();
     render(IRInspector, { ...defaultProps, onExtract });
-    await fireEvent.click(screen.getByText("Extract IR"));
+    await fireEvent.click(screen.getByText("Extract Blueprint"));
     expect(onExtract).toHaveBeenCalledOnce();
   });
 

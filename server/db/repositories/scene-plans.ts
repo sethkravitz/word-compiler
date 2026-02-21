@@ -7,7 +7,13 @@ export function createScenePlan(db: Database.Database, plan: ScenePlan, sceneOrd
   const now = new Date().toISOString();
   db.prepare(
     `INSERT INTO scene_plans (id, project_id, chapter_id, scene_order, status, data, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET
+       project_id = excluded.project_id,
+       chapter_id = excluded.chapter_id,
+       scene_order = excluded.scene_order,
+       data = excluded.data,
+       updated_at = excluded.updated_at`,
   ).run(plan.id, plan.projectId, plan.chapterId, sceneOrder, "planned", JSON.stringify(plan), now, now);
   return plan;
 }

@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { mockStartup } from "./helpers.js";
 
 test.describe("Word Compiler App", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockStartup(page);
+  });
+
   test("loads and renders the header", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("text=Word Compiler").first()).toBeVisible();
@@ -11,33 +16,33 @@ test.describe("Word Compiler App", () => {
     await expect(page.locator("text=Bible + Plan")).toBeVisible();
   });
 
-  test("shows Compiler tab active by default", async ({ page }) => {
+  test("shows Draft Engine tab active by default", async ({ page }) => {
     await page.goto("/");
-    const compilerBtn = page.locator("button", { hasText: "Compiler" }).first();
+    const compilerBtn = page.locator("button", { hasText: "Draft Engine" }).first();
     await expect(compilerBtn).toBeVisible();
   });
 
-  test("can switch to IR Inspector tab", async ({ page }) => {
+  test("can switch to Scene Blueprint tab", async ({ page }) => {
     await page.goto("/");
-    await page.locator("button", { hasText: "IR Inspector" }).click();
-    await expect(page.locator("text=IR Inspector — No scene")).toBeVisible();
+    await page.locator("button", { hasText: "Scene Blueprint" }).click();
+    await expect(page.locator("text=Scene Blueprint — No scene")).toBeVisible();
   });
 
-  test("can switch to Forward Sim tab", async ({ page }) => {
+  test("can switch to Reader Journey tab", async ({ page }) => {
     await page.goto("/");
-    await page.locator("button", { hasText: "Forward Sim" }).click();
+    await page.locator("button", { hasText: "Reader Journey" }).click();
     await expect(page.locator("text=No scenes")).toBeVisible();
   });
 
-  test("can switch to Style Drift tab", async ({ page }) => {
+  test("can switch to Voice Consistency tab", async ({ page }) => {
     await page.goto("/");
-    await page.locator("button", { hasText: "Style Drift" }).click();
+    await page.locator("button", { hasText: "Voice Consistency" }).click();
     await expect(page.locator("text=Complete at least 2 scenes")).toBeVisible();
   });
 
-  test("can switch to Voice Sep tab", async ({ page }) => {
+  test("can switch to Character Voices tab", async ({ page }) => {
     await page.goto("/");
-    await page.locator("button", { hasText: "Voice Sep" }).click();
+    await page.locator("button", { hasText: "Character Voices" }).click();
     await expect(page.locator("text=No voice separability data")).toBeVisible();
   });
 

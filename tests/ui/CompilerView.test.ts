@@ -41,9 +41,9 @@ describe("CompilerView", () => {
     expect(screen.getByText("Load a Bible and Scene Plan to see the compiled payload.")).toBeInTheDocument();
   });
 
-  it("shows 'Compiler View' title always", () => {
+  it("shows 'Draft Engine' title always", () => {
     render(CompilerView, defaultProps());
-    expect(screen.getByText("Compiler View")).toBeInTheDocument();
+    expect(screen.getByText("Draft Engine")).toBeInTheDocument();
   });
 
   it("shows system message section when payload and log present", () => {

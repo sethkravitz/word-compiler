@@ -19,12 +19,15 @@ import {
   TagInput,
   TextArea,
 } from "../primitives/index.js";
+import type { Commands } from "../store/commands.js";
 import type { ProjectStore } from "../store/project.svelte.js";
 
 let {
   store,
+  commands,
 }: {
   store: ProjectStore;
+  commands: Commands;
 } = $props();
 
 // ─── Tab state ──────────────────────────────────
@@ -54,8 +57,8 @@ const stepDefs = [
 let currentStep = $state("foundations");
 let completedSteps = $state<string[]>([]);
 
-// The working Bible — start from store or empty
-let bible = $state<Bible>(store.bible ? $state.snapshot(store.bible) : createEmptyBible(store.project?.id ?? ""));
+// The working Bible — initialized in $effect when modal opens
+let bible = $state<Bible>(createEmptyBible(""));
 
 // Re-init when modal opens with existing Bible
 $effect(() => {
@@ -120,7 +123,7 @@ async function handleBootstrap() {
 
     const result = bootstrapToBible(parsed, store.project?.id ?? `proj-${Date.now()}`);
     bsStatus = "Done!";
-    store.setBible(result);
+    await commands.saveBible(result);
 
     setTimeout(() => {
       handleClose();
@@ -163,8 +166,8 @@ function prevStep() {
   }
 }
 
-function saveBible() {
-  store.setBible(bible);
+async function saveBible() {
+  await commands.saveBible(bible);
   handleClose();
 }
 
@@ -266,7 +269,7 @@ function removeVocabPref(index: number) {
   {#if activeTab === "bootstrap"}
     <!-- ─── AI Bootstrap Tab (migrated from BootstrapModal) ─── -->
     <p class="modal-instructions">
-      Paste your story synopsis. The system will extract characters, locations, tone, and a suggested kill list.
+      Paste your story synopsis. The system will extract characters, locations, tone, and a suggested avoid list.
     </p>
 
     {#if !bsLoading}
@@ -386,19 +389,19 @@ function removeVocabPref(index: number) {
               <CollapsibleSection summary="Behavior">
                 <div class="char-section">
                   <FormField label="Stress Response">
-                    <TextArea value={char.behavior?.stressResponse ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { stressResponse: (e.target as HTMLTextAreaElement).value || null, socialPosture: char.behavior?.socialPosture ?? null, noticesFirst: char.behavior?.noticesFirst ?? null, lyingStyle: char.behavior?.lyingStyle ?? null, emotionPhysicality: char.behavior?.emotionPhysicality ?? null } })} />
+                    <TextArea value={char.behavior?.stressResponse ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...char.behavior, stressResponse: (e.target as HTMLTextAreaElement).value || null } })} />
                   </FormField>
                   <FormField label="Social Posture">
-                    <TextArea value={char.behavior?.socialPosture ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { stressResponse: char.behavior?.stressResponse ?? null, socialPosture: (e.target as HTMLTextAreaElement).value || null, noticesFirst: char.behavior?.noticesFirst ?? null, lyingStyle: char.behavior?.lyingStyle ?? null, emotionPhysicality: char.behavior?.emotionPhysicality ?? null } })} />
+                    <TextArea value={char.behavior?.socialPosture ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...char.behavior, socialPosture: (e.target as HTMLTextAreaElement).value || null } })} />
                   </FormField>
                   <FormField label="Notices First">
-                    <TextArea value={char.behavior?.noticesFirst ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { stressResponse: char.behavior?.stressResponse ?? null, socialPosture: char.behavior?.socialPosture ?? null, noticesFirst: (e.target as HTMLTextAreaElement).value || null, lyingStyle: char.behavior?.lyingStyle ?? null, emotionPhysicality: char.behavior?.emotionPhysicality ?? null } })} />
+                    <TextArea value={char.behavior?.noticesFirst ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...char.behavior, noticesFirst: (e.target as HTMLTextAreaElement).value || null } })} />
                   </FormField>
                   <FormField label="Lying Style">
-                    <TextArea value={char.behavior?.lyingStyle ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { stressResponse: char.behavior?.stressResponse ?? null, socialPosture: char.behavior?.socialPosture ?? null, noticesFirst: char.behavior?.noticesFirst ?? null, lyingStyle: (e.target as HTMLTextAreaElement).value || null, emotionPhysicality: char.behavior?.emotionPhysicality ?? null } })} />
+                    <TextArea value={char.behavior?.lyingStyle ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...char.behavior, lyingStyle: (e.target as HTMLTextAreaElement).value || null } })} />
                   </FormField>
                   <FormField label="Emotion Physicality">
-                    <TextArea value={char.behavior?.emotionPhysicality ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { stressResponse: char.behavior?.stressResponse ?? null, socialPosture: char.behavior?.socialPosture ?? null, noticesFirst: char.behavior?.noticesFirst ?? null, lyingStyle: char.behavior?.lyingStyle ?? null, emotionPhysicality: (e.target as HTMLTextAreaElement).value || null } })} />
+                    <TextArea value={char.behavior?.emotionPhysicality ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...char.behavior, emotionPhysicality: (e.target as HTMLTextAreaElement).value || null } })} />
                   </FormField>
                 </div>
               </CollapsibleSection>
@@ -466,11 +469,11 @@ function removeVocabPref(index: number) {
             />
           </FormField>
 
-          <CollapsibleSection summary="Kill List">
+          <CollapsibleSection summary="Avoid List">
             <CardList
               items={bible.styleGuide.killList}
-              addLabel="Add Kill Entry"
-              emptyMessage="No kill list entries."
+              addLabel="Add Entry"
+              emptyMessage="No avoid list entries."
               onAdd={addKillEntry}
               onRemove={removeKillEntry}
             >
@@ -534,7 +537,7 @@ function removeVocabPref(index: number) {
           <div class="review-summary">
             <div class="review-stat">Characters: {bible.characters.length}</div>
             <div class="review-stat">Locations: {bible.locations.length}</div>
-            <div class="review-stat">Kill List: {bible.styleGuide.killList.length} entries</div>
+            <div class="review-stat">Avoid List: {bible.styleGuide.killList.length} entries</div>
             <div class="review-stat">POV: {bible.narrativeRules.pov.default} / {bible.narrativeRules.pov.distance}</div>
           </div>
           <pre class="json-preview">{JSON.stringify(bible, null, 2)}</pre>

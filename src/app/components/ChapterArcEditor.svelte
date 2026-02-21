@@ -1,20 +1,27 @@
 <script lang="ts">
 import type { ChapterArc, ReaderState } from "../../types/index.js";
 import { Button, Input, Modal, TextArea } from "../primitives/index.js";
+import type { Commands } from "../store/commands.js";
 import type { ProjectStore } from "../store/project.svelte.js";
 
 let {
   arc,
   store,
+  commands,
   onClose,
 }: {
   arc: ChapterArc;
   store: ProjectStore;
+  commands: Commands;
   onClose: () => void;
 } = $props();
 
+let arcDebounce: ReturnType<typeof setTimeout> | undefined;
+
 function update(changes: Partial<ChapterArc>) {
-  store.setChapterArc({ ...arc, ...changes });
+  const updated = { ...arc, ...changes };
+  clearTimeout(arcDebounce);
+  arcDebounce = setTimeout(() => commands.updateChapterArc(updated), 500);
 }
 
 function updateReaderState(field: "readerStateEntering" | "readerStateExiting", rs: ReaderState) {

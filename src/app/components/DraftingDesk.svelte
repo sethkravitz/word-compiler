@@ -18,14 +18,19 @@ let {
   onUpdateChunk,
   onRemoveChunk,
   onRunAudit,
+  onRunDeepAudit,
   onCompleteScene,
+  onAutopilot,
+  onCancelAutopilot,
   onOpenIRInspector,
   onExtractIR,
+  isAutopilot = false,
 }: {
   chunks: Chunk[];
   scenePlan: ScenePlan | null;
   sceneStatus: SceneStatus | null;
   isGenerating: boolean;
+  isAutopilot: boolean;
   canGenerate: boolean;
   gateMessages: string[];
   auditFlags: AuditFlag[];
@@ -35,7 +40,10 @@ let {
   onUpdateChunk: (index: number, changes: Partial<Chunk>) => void;
   onRemoveChunk: (index: number) => void;
   onRunAudit: () => void;
+  onRunDeepAudit?: () => void;
   onCompleteScene: () => void;
+  onAutopilot: () => void;
+  onCancelAutopilot: () => void;
   onOpenIRInspector: () => void;
   onExtractIR: () => void;
 } = $props();
@@ -69,23 +77,37 @@ $effect(() => {
         {#if sceneIR}
           <Button onclick={onOpenIRInspector} title="View/edit IR">IR {sceneIR.verified ? "✓" : "?"}</Button>
         {:else}
-          <Button onclick={onExtractIR} disabled={isExtractingIR} title="Extract Narrative IR">
-            {#if isExtractingIR}<Spinner size="sm" /> Extracting IR...{:else}Extract IR{/if}
+          <Button onclick={onExtractIR} disabled={isExtractingIR} title="Extract scene blueprint">
+            {#if isExtractingIR}<Spinner size="sm" /> Extracting...{:else}Extract Blueprint{/if}
           </Button>
         {/if}
       {/if}
       <Button onclick={onRunAudit} disabled={chunks.length === 0}>Run Audit</Button>
-      {#if sceneStatus !== "complete"}
-        <Button
-          variant="primary"
-          onclick={onGenerate}
-          disabled={!canGenerateNext}
-          title={gateMessages.length > 0 ? gateMessages.join("\n") : undefined}
-        >
-          {#if isGenerating}Generating...{:else if atChunkLimit}All chunks generated{:else}Generate Chunk {chunks.length + 1}{/if}
-        </Button>
+      {#if onRunDeepAudit}
+        <Button onclick={onRunDeepAudit} disabled={chunks.length === 0} title="LLM-assisted subtext compliance check">Deep Audit</Button>
       {/if}
-      {#if atChunkLimit && sceneStatus !== "complete"}
+      {#if sceneStatus !== "complete"}
+        {#if isAutopilot}
+          <Button variant="danger" onclick={onCancelAutopilot}>
+            Cancel Autopilot ({chunks.length}/{maxChunks})
+          </Button>
+        {:else}
+          <Button
+            variant="primary"
+            onclick={onGenerate}
+            disabled={!canGenerateNext}
+            title={gateMessages.length > 0 ? gateMessages.join("\n") : undefined}
+          >
+            {#if isGenerating}Generating...{:else if atChunkLimit}All chunks generated{:else}Generate Chunk {chunks.length + 1}{/if}
+          </Button>
+          {#if canGenerateNext && chunks.length === 0}
+            <Button onclick={onAutopilot} title="Generate all chunks, auto-accept, and complete scene">
+              Autopilot
+            </Button>
+          {/if}
+        {/if}
+      {/if}
+      {#if atChunkLimit && sceneStatus !== "complete" && !isAutopilot}
         <Button
           variant="primary"
           onclick={onCompleteScene}

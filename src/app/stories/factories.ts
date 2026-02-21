@@ -112,7 +112,7 @@ export function makeAuditFlag(overrides: Partial<AuditFlag> = {}): AuditFlag {
     sceneId: "scene-1",
     severity: "warning",
     category: "kill-list",
-    message: 'Kill list violation: "suddenly" in paragraph 3',
+    message: 'Avoid list violation: "suddenly" in paragraph 3',
     lineReference: "P3",
     resolved: false,
     resolvedAction: null,

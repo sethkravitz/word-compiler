@@ -22,12 +22,15 @@ import {
   TagInput,
   TextArea,
 } from "../primitives/index.js";
+import type { Commands } from "../store/commands.js";
 import type { ProjectStore } from "../store/project.svelte.js";
 
 let {
   store,
+  commands,
 }: {
   store: ProjectStore;
+  commands: Commands;
 } = $props();
 
 // ─── Tab state ──────────────────────────────────
@@ -220,13 +223,13 @@ function acceptAll() {
   acceptedIndices = new Set(generatedPlans.map((_, i) => i));
 }
 
-function commitAccepted() {
+async function commitAccepted() {
   const plans = generatedPlans.filter((_, i) => acceptedIndices.has(i));
   if (plans.length > 0) {
-    store.addMultipleScenePlans(plans);
+    await commands.saveMultipleScenePlans(plans);
   }
   if (generatedArc) {
-    store.setChapterArc(generatedArc);
+    await commands.saveChapterArc(generatedArc);
   }
   handleClose();
 }
@@ -250,8 +253,8 @@ function prevFormStep() {
   }
 }
 
-function saveFormPlan() {
-  store.addScenePlan(formPlan);
+async function saveFormPlan() {
+  await commands.saveScenePlan(formPlan, store.scenes.length);
   formPlan = createEmptyScenePlan(store.project?.id ?? "");
   formStep = "core";
   handleClose();

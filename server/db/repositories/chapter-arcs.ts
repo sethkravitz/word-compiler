@@ -5,7 +5,10 @@ export function createChapterArc(db: Database.Database, arc: ChapterArc): Chapte
   const now = new Date().toISOString();
   db.prepare(
     `INSERT INTO chapter_arcs (id, project_id, chapter_number, data, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(project_id, chapter_number) DO UPDATE SET
+       data = excluded.data,
+       updated_at = excluded.updated_at`,
   ).run(arc.id, arc.projectId, arc.chapterNumber, JSON.stringify(arc), now, now);
   return arc;
 }

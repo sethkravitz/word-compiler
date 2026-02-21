@@ -23,15 +23,37 @@ function createMockStore() {
   };
 }
 
+function createMockCommands() {
+  return {
+    saveBible: vi.fn().mockResolvedValue({ ok: true }),
+    saveScenePlan: vi.fn().mockResolvedValue({ ok: true }),
+    updateScenePlan: vi.fn().mockResolvedValue({ ok: true }),
+    saveMultipleScenePlans: vi.fn().mockResolvedValue({ ok: true }),
+    saveChapterArc: vi.fn().mockResolvedValue({ ok: true }),
+    updateChapterArc: vi.fn().mockResolvedValue({ ok: true }),
+    saveChunk: vi.fn().mockResolvedValue({ ok: true }),
+    updateChunk: vi.fn().mockResolvedValue({ ok: true }),
+    persistChunk: vi.fn().mockResolvedValue({ ok: true }),
+    removeChunk: vi.fn().mockResolvedValue({ ok: true }),
+    completeScene: vi.fn().mockResolvedValue({ ok: true }),
+    saveAuditFlags: vi.fn().mockResolvedValue({ ok: true }),
+    resolveAuditFlag: vi.fn().mockResolvedValue({ ok: true }),
+    dismissAuditFlag: vi.fn().mockResolvedValue({ ok: true }),
+    saveSceneIR: vi.fn().mockResolvedValue({ ok: true }),
+    verifySceneIR: vi.fn().mockResolvedValue({ ok: true }),
+    saveCompilationLog: vi.fn().mockResolvedValue({ ok: true }),
+  };
+}
+
 describe("BibleAuthoringModal", () => {
   it('renders "AI Bootstrap" and "Guided Form" tabs', () => {
-    render(BibleAuthoringModal, { store: createMockStore() });
+    render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
     expect(screen.getByText("AI Bootstrap")).toBeInTheDocument();
     expect(screen.getByText("Guided Form")).toBeInTheDocument();
   });
 
   it("Guided Form tab shows stepper with 5 steps", async () => {
-    render(BibleAuthoringModal, { store: createMockStore() });
+    render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
     await fireEvent.click(screen.getByText("Guided Form"));
     expect(screen.getByText("Foundations")).toBeInTheDocument();
     expect(screen.getByText("Characters")).toBeInTheDocument();
@@ -41,7 +63,7 @@ describe("BibleAuthoringModal", () => {
   });
 
   it('Characters step shows "Add Character" button and empty message', async () => {
-    render(BibleAuthoringModal, { store: createMockStore() });
+    render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
     await fireEvent.click(screen.getByText("Guided Form"));
     await fireEvent.click(screen.getByText("Characters"));
     expect(screen.getByText("Add Character")).toBeInTheDocument();
@@ -49,16 +71,16 @@ describe("BibleAuthoringModal", () => {
   });
 
   it("Review step shows summary counts", async () => {
-    render(BibleAuthoringModal, { store: createMockStore() });
+    render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
     await fireEvent.click(screen.getByText("Guided Form"));
     await fireEvent.click(screen.getByText("Review"));
     expect(screen.getByText("Characters: 0")).toBeInTheDocument();
     expect(screen.getByText("Locations: 0")).toBeInTheDocument();
-    expect(screen.getByText("Kill List: 0 entries")).toBeInTheDocument();
+    expect(screen.getByText("Avoid List: 0 entries")).toBeInTheDocument();
   });
 
   it("Footer shows Cancel and Next buttons on first step", async () => {
-    render(BibleAuthoringModal, { store: createMockStore() });
+    render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
     await fireEvent.click(screen.getByText("Guided Form"));
     expect(screen.getByText("Cancel")).toBeInTheDocument();
     expect(screen.getByText("Next")).toBeInTheDocument();
@@ -66,7 +88,7 @@ describe("BibleAuthoringModal", () => {
   });
 
   it("Footer shows Back button on non-first steps", async () => {
-    render(BibleAuthoringModal, { store: createMockStore() });
+    render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
     await fireEvent.click(screen.getByText("Guided Form"));
     await fireEvent.click(screen.getByText("Next"));
     expect(screen.getByText("Back")).toBeInTheDocument();

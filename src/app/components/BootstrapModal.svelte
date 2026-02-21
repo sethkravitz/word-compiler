@@ -1,13 +1,17 @@
 <script lang="ts">
 import { bootstrapToBible, buildBootstrapPrompt, parseBootstrapResponse } from "../../bootstrap/index.js";
 import { generateStream } from "../../llm/client.js";
+import { generateId } from "../../types/index.js";
 import { Button, ErrorBanner, Modal, Spinner, TextArea } from "../primitives/index.js";
+import type { Commands } from "../store/commands.js";
 import type { ProjectStore } from "../store/project.svelte.js";
 
 let {
   store,
+  commands,
 }: {
   store: ProjectStore;
+  commands: Commands;
 } = $props();
 
 let synopsis = $state("");
@@ -68,9 +72,9 @@ async function handleBootstrap() {
       return;
     }
 
-    const bible = bootstrapToBible(parsed, `proj-${Date.now()}`);
+    const bible = bootstrapToBible(parsed, store.project?.id ?? generateId());
     status = "Done!";
-    store.setBible(bible);
+    await commands.saveBible(bible);
 
     setTimeout(() => {
       store.setBootstrapOpen(false);
@@ -93,7 +97,7 @@ async function handleBootstrap() {
   {#snippet header()}Bootstrap Bible from Synopsis{/snippet}
 
   <p class="modal-instructions">
-    Paste your story synopsis. The system will extract characters, locations, tone, and a suggested kill list.
+    Paste your story synopsis. The system will extract characters, locations, tone, and a suggested avoid list.
     You'll need to add dialogue samples manually.
   </p>
 

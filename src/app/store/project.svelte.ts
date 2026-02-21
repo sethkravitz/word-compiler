@@ -47,7 +47,9 @@ export class ProjectStore {
 
   // ─── UI state ──────────────────────────────────
   isGenerating = $state(false);
-  isExtractingIR = $state(false);
+  isAutopilot = $state(false);
+  autopilotCancelled = $state(false);
+  extractingIRSceneId = $state<string | null>(null);
   selectedChunkIndex = $state<number | null>(null);
   bootstrapModalOpen = $state(false);
   bibleAuthoringOpen = $state(false);
@@ -80,6 +82,10 @@ export class ProjectStore {
   get activeSceneIR(): NarrativeIR | null {
     const id = this.activeScenePlan?.id;
     return id ? (this.sceneIRs[id] ?? null) : null;
+  }
+
+  get isExtractingIR(): boolean {
+    return this.extractingIRSceneId !== null && this.extractingIRSceneId === this.activeScenePlan?.id;
   }
 
   // ─── Initialization ───────────────────────────
@@ -150,7 +156,10 @@ export class ProjectStore {
   updateChunk(index: number, changes: Partial<Chunk>) {
     const scene = this.activeScene;
     if (!scene) return;
-    const sceneId = scene.plan.id;
+    this.updateChunkForScene(scene.plan.id, index, changes);
+  }
+
+  updateChunkForScene(sceneId: string, index: number, changes: Partial<Chunk>) {
     const chunks = [...(this.sceneChunks[sceneId] ?? [])];
     const existing = chunks[index];
     if (existing) {
@@ -163,7 +172,9 @@ export class ProjectStore {
     const scene = this.activeScene;
     if (!scene) return;
     const sceneId = scene.plan.id;
-    const chunks = (this.sceneChunks[sceneId] ?? []).filter((_, i) => i !== index);
+    const chunks = (this.sceneChunks[sceneId] ?? [])
+      .filter((_, i) => i !== index)
+      .map((c, i) => ({ ...c, sequenceNumber: i }));
     this.sceneChunks = { ...this.sceneChunks, [sceneId]: chunks };
   }
 
@@ -194,8 +205,18 @@ export class ProjectStore {
     this.isGenerating = value;
   }
 
-  setExtractingIR(value: boolean) {
-    this.isExtractingIR = value;
+  setAutopilot(value: boolean) {
+    this.isAutopilot = value;
+    if (value) this.autopilotCancelled = false;
+  }
+
+  cancelAutopilot() {
+    this.autopilotCancelled = true;
+    this.isAutopilot = false;
+  }
+
+  setExtractingIR(sceneId: string | null) {
+    this.extractingIRSceneId = sceneId;
   }
 
   setBootstrapOpen(value: boolean) {

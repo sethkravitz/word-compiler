@@ -26,7 +26,10 @@ export function createNarrativeIR(db: Database.Database, ir: NarrativeIR): Narra
   const { sceneId, verified, ...rest } = ir;
   db.prepare(
     `INSERT INTO narrative_irs (id, scene_id, verified, data, created_at)
-     VALUES (?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT(scene_id) DO UPDATE SET
+       verified = excluded.verified,
+       data = excluded.data`,
   ).run(id, sceneId, verified ? 1 : 0, JSON.stringify(rest), now);
   return ir;
 }

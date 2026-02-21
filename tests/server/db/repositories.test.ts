@@ -187,6 +187,47 @@ describe("bibles repository", () => {
   it("returns null for nonexistent project", () => {
     expect(bibles.getLatestBible(db, "nope")).toBeNull();
   });
+
+  it("upserts when same (projectId, version) is inserted twice", () => {
+    const bible1 = { ...createEmptyBible(projectId), version: 1 };
+    bibles.createBible(db, bible1);
+
+    // Insert again with same projectId + version but different data
+    const bible2 = {
+      ...createEmptyBible(projectId),
+      version: 1,
+      characters: [
+        {
+          id: "c1",
+          name: "Alice",
+          role: "protagonist" as const,
+          physicalDescription: null,
+          backstory: null,
+          selfNarrative: null,
+          contradictions: null,
+          voice: {
+            sentenceLengthRange: null,
+            vocabularyNotes: null,
+            verbalTics: [],
+            metaphoricRegister: null,
+            prohibitedLanguage: [],
+            dialogueSamples: [],
+          },
+          behavior: null,
+        },
+      ],
+    };
+    // Should NOT throw
+    expect(() => bibles.createBible(db, bible2)).not.toThrow();
+
+    // Should have updated the existing row, not created a duplicate
+    const versions = bibles.listBibleVersions(db, projectId);
+    expect(versions).toHaveLength(1);
+
+    const latest = bibles.getLatestBible(db, projectId);
+    expect(latest!.characters).toHaveLength(1);
+    expect(latest!.characters[0]!.name).toBe("Alice");
+  });
 });
 
 // ─── Chapter Arcs ────────────────────────────────────
@@ -230,6 +271,20 @@ describe("chapter arcs repository", () => {
     const list = chapterArcs.listChapterArcs(db, projectId);
     expect(list).toHaveLength(2);
     expect(list[0]!.chapterNumber).toBe(1);
+  });
+
+  it("upserts when same (projectId, chapterNumber) is inserted twice", () => {
+    const arc1 = makeChapterArc(projectId, { chapterNumber: 1, workingTitle: "Original" });
+    chapterArcs.createChapterArc(db, arc1);
+
+    const arc2 = makeChapterArc(projectId, { chapterNumber: 1, workingTitle: "Updated Title" });
+    expect(() => chapterArcs.createChapterArc(db, arc2)).not.toThrow();
+
+    const list = chapterArcs.listChapterArcs(db, projectId);
+    expect(list).toHaveLength(1);
+
+    const found = chapterArcs.getChapterArcByProject(db, projectId, 1);
+    expect(found!.workingTitle).toBe("Updated Title");
   });
 });
 
@@ -285,6 +340,21 @@ describe("scene plans repository", () => {
 
   it("returns false when updating nonexistent scene status", () => {
     expect(scenePlans.updateSceneStatus(db, "nope", "drafting")).toBe(false);
+  });
+
+  it("upserts when same scene plan id is inserted twice", () => {
+    const plan = { ...createEmptyScenePlan(projectId), chapterId, title: "Original" };
+    scenePlans.createScenePlan(db, plan, 0);
+
+    // Insert same plan again with updated data
+    const updated = { ...plan, title: "Reloaded" };
+    expect(() => scenePlans.createScenePlan(db, updated, 0)).not.toThrow();
+
+    const list = scenePlans.listScenePlans(db, chapterId);
+    expect(list).toHaveLength(1);
+
+    const found = scenePlans.getScenePlan(db, plan.id);
+    expect(found!.plan.title).toBe("Reloaded");
   });
 });
 

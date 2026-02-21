@@ -47,10 +47,32 @@ function createMockStore() {
   };
 }
 
+function createMockCommands() {
+  return {
+    saveBible: vi.fn().mockResolvedValue({ ok: true }),
+    saveScenePlan: vi.fn().mockResolvedValue({ ok: true }),
+    updateScenePlan: vi.fn().mockResolvedValue({ ok: true }),
+    saveMultipleScenePlans: vi.fn().mockResolvedValue({ ok: true }),
+    saveChapterArc: vi.fn().mockResolvedValue({ ok: true }),
+    updateChapterArc: vi.fn().mockResolvedValue({ ok: true }),
+    saveChunk: vi.fn().mockResolvedValue({ ok: true }),
+    updateChunk: vi.fn().mockResolvedValue({ ok: true }),
+    persistChunk: vi.fn().mockResolvedValue({ ok: true }),
+    removeChunk: vi.fn().mockResolvedValue({ ok: true }),
+    completeScene: vi.fn().mockResolvedValue({ ok: true }),
+    saveAuditFlags: vi.fn().mockResolvedValue({ ok: true }),
+    resolveAuditFlag: vi.fn().mockResolvedValue({ ok: true }),
+    dismissAuditFlag: vi.fn().mockResolvedValue({ ok: true }),
+    saveSceneIR: vi.fn().mockResolvedValue({ ok: true }),
+    verifySceneIR: vi.fn().mockResolvedValue({ ok: true }),
+    saveCompilationLog: vi.fn().mockResolvedValue({ ok: true }),
+  };
+}
+
 describe("BootstrapModal", () => {
   it("renders synopsis textarea when not loading", () => {
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     const textarea = screen.getByPlaceholderText(/Example synopsis/);
     expect(textarea).toBeInTheDocument();
@@ -59,21 +81,21 @@ describe("BootstrapModal", () => {
 
   it("renders modal header text", () => {
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     expect(screen.getByText("Bootstrap Bible from Synopsis")).toBeInTheDocument();
   });
 
   it("renders instruction text", () => {
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     expect(screen.getByText(/Paste your story synopsis/)).toBeInTheDocument();
   });
 
   it("Bootstrap Bible button is disabled when synopsis is empty", () => {
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     const btn = screen.getByText("Bootstrap Bible");
     expect(btn).toBeDisabled();
@@ -81,7 +103,7 @@ describe("BootstrapModal", () => {
 
   it("Bootstrap Bible button is enabled when synopsis has text", async () => {
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     const textarea = screen.getByPlaceholderText(/Example synopsis/);
     await fireEvent.input(textarea, { target: { value: "A noir detective story." } });
@@ -95,7 +117,7 @@ describe("BootstrapModal", () => {
     vi.mocked(generateStream).mockImplementation(() => new Promise(() => {}));
 
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     // Type synopsis and click bootstrap
     const textarea = screen.getByPlaceholderText(/Example synopsis/);
@@ -113,7 +135,7 @@ describe("BootstrapModal", () => {
     vi.mocked(generateStream).mockImplementation(() => new Promise(() => {}));
 
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     const textarea = screen.getByPlaceholderText(/Example synopsis/);
     await fireEvent.input(textarea, { target: { value: "A noir detective story." } });
@@ -129,7 +151,7 @@ describe("BootstrapModal", () => {
     vi.mocked(generateStream).mockImplementation(() => new Promise(() => {}));
 
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     const textarea = screen.getByPlaceholderText(/Example synopsis/);
     await fireEvent.input(textarea, {
@@ -154,7 +176,7 @@ describe("BootstrapModal", () => {
     });
 
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     const textarea = screen.getByPlaceholderText(/Example synopsis/);
     await fireEvent.input(textarea, { target: { value: "Some story." } });
@@ -167,7 +189,7 @@ describe("BootstrapModal", () => {
     });
   });
 
-  it("does not call setBible when parse fails", async () => {
+  it("does not call commands.saveBible when parse fails", async () => {
     vi.mocked(generateStream).mockImplementation(async (_payload, callbacks) => {
       callbacks.onToken("broken");
       callbacks.onDone({ input_tokens: 5, output_tokens: 5 }, "end_turn");
@@ -179,7 +201,8 @@ describe("BootstrapModal", () => {
     });
 
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    const commands = createMockCommands();
+    render(BootstrapModal, { store, commands });
 
     const textarea = screen.getByPlaceholderText(/Example synopsis/);
     await fireEvent.input(textarea, { target: { value: "Some story." } });
@@ -189,10 +212,10 @@ describe("BootstrapModal", () => {
       expect(screen.getByRole("alert")).toBeInTheDocument();
     });
 
-    expect(store.setBible).not.toHaveBeenCalled();
+    expect(commands.saveBible).not.toHaveBeenCalled();
   });
 
-  it("calls store.setBible on successful bootstrap", async () => {
+  it("calls commands.saveBible on successful bootstrap", async () => {
     const fakeBible = {
       projectId: "test-proj",
       version: 1,
@@ -216,28 +239,29 @@ describe("BootstrapModal", () => {
     vi.mocked(bootstrapToBible).mockReturnValue(fakeBible as any);
 
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    const commands = createMockCommands();
+    render(BootstrapModal, { store, commands });
 
     const textarea = screen.getByPlaceholderText(/Example synopsis/);
     await fireEvent.input(textarea, { target: { value: "A great story." } });
     await fireEvent.click(screen.getByText("Bootstrap Bible"));
 
     await waitFor(() => {
-      expect(store.setBible).toHaveBeenCalledWith(fakeBible);
+      expect(commands.saveBible).toHaveBeenCalledWith(fakeBible);
     });
   });
 
   it("does not render modal contents when bootstrapModalOpen is false", () => {
     const store = createMockStore();
     store.bootstrapModalOpen = false;
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     expect(screen.queryByText("Bootstrap Bible from Synopsis")).toBeNull();
   });
 
   it("shows Cancel button that calls handleClose", async () => {
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     const cancelBtn = screen.getByText("Cancel");
     expect(cancelBtn).toBeInTheDocument();
@@ -255,7 +279,7 @@ describe("BootstrapModal", () => {
     });
 
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     const textarea = screen.getByPlaceholderText(/Example synopsis/);
     await fireEvent.input(textarea, { target: { value: "A story." } });
@@ -270,7 +294,7 @@ describe("BootstrapModal", () => {
     vi.mocked(generateStream).mockRejectedValue(new Error("Network failure"));
 
     const store = createMockStore();
-    render(BootstrapModal, { store });
+    render(BootstrapModal, { store, commands: createMockCommands() });
 
     const textarea = screen.getByPlaceholderText(/Example synopsis/);
     await fireEvent.input(textarea, { target: { value: "A story." } });

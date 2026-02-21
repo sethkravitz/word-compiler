@@ -71,12 +71,12 @@ export function diffBibles(older: Bible, newer: Bible): BibleDiff[] {
 
   for (const k of newer.styleGuide.killList) {
     if (!oldKillPatterns.has(`${k.type}:${k.pattern}`)) {
-      diffs.push({ type: "added", area: "kill_list", description: `Kill list entry "${k.pattern}" added` });
+      diffs.push({ type: "added", area: "kill_list", description: `Avoid list entry "${k.pattern}" added` });
     }
   }
   for (const k of older.styleGuide.killList) {
     if (!newKillPatterns.has(`${k.type}:${k.pattern}`)) {
-      diffs.push({ type: "removed", area: "kill_list", description: `Kill list entry "${k.pattern}" removed` });
+      diffs.push({ type: "removed", area: "kill_list", description: `Avoid list entry "${k.pattern}" removed` });
     }
   }
 

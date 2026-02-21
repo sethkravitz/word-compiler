@@ -39,7 +39,7 @@ export function checkKillList(prose: string, killList: KillListEntry[], sceneId:
         sceneId,
         severity: "critical",
         category: "kill_list",
-        message: `Kill list violation: "${entry.pattern}" found.`,
+        message: `Avoid list violation: "${entry.pattern}" found.`,
         lineReference: getLineReference(prose, match.index!),
         resolved: false,
         resolvedAction: null,
