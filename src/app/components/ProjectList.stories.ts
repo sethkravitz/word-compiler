@@ -1,19 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/svelte";
 import { fn } from "storybook/test";
-import type { Project } from "../../types/index.js";
-import { generateId } from "../../types/index.js";
+import { makeProject } from "../stories/factories.js";
 import ProjectList from "./ProjectList.svelte";
-
-function makeProject(overrides: Partial<Project> = {}): Project {
-  return {
-    id: generateId(),
-    title: "Untitled Project",
-    status: "bootstrap",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    ...overrides,
-  };
-}
 
 const meta: Meta<ProjectList> = {
   title: "Components/ProjectList",
