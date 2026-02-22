@@ -36,6 +36,6 @@ let {
   .segment-empty { background: var(--bg-secondary); color: var(--text-muted); border: 1px dashed var(--border); font-style: italic; }
   .segment-actionable { background: var(--success); }
   .segment-noise { background: var(--warning); }
-  .segment-flagged { background: repeating-linear-gradient(45deg, var(--error), var(--error) 3px, rgba(255,255,255,0.15) 3px, rgba(255,255,255,0.15) 6px); outline: 2px solid var(--error); outline-offset: -1px; }
-  .segment-starved { background: repeating-linear-gradient(45deg, var(--warning), var(--warning) 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 6px); outline: 2px solid var(--warning); outline-offset: -1px; }
+  .segment-flagged { background: repeating-linear-gradient(45deg, var(--error), var(--error) 3px, rgba(255,255,255,0.3) 3px, rgba(255,255,255,0.3) 6px); outline: 2px solid var(--error); outline-offset: -1px; color: var(--segment-flagged-text, white); font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+  .segment-starved { background: repeating-linear-gradient(45deg, var(--warning), var(--warning) 3px, rgba(0,0,0,0.25) 3px, rgba(0,0,0,0.25) 6px); outline: 2px solid var(--warning); outline-offset: -1px; color: var(--segment-starved-text, white); font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
 </style>
