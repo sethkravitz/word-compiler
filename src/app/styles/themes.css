@@ -54,6 +54,10 @@
   --severity-warning-bg: rgba(255, 165, 2, 0.1);
   --severity-info-bg: rgba(95, 158, 160, 0.1);
 
+  /* Segment bar backgrounds (white text safe) */
+  --segment-actionable-bg: #1faa5c;
+  --segment-noise-bg: #d48a00;
+
   /* Focus (active node) */
   --focus-color: #7070ff;
   --focus-bg: #2a2a4a;
@@ -122,6 +126,10 @@
   --severity-error-bg: rgba(214, 48, 49, 0.08);
   --severity-warning-bg: rgba(225, 112, 85, 0.1);
   --severity-info-bg: rgba(61, 125, 128, 0.1);
+
+  /* Segment bar backgrounds (white text safe — darkened for light mode) */
+  --segment-actionable-bg: #00875a;
+  --segment-noise-bg: #b85c30;
 
   /* Focus (active node) */
   --focus-color: #4040cc;
