@@ -64,3 +64,18 @@ export const WithDelete: Story = {
     ],
   },
 };
+
+export const ManyProjects: Story = {
+  args: {
+    projects: [
+      makeProject({ title: "The Letter", status: "drafting" }),
+      makeProject({ title: "Summer Noir", status: "planning" }),
+      makeProject({ title: "First Light", status: "revising" }),
+      makeProject({ title: "Untitled Sketch", status: "bootstrap" }),
+      makeProject({ title: "The Harbor", status: "bible" }),
+      makeProject({ title: "Red Lantern", status: "drafting" }),
+      makeProject({ title: "After the Storm", status: "revising" }),
+      makeProject({ title: "New Idea", status: "bootstrap" }),
+    ],
+  },
+};

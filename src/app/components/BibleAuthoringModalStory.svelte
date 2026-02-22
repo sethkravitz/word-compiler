@@ -1,4 +1,5 @@
 <script lang="ts">
+import { applyGenreTemplate, LITERARY_FICTION } from "../../bootstrap/genres.js";
 import type { Bible } from "../../types/index.js";
 import { createEmptyBible, createEmptyCharacterDossier, generateId } from "../../types/index.js";
 import { createCommands } from "../store/commands.js";
@@ -8,9 +9,11 @@ import BibleAuthoringModal from "./BibleAuthoringModal.svelte";
 let {
   mode = "bootstrap",
   prePopulated = false,
+  withGenre = false,
 }: {
   mode?: "bootstrap" | "form";
   prePopulated?: boolean;
+  withGenre?: boolean;
 } = $props();
 
 const store = new ProjectStore();
@@ -43,6 +46,9 @@ if (prePopulated) {
     },
   ];
   bible.styleGuide.killList = [{ pattern: "a wave of", type: "exact" }];
+  store.setBible(withGenre ? applyGenreTemplate(bible, LITERARY_FICTION) : bible);
+} else if (withGenre) {
+  const bible = applyGenreTemplate(createEmptyBible("story-proj"), LITERARY_FICTION);
   store.setBible(bible);
 }
 </script>

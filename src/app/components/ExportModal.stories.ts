@@ -14,6 +14,16 @@ const meta: Meta<ExportModalStory> = {
       },
     },
   },
+  argTypes: {
+    withProse: {
+      control: "boolean",
+      description: "Whether to populate the project with sample prose.",
+    },
+    multiScene: {
+      control: "boolean",
+      description: "Whether to add a second scene for multi-scene export.",
+    },
+  },
 };
 
 export default meta;

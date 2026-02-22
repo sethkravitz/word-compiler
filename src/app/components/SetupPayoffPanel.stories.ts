@@ -88,3 +88,53 @@ export const Mixed: Story = {
     sceneOrders: { s1: 0, s2: 1, s3: 2 },
   },
 };
+
+export const FiveSceneEpic: Story = {
+  args: {
+    sceneIRs: {
+      s1: makeNarrativeIR({
+        sceneId: "s1",
+        verified: true,
+        setupsPlanted: [
+          "The locked drawer in Marcus's desk",
+          "Elena's missing photograph",
+          "The unsigned letter",
+          "Tomás's press badge",
+        ],
+        payoffsExecuted: [],
+      }),
+      s2: makeNarrativeIR({
+        sceneId: "s2",
+        verified: true,
+        setupsPlanted: ["Bob's alibi", "The second key"],
+        payoffsExecuted: ["The locked drawer in Marcus's desk"],
+      }),
+      s3: makeNarrativeIR({
+        sceneId: "s3",
+        verified: true,
+        setupsPlanted: ["The harbor meeting"],
+        payoffsExecuted: ["The unsigned letter", "Tomás's press badge"],
+      }),
+      s4: makeNarrativeIR({
+        sceneId: "s4",
+        verified: true,
+        setupsPlanted: [],
+        payoffsExecuted: ["Bob's alibi", "The second key"],
+      }),
+      s5: makeNarrativeIR({
+        sceneId: "s5",
+        verified: true,
+        setupsPlanted: [],
+        payoffsExecuted: ["The harbor meeting"],
+      }),
+    },
+    sceneTitles: {
+      s1: "The Discovery",
+      s2: "The Confrontation",
+      s3: "The Harbor",
+      s4: "The Reckoning",
+      s5: "The Aftermath",
+    },
+    sceneOrders: { s1: 0, s2: 1, s3: 2, s4: 3, s5: 4 },
+  },
+};

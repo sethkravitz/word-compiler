@@ -24,6 +24,10 @@ const meta: Meta<BibleAuthoringModalStory> = {
       control: "boolean",
       description: "Whether to pre-populate with sample Bible data.",
     },
+    withGenre: {
+      control: "boolean",
+      description: "Whether to apply Literary Fiction genre template defaults.",
+    },
   },
 };
 
@@ -40,4 +44,8 @@ export const EmptyForm: Story = {
 
 export const PrePopulatedForm: Story = {
   args: { mode: "form", prePopulated: true },
+};
+
+export const WithGenrePresets: Story = {
+  args: { mode: "form", prePopulated: true, withGenre: true },
 };

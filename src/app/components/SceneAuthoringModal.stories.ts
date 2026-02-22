@@ -19,6 +19,10 @@ const meta: Meta<SceneAuthoringModalStory> = {
       control: "boolean",
       description: "Whether to populate Bible data (characters + locations).",
     },
+    richData: {
+      control: "boolean",
+      description: "Whether to add extra characters/locations with filled voice and sensory data.",
+    },
   },
 };
 
@@ -31,4 +35,8 @@ export const Empty: Story = {
 
 export const WithBible: Story = {
   args: { withBible: true },
+};
+
+export const WithRichBible: Story = {
+  args: { withBible: true, richData: true },
 };
