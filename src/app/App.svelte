@@ -1,20 +1,26 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import { apiCreateProject } from "../api/client.js";
+import { apiCreateProject, apiListProjects } from "../api/client.js";
 import { checkChunkReviewGate, checkCompileGate, checkScenePlanGate } from "../gates/index.js";
+import { analyzeEdits } from "../learner/diff.js";
+import { applyProposal } from "../learner/proposals.js";
+import { generateTuningProposals } from "../learner/tuning.js";
 import { computeStyleDriftFromProse } from "../metrics/styleDrift.js";
 import { measureVoiceSeparability } from "../metrics/voiceSeparability.js";
 import { countTokens } from "../tokens/index.js";
 import type { Chunk, StyleDriftReport, VoiceSeparabilityReport } from "../types/index.js";
 import { generateId, getCanonicalText } from "../types/index.js";
 import BibleAuthoringModal from "./components/BibleAuthoringModal.svelte";
-import BiblePane from "./components/BiblePane.svelte";
+import AtlasPane from "./components/AtlasPane.svelte";
 import BootstrapModal from "./components/BootstrapModal.svelte";
 import ChapterArcEditor from "./components/ChapterArcEditor.svelte";
 import CompilerView from "./components/CompilerView.svelte";
 import DraftingDesk from "./components/DraftingDesk.svelte";
+import ExportModal from "./components/ExportModal.svelte";
 import ForwardSimulator from "./components/ForwardSimulator.svelte";
 import IRInspector from "./components/IRInspector.svelte";
+import LearnerPanel from "./components/LearnerPanel.svelte";
+import ProjectList from "./components/ProjectList.svelte";
 import SceneAuthoringModal from "./components/SceneAuthoringModal.svelte";
 import SceneSequencer from "./components/SceneSequencer.svelte";
 import SetupPayoffPanel from "./components/SetupPayoffPanel.svelte";
@@ -26,6 +32,7 @@ import {
   createCommands,
   createGenerationActions,
   initializeApp,
+  loadProject,
   setupCompilerEffect,
   store,
 } from "./store/index.svelte.js";
@@ -47,11 +54,23 @@ const { generateChunk, runAuditManual, runDeepAudit, extractSceneIR, runAutopilo
 // ─── Startup ────────────────────────────────────
 let appReady = $state(false);
 let startupStatus = $state<string>("loading");
+let currentView = $state<"project-list" | "project">("project");
+let projectList = $state<import("../types/index.js").Project[]>([]);
 
 onMount(async () => {
   const result = await initializeApp(store);
   startupStatus = result;
-  appReady = result === "loaded";
+  if (result === "loaded") {
+    appReady = true;
+    currentView = "project";
+  } else if (result === "multiple-projects") {
+    // Load the project list for selection
+    try {
+      projectList = await apiListProjects();
+    } catch {
+      // Fall through to show the placeholder
+    }
+  }
 });
 
 async function createFirstProject() {
@@ -65,14 +84,53 @@ async function createFirstProject() {
     });
     store.setProject(project);
     appReady = true;
+    currentView = "project";
   } catch (err) {
     store.setError(err instanceof Error ? err.message : "Failed to create project");
   }
 }
 
+async function handleSelectProject(projectId: string) {
+  store.resetForProjectSwitch();
+  const result = await loadProject(store, projectId);
+  if (result === "loaded") {
+    appReady = true;
+    currentView = "project";
+  }
+}
+
+async function handleCreateProjectFromList() {
+  try {
+    const project = await apiCreateProject({
+      id: generateId(),
+      title: "Untitled Novel",
+      status: "bootstrap",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    store.setProject(project);
+    appReady = true;
+    currentView = "project";
+  } catch (err) {
+    store.setError(err instanceof Error ? err.message : "Failed to create project");
+  }
+}
+
+function handleBackToProjects() {
+  store.resetForProjectSwitch();
+  appReady = false;
+  currentView = "project-list";
+  startupStatus = "multiple-projects";
+  // Refresh project list
+  apiListProjects()
+    .then((list) => { projectList = list; })
+    .catch(() => {});
+}
+
 // ─── Local UI state ─────────────────────────────
 let showArcEditor = $state(false);
-let activeTab = $state<"compiler" | "ir" | "simulator" | "drift" | "voice" | "setups">("compiler");
+let exportModalOpen = $state(false);
+let activeTab = $state<"compiler" | "ir" | "simulator" | "drift" | "voice" | "setups" | "learner">("compiler");
 
 const tabItems = [
   { id: "compiler", label: "Draft Engine" },
@@ -81,6 +139,7 @@ const tabItems = [
   { id: "drift", label: "Voice Consistency" },
   { id: "voice", label: "Character Voices" },
   { id: "setups", label: "Setups" },
+  { id: "learner", label: "Learner" },
 ];
 
 // ─── Derived values ─────────────────────────────
@@ -142,6 +201,29 @@ let baselineSceneTitle = $derived(store.scenes.find((s) => s.status === "complet
 
 // Scene title lookup for drift panel
 let sceneTitles = $derived(Object.fromEntries(store.scenes.map((s) => [s.plan.id, s.plan.title])));
+
+// Learner: extract edit patterns from all edited chunks
+let editPatterns = $derived.by(() => {
+  const projectId = store.project?.id ?? "";
+  const patterns = [];
+  for (const scene of store.scenes) {
+    const chunks = store.sceneChunks[scene.plan.id] ?? [];
+    for (const chunk of chunks) {
+      if (chunk.editedText !== null) {
+        patterns.push(...analyzeEdits(chunk.generatedText, chunk.editedText, chunk.id, scene.plan.id, projectId));
+      }
+    }
+  }
+  return patterns;
+});
+
+let sceneOrderMap = $derived(new Map(store.scenes.map((s) => [s.plan.id, s.sceneOrder])));
+
+// Tuning proposals from edit ratio analysis
+let tuningProposals = $derived.by(() => {
+  const allChunks = store.scenes.flatMap((s) => store.sceneChunks[s.plan.id] ?? []);
+  return generateTuningProposals(allChunks, store.compilationConfig, store.project?.id ?? "");
+});
 
 // Voice separability (computed across all scene prose)
 let voiceReport = $derived.by((): VoiceSeparabilityReport | null => {
@@ -217,6 +299,13 @@ async function handleUpdateIR(ir: import("../types/index.js").NarrativeIR) {
   if (sceneId) await commands.saveSceneIR(sceneId, ir);
 }
 
+// ─── Learner Handlers ────────────────────────────
+async function handleAcceptProposal(proposal: import("../learner/proposals.js").BibleProposal) {
+  if (!store.bible) return;
+  const updated = applyProposal(store.bible, proposal);
+  await commands.saveBible(updated);
+}
+
 // ─── Prose Export ────────────────────────────────
 let totalWordCount = $derived(
   store.scenes.reduce((sum, scene) => {
@@ -226,44 +315,6 @@ let totalWordCount = $derived(
 );
 
 let hasAnyProse = $derived(store.scenes.some((scene) => (store.sceneChunks[scene.plan.id] ?? []).length > 0));
-
-function exportProse() {
-  const sceneProse = store.scenes
-    .toSorted((a, b) => a.sceneOrder - b.sceneOrder)
-    .map((scene) => {
-      const chunks = store.sceneChunks[scene.plan.id] ?? [];
-      return chunks.map((c) => getCanonicalText(c)).join("\n\n");
-    })
-    .filter((text) => text.length > 0);
-
-  if (sceneProse.length === 0) {
-    store.setError("No prose to export — generate some chunks first.");
-    return;
-  }
-
-  const prose = sceneProse.join("\n\n* * *\n\n");
-
-  navigator.clipboard
-    .writeText(prose)
-    .then(() => {
-      store.setError(null);
-      const words = prose.split(/\s+/).filter(Boolean).length;
-      alert(
-        `${words.toLocaleString()} words copied to clipboard (${sceneProse.length} scene${sceneProse.length > 1 ? "s" : ""}).`,
-      );
-    })
-    .catch(() => {
-      const title = store.chapterArc?.workingTitle ?? "chapter";
-      const filename = `${title.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}.txt`;
-      const blob = new Blob([prose], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-}
 
 // ─── State Export ────────────────────────────────
 function truncate(text: string, maxLen: number): string {
@@ -383,7 +434,11 @@ function exportState() {
     {:else if startupStatus === "error"}
       <ErrorBanner message={store.error ?? "Failed to load"} onDismiss={() => store.setError(null)} />
     {:else if startupStatus === "multiple-projects"}
-      <p>Multiple projects found. Project list coming in Phase 3.</p>
+      <ProjectList
+        projects={projectList}
+        onSelectProject={handleSelectProject}
+        onCreateProject={handleCreateProjectFromList}
+      />
     {/if}
   </div>
 {:else}
@@ -391,6 +446,9 @@ function exportState() {
   <div class="app-header">
     <span class="app-title">Word Compiler</span>
     <div class="header-right">
+      {#if projectList.length > 1}
+        <Button size="sm" onclick={handleBackToProjects}>Projects</Button>
+      {/if}
       {#if store.chapterArc}
         <Button size="sm" onclick={() => { showArcEditor = true; }}>Chapter Arc</Button>
       {/if}
@@ -409,8 +467,8 @@ function exportState() {
           {/if}
         </Select>
       </label>
-      <Button size="sm" onclick={exportProse} disabled={!hasAnyProse} title="Copy all prose to clipboard">
-        Copy Prose{#if totalWordCount > 0} ({totalWordCount.toLocaleString()}w){/if}
+      <Button size="sm" onclick={() => { exportModalOpen = true; }} disabled={!hasAnyProse} title="Export prose">
+        Export Prose{#if totalWordCount > 0} ({totalWordCount.toLocaleString()}w){/if}
       </Button>
       <Button size="sm" onclick={exportState} title="Copy state snapshot to clipboard">Export</Button>
       <Button size="sm" onclick={() => theme.toggle()} title="Toggle dark/light theme">
@@ -441,7 +499,7 @@ function exportState() {
   <Tabs items={tabItems} active={activeTab} onSelect={(id) => { activeTab = id as typeof activeTab; }} />
 
   <div class="cockpit">
-    <BiblePane {store} {commands} onBootstrap={() => store.setBootstrapOpen(true)} onAuthor={() => store.setBibleAuthoringOpen(true)} />
+    <AtlasPane {store} {commands} onBootstrap={() => store.setBootstrapOpen(true)} onAuthor={() => store.setBibleAuthoringOpen(true)} />
     <DraftingDesk
       chunks={store.activeSceneChunks}
       scenePlan={store.activeScenePlan}
@@ -499,12 +557,24 @@ function exportState() {
       <VoiceSeparabilityView report={voiceReport} />
     {:else if activeTab === "setups"}
       <SetupPayoffPanel sceneIRs={store.sceneIRs} {sceneTitles} sceneOrders={Object.fromEntries(store.scenes.map((s) => [s.plan.id, s.sceneOrder]))} />
+    {:else if activeTab === "learner"}
+      <LearnerPanel
+        {editPatterns}
+        sceneOrder={sceneOrderMap}
+        projectId={store.project?.id ?? ""}
+        {tuningProposals}
+        onAcceptProposal={handleAcceptProposal}
+        onAcceptTuning={(tp) => {
+          store.setConfig({ ...store.compilationConfig, [tp.parameter]: tp.suggestedValue });
+        }}
+      />
     {/if}
   </div>
 
   <BootstrapModal {store} {commands} />
   <BibleAuthoringModal {store} {commands} />
   <SceneAuthoringModal {store} {commands} />
+  <ExportModal open={exportModalOpen} onClose={() => { exportModalOpen = false; }} {store} />
 
   {#if showArcEditor && store.chapterArc}
     <ChapterArcEditor arc={store.chapterArc} {store} {commands} onClose={() => { showArcEditor = false; }} />

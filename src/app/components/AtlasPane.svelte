@@ -97,7 +97,7 @@ async function handleLoadArc() {
 }
 </script>
 
-<Pane title="Bible + Plan" contentClass="bible-content">
+<Pane title="Project Atlas" contentClass="bible-content">
   {#snippet headerRight()}
     <div class="pane-actions">
       {#if onAuthor}

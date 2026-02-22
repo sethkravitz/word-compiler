@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { Bible, ScenePlan } from "../../types/index.js";
 import { createEmptyBible, createEmptyScenePlan } from "../../types/index.js";
-import BiblePane from "./BiblePane.svelte";
+import AtlasPane from "./AtlasPane.svelte";
 
 let {
   hasBible = false,
@@ -38,4 +38,4 @@ class MockStore {
 const store = new MockStore(hasBible, hasScenes);
 </script>
 
-<BiblePane {store} onBootstrap={() => {}} />
+<AtlasPane {store} onBootstrap={() => {}} />

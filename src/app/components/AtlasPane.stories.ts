@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/svelte";
-import BiblePaneStory from "./BiblePaneStory.svelte";
+import AtlasPaneStory from "./AtlasPaneStory.svelte";
 
-const meta: Meta<BiblePaneStory> = {
-  title: "Components/BiblePane",
-  component: BiblePaneStory,
+const meta: Meta<AtlasPaneStory> = {
+  title: "Components/AtlasPane",
+  component: AtlasPaneStory,
   parameters: {
     docs: {
       description: {
         component:
-          "Editor pane for Bible and Scene Plan JSON with CodeMirror integration, file load/save buttons, and bootstrap trigger. Requires a `ProjectStore` instance (mocked here via a wrapper).",
+          "Editor pane for Bible, Scene Plan, and Chapter Arc JSON with CodeMirror integration, file load/save buttons, and bootstrap trigger. Requires a `ProjectStore` instance (mocked here via a wrapper).",
       },
     },
   },
@@ -26,7 +26,7 @@ const meta: Meta<BiblePaneStory> = {
 };
 
 export default meta;
-type Story = StoryObj<BiblePaneStory>;
+type Story = StoryObj<AtlasPaneStory>;
 
 export const NoBible: Story = {
   args: { hasBible: false, hasScenes: false },

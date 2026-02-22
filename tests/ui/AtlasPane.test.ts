@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/svelte";
 import { describe, expect, it, vi } from "vitest";
-import BiblePane from "../../src/app/components/BiblePane.svelte";
+import AtlasPane from "../../src/app/components/AtlasPane.svelte";
 
 vi.mock("svelte-codemirror-editor", () => ({
   // Svelte 5 components are functions; provide a no-op component
@@ -48,14 +48,14 @@ function createMockCommands() {
   };
 }
 
-describe("BiblePane", () => {
-  it("renders 'Bible + Plan' title", () => {
-    render(BiblePane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
-    expect(screen.getByText("Bible + Plan")).toBeInTheDocument();
+describe("AtlasPane", () => {
+  it("renders 'Project Atlas' title", () => {
+    render(AtlasPane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
+    expect(screen.getByText("Project Atlas")).toBeInTheDocument();
   });
 
   it("shows 'New Bible' button when onAuthor is provided", () => {
-    render(BiblePane, {
+    render(AtlasPane, {
       store: createMockStore(),
       commands: createMockCommands(),
       onBootstrap: vi.fn(),
@@ -65,17 +65,17 @@ describe("BiblePane", () => {
   });
 
   it("shows 'Bootstrap' button when onAuthor is not provided", () => {
-    render(BiblePane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
+    render(AtlasPane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
     expect(screen.getByText("Bootstrap")).toBeInTheDocument();
   });
 
   it("shows 'Load Bible' button", () => {
-    render(BiblePane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
+    render(AtlasPane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
     expect(screen.getByText("Load Bible")).toBeInTheDocument();
   });
 
   it("Save Bible button is disabled when no bible", () => {
-    render(BiblePane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
+    render(AtlasPane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
     expect(screen.getByText("Save Bible")).toBeDisabled();
   });
 });

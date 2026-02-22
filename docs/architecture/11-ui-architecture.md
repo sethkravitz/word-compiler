@@ -81,7 +81,7 @@ Manages SSE streaming for chunk generation:
 | `CompilerView.svelte` | Ring inspector (compiled payload) |
 | `AuditPanel.svelte` | Audit flag list with resolution |
 | `IRInspector.svelte` | Narrative IR viewer |
-| `BiblePane.svelte` | Bible summary display |
+| `AtlasPane.svelte` | Project Atlas — Bible, Scene Plan, Chapter Arc editors |
 | `LearnerPanel.svelte` | Edit patterns + proposals + tuning |
 | `SetupPayoffPanel.svelte` | Cross-scene setup/payoff tracker |
 | `StyleDriftPanel.svelte` | Style drift metrics |
