@@ -287,6 +287,19 @@ describe("chapter arcs repository", () => {
     const found = chapterArcs.getChapterArcByProject(db, projectId, 1);
     expect(found!.workingTitle).toBe("Updated Title");
   });
+
+  it("upsert returns the persisted row id, not the input id", () => {
+    const arc1 = makeChapterArc(projectId, { chapterNumber: 1 });
+    const saved1 = chapterArcs.createChapterArc(db, arc1);
+    expect(saved1.id).toBe(arc1.id);
+
+    const arc2 = makeChapterArc(projectId, { chapterNumber: 1, workingTitle: "Re-bootstrap" });
+    expect(arc2.id).not.toBe(arc1.id); // different client-generated id
+    const saved2 = chapterArcs.createChapterArc(db, arc2);
+    // Must return the original persisted id so FK references remain valid
+    expect(saved2.id).toBe(arc1.id);
+    expect(saved2.workingTitle).toBe("Re-bootstrap");
+  });
 });
 
 // ─── Scene Plans ─────────────────────────────────────

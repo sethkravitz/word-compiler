@@ -45,7 +45,9 @@ function handleArcChange(text: string) {
   try {
     const parsed = JSON.parse(text) as ChapterArc;
     clearTimeout(arcDebounce);
-    arcDebounce = setTimeout(() => commands.updateChapterArc(parsed), 500);
+    // Use saveChapterArc (upsert) instead of updateChapterArc so edits
+    // persist even when no chapter arc row exists yet.
+    arcDebounce = setTimeout(() => commands.saveChapterArc(parsed), 500);
   } catch {
     // Invalid JSON
   }

@@ -11,9 +11,9 @@ test.describe("Word Compiler App", () => {
     await expect(page.locator("text=Word Compiler").first()).toBeVisible();
   });
 
-  test("shows Bible + Plan pane", async ({ page }) => {
+  test("shows Project Atlas pane", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("text=Bible + Plan")).toBeVisible();
+    await expect(page.locator("text=Project Atlas")).toBeVisible();
   });
 
   test("shows Draft Engine tab active by default", async ({ page }) => {

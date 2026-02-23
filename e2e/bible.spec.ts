@@ -11,7 +11,7 @@ test.describe("Bible workflow", () => {
 
   test("loads Bible from fixture JSON via file chooser", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("text=Bible + Plan")).toBeVisible();
+    await expect(page.locator("text=Project Atlas")).toBeVisible();
 
     // Trigger file chooser and load fixture
     const [fileChooser] = await Promise.all([
