@@ -2,7 +2,7 @@
 import { bootstrapToBible, buildBootstrapPrompt, parseBootstrapResponse } from "../../bootstrap/index.js";
 import { generateStream } from "../../llm/client.js";
 import type { Bible } from "../../types/index.js";
-import { Button, ErrorBanner, Spinner, TextArea } from "../primitives/index.js";
+import { ErrorBanner, Spinner, TextArea } from "../primitives/index.js";
 
 export type BootstrapFooterState = {
   loading: boolean;

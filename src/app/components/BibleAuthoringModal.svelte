@@ -32,10 +32,12 @@ let bootstrapFooter = $state<BootstrapFooterState>({ loading: false, canGenerate
 let formFooter = $state<FormFooterState>({ currentStep: "foundations", isFirstStep: true, isLastStep: false });
 
 let initialBible = $state<Bible>(createEmptyBible(""));
+let stableProjectId = $state("");
 
 $effect(() => {
   if (store.bibleAuthoringOpen) {
-    initialBible = store.bible ? $state.snapshot(store.bible) : createEmptyBible(store.project?.id ?? "");
+    stableProjectId = store.project?.id ?? `proj-${Date.now()}`;
+    initialBible = store.bible ? $state.snapshot(store.bible) : createEmptyBible(stableProjectId);
   }
 });
 
@@ -65,7 +67,7 @@ async function handleFormSave(bible: Bible) {
     <BibleBootstrapTab
       bind:this={bootstrapRef}
       bind:footerState={bootstrapFooter}
-      projectId={store.project?.id ?? `proj-${Date.now()}`}
+      projectId={stableProjectId}
       onCommit={handleBootstrapCommit}
     />
   </div>
