@@ -39,6 +39,10 @@
   --ring2-color: #7a5a9e;
   --ring3-color: #2d8a6a;
 
+  /* Segmented bar stripe gaps (flagged/starved patterns) */
+  --stripe-gap-flagged: rgba(255, 255, 255, 0.3);
+  --stripe-gap-starved: rgba(255, 255, 255, 0.3);
+
   /* Badge backgrounds */
   --badge-accepted-bg: #1a3a2a;
   --badge-edited-bg: #2a2a1a;
@@ -107,6 +111,10 @@
   --ring1-color: #4a6fa5;
   --ring2-color: #7a5a9e;
   --ring3-color: #2d8a6a;
+
+  /* Segmented bar stripe gaps (flagged/starved patterns) */
+  --stripe-gap-flagged: rgba(255, 255, 255, 0.35);
+  --stripe-gap-starved: rgba(255, 255, 255, 0.35);
 
   /* Badge backgrounds */
   --badge-accepted-bg: #d4edda;

@@ -51,10 +51,9 @@ function handleResolve(flagId: string) {
         ]}
         height={8}
       />
-      <div class="signal-label">
-        {stats.actionable} actionable / {stats.nonActionable} noise
-        {#if stats.signalToNoiseRatio < 0.6} — below 60% target{/if}
-      </div>
+      {#if stats.signalToNoiseRatio < 0.6}
+        <div class="signal-label">below 60% target</div>
+      {/if}
     </div>
   {/if}
 

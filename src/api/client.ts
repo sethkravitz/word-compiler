@@ -224,3 +224,39 @@ export function apiListChapterIRs(chapterId: string): Promise<NarrativeIR[]> {
 export function apiListVerifiedChapterIRs(chapterId: string): Promise<NarrativeIR[]> {
   return fetchJson(`${BASE}/chapters/${chapterId}/irs/verified`);
 }
+
+// ─── Profile Adjustments (Auto-Tuning) ──────────
+
+export interface ProfileAdjustmentData {
+  id: string;
+  projectId: string;
+  parameter: string;
+  currentValue: number;
+  suggestedValue: number;
+  rationale: string;
+  confidence: number;
+  evidence: { editedChunkCount: number; sceneCount: number; avgEditRatio: number };
+  status: "pending" | "accepted" | "rejected";
+  createdAt: string;
+}
+
+export function apiListProfileAdjustments(projectId: string, status?: string): Promise<ProfileAdjustmentData[]> {
+  const query = status ? `?status=${status}` : "";
+  return fetchJson(`${BASE}/projects/${projectId}/profile-adjustments${query}`);
+}
+
+export function apiCreateProfileAdjustment(
+  data: Omit<ProfileAdjustmentData, "id" | "createdAt">,
+): Promise<ProfileAdjustmentData> {
+  return fetchJson(`${BASE}/profile-adjustments`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function apiUpdateProfileAdjustmentStatus(id: string, status: "accepted" | "rejected"): Promise<void> {
+  return fetchJson(`${BASE}/profile-adjustments/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}

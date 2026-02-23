@@ -125,6 +125,7 @@ describe("POST /api/generate/stream", () => {
 
     const mockStreamInstance = {
       on: vi.fn().mockReturnThis(),
+      abort: vi.fn(),
       finalMessage: vi.fn().mockResolvedValue({
         usage: { input_tokens: 10, output_tokens: 5 },
         stop_reason: "end_turn",
@@ -157,6 +158,7 @@ describe("POST /api/generate/stream", () => {
   it("omits output_config when outputSchema is absent", async () => {
     const mockStreamInstance = {
       on: vi.fn().mockReturnThis(),
+      abort: vi.fn(),
       finalMessage: vi.fn().mockResolvedValue({
         usage: { input_tokens: 10, output_tokens: 5 },
         stop_reason: "end_turn",

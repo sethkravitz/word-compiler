@@ -8,6 +8,7 @@ import * as compilationLogs from "../db/repositories/compilation-logs.js";
 import * as editPatterns from "../db/repositories/edit-patterns.js";
 import * as learnedPatterns from "../db/repositories/learned-patterns.js";
 import * as narrativeIRs from "../db/repositories/narrative-irs.js";
+import * as profileAdjustments from "../db/repositories/profile-adjustments.js";
 import * as projects from "../db/repositories/projects.js";
 import * as scenePlans from "../db/repositories/scene-plans.js";
 
@@ -259,6 +260,23 @@ export function createApiRouter(db: Database.Database): Router {
   router.patch("/learned-patterns/:id/status", (req, res) => {
     const ok = learnedPatterns.updateLearnedPatternStatus(db, req.params.id, req.body.status);
     if (!ok) return res.status(404).json({ error: "Learned pattern not found" });
+    res.json({ ok: true });
+  });
+
+  // ─── Profile Adjustments (Auto-Tuning) ─────────
+  router.get("/projects/:projectId/profile-adjustments", (req, res) => {
+    const status = req.query.status as string | undefined;
+    res.json(profileAdjustments.listProfileAdjustments(db, req.params.projectId, status));
+  });
+
+  router.post("/profile-adjustments", (req, res) => {
+    const proposal = profileAdjustments.createProfileAdjustment(db, req.body);
+    res.status(201).json(proposal);
+  });
+
+  router.patch("/profile-adjustments/:id/status", (req, res) => {
+    const ok = profileAdjustments.updateProfileAdjustmentStatus(db, req.params.id, req.body.status);
+    if (!ok) return res.status(404).json({ error: "Profile adjustment not found" });
     res.json({ ok: true });
   });
 

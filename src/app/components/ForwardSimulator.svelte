@@ -1,6 +1,6 @@
 <script lang="ts">
 import { accumulateReaderState, detectEpistemicIssues, type SceneInput } from "../../simulator/readerState.js";
-import type { NarrativeIR, ScenePlan } from "../../types/index.js";
+import type { Bible, NarrativeIR, ScenePlan } from "../../types/index.js";
 import { Badge, CollapsibleSection, DiagnosticItem, Pane } from "../primitives/index.js";
 
 interface SceneNode {
@@ -12,17 +12,19 @@ interface SceneNode {
 let {
   scenes,
   activeSceneIndex,
+  bible,
   onSelectScene,
 }: {
   scenes: SceneNode[];
   activeSceneIndex: number;
+  bible: Bible | null;
   onSelectScene: (index: number) => void;
 } = $props();
 
 let sceneInputs = $derived<SceneInput[]>(scenes.map((s) => ({ plan: s.plan, ir: s.ir, sceneOrder: s.sceneOrder })));
 let sceneLookup = $derived(new Map(scenes.map((s, idx) => [s.plan.id, { scene: s, index: idx }])));
 let readerStates = $derived(accumulateReaderState(sceneInputs));
-let warnings = $derived(detectEpistemicIssues(sceneInputs, readerStates));
+let warnings = $derived(detectEpistemicIssues(sceneInputs, readerStates, bible ?? undefined));
 let warningsByScene = $derived(
   warnings.reduce<Record<string, typeof warnings>>((acc, w) => {
     if (!acc[w.sceneId]) acc[w.sceneId] = [];

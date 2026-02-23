@@ -65,8 +65,12 @@ app.post("/api/generate", async (req, res) => {
     });
 
     const textBlock = response.content.find((b: { type: string }) => b.type === "text");
+    if (!textBlock) {
+      res.status(502).json({ error: "LLM response contained no text content" });
+      return;
+    }
     res.json({
-      text: textBlock ? (textBlock as { text: string }).text : "",
+      text: (textBlock as { text: string }).text,
       usage: response.usage,
       stopReason: response.stop_reason,
     });
@@ -88,6 +92,13 @@ app.post("/api/generate/stream", async (req, res) => {
   const samplingParams: { temperature?: number; top_p?: number } =
     temperature != null ? { temperature } : topP != null ? { top_p: topP } : { temperature: 0.8 };
 
+  function safeWrite(data: string) {
+    if (!res.writableEnded && !res.destroyed) res.write(data);
+  }
+  function safeEnd() {
+    if (!res.writableEnded && !res.destroyed) res.end();
+  }
+
   try {
     const stream = client.messages.stream({
       model: model || "claude-sonnet-4-6",
@@ -100,28 +111,34 @@ app.post("/api/generate/stream", async (req, res) => {
       }),
     });
 
+    // Abort the upstream Anthropic stream when the client disconnects
+    // to prevent wasting API tokens on responses nobody is reading
+    req.on("close", () => {
+      stream.abort();
+    });
+
     stream.on("text", (text: string) => {
-      res.write(`data: ${JSON.stringify({ type: "delta", text })}\n\n`);
+      safeWrite(`data: ${JSON.stringify({ type: "delta", text })}\n\n`);
     });
 
     stream.on("error", (err: Error) => {
-      res.write(`data: ${JSON.stringify({ type: "error", error: err.message })}\n\n`);
-      res.end();
+      safeWrite(`data: ${JSON.stringify({ type: "error", error: err.message })}\n\n`);
+      safeEnd();
     });
 
     const finalMessage = await stream.finalMessage();
-    res.write(
+    safeWrite(
       `data: ${JSON.stringify({
         type: "done",
         usage: finalMessage.usage,
         stopReason: finalMessage.stop_reason,
       })}\n\n`,
     );
-    res.end();
+    safeEnd();
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    res.write(`data: ${JSON.stringify({ type: "error", error: message })}\n\n`);
-    res.end();
+    safeWrite(`data: ${JSON.stringify({ type: "error", error: message })}\n\n`);
+    safeEnd();
   }
 });
 

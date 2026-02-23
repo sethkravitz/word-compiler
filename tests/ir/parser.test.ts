@@ -63,12 +63,10 @@ describe("parseIRResponse", () => {
     expect(ir.events).toContain("The key was found");
   });
 
-  it("returns empty IR on completely unparseable response", () => {
-    const ir = parseIRResponse("I cannot parse this at all. No JSON here!", SCENE_ID);
-    expect(ir.sceneId).toBe(SCENE_ID);
-    expect(ir.verified).toBe(false);
-    expect(ir.events).toHaveLength(0);
-    expect(ir.characterDeltas).toHaveLength(0);
+  it("throws on completely unparseable response", () => {
+    expect(() => parseIRResponse("I cannot parse this at all. No JSON here!", SCENE_ID)).toThrow(
+      "unparseable response",
+    );
   });
 
   it("coerces non-string array items to strings", () => {
@@ -101,7 +99,7 @@ describe("parseIRResponse", () => {
 
   it("coerces characterPositions non-string values to strings", () => {
     const json = JSON.stringify({
-      events: [],
+      events: ["Alice moved"],
       factsIntroduced: [],
       factsRevealedToReader: [],
       factsWithheld: [],

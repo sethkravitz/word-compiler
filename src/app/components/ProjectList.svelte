@@ -1,24 +1,36 @@
 <script lang="ts">
 import type { Project } from "../../types/index.js";
-import { Button, Pane } from "../primitives/index.js";
+import { Button, Input, Pane } from "../primitives/index.js";
 
 let {
   projects,
+  newTitle = "",
   onSelectProject,
   onCreateProject,
   onDeleteProject,
+  onTitleChange,
 }: {
   projects: Project[];
+  newTitle?: string;
   onSelectProject: (id: string) => void;
   onCreateProject: () => void;
   onDeleteProject?: (id: string) => void;
+  onTitleChange?: (title: string) => void;
 } = $props();
 </script>
 
 <div class="project-list">
   <Pane title="Projects">
     {#snippet headerRight()}
-      <Button size="sm" onclick={onCreateProject}>New Project</Button>
+      <div class="new-project-row">
+        <Input
+          placeholder="Project title"
+          value={newTitle}
+          oninput={(e) => onTitleChange?.((e.target as HTMLInputElement).value)}
+          onkeydown={(e) => { if (e.key === "Enter") onCreateProject(); }}
+        />
+        <Button size="sm" onclick={onCreateProject}>New Project</Button>
+      </div>
     {/snippet}
 
     {#if projects.length === 0}
@@ -54,6 +66,7 @@ let {
 <style>
   .project-list { max-width: 800px; margin: 40px auto; padding: 0 16px; }
   .project-empty { color: var(--text-muted); padding: 40px; text-align: center; font-size: 13px; }
+  .new-project-row { display: flex; align-items: center; gap: 8px; }
   .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; padding: 12px; }
   .project-card {
     position: relative; background: var(--bg-primary); border: 1px solid var(--border);

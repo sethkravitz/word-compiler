@@ -84,6 +84,18 @@ export class ProjectStore {
     return id ? (this.sceneIRs[id] ?? null) : null;
   }
 
+  /** IRs for all scenes before the active one (ordered by scene order). */
+  get previousSceneIRs(): NarrativeIR[] {
+    const irs: NarrativeIR[] = [];
+    for (let i = 0; i < this.activeSceneIndex; i++) {
+      const scene = this.scenes[i];
+      if (!scene) continue;
+      const ir = this.sceneIRs[scene.plan.id];
+      if (ir) irs.push(ir);
+    }
+    return irs;
+  }
+
   get isExtractingIR(): boolean {
     return this.extractingIRSceneId !== null && this.extractingIRSceneId === this.activeScenePlan?.id;
   }
@@ -298,6 +310,7 @@ export class ProjectStore {
     chapterArc: ChapterArc | null;
     scenes: SceneEntry[];
     sceneChunks: Record<string, Chunk[]>;
+    sceneIRs: Record<string, NarrativeIR>;
     bibleVersions: Array<{ version: number; createdAt: string }>;
   }) {
     this.project = data.project;
@@ -305,7 +318,35 @@ export class ProjectStore {
     this.chapterArc = data.chapterArc;
     this.scenes = data.scenes;
     this.sceneChunks = data.sceneChunks;
+    this.sceneIRs = data.sceneIRs;
     this.bibleVersions = data.bibleVersions;
+    this.error = null;
+  }
+
+  resetForProjectSwitch() {
+    this.project = null;
+    this.bible = null;
+    this.bibleVersions = [];
+    this.chapterArc = null;
+    this.scenes = [];
+    this.activeSceneIndex = 0;
+    this.sceneChunks = {};
+    this.sceneIRs = {};
+    this.compiledPayload = null;
+    this.compilationLog = null;
+    this.lintResult = null;
+    this.auditFlags = [];
+    this.metrics = null;
+    this.compilationConfig = createDefaultCompilationConfig();
+    this.isGenerating = false;
+    this.isAutopilot = false;
+    this.autopilotCancelled = false;
+    this.extractingIRSceneId = null;
+    this.selectedChunkIndex = null;
+    this.bootstrapModalOpen = false;
+    this.bibleAuthoringOpen = false;
+    this.sceneAuthoringOpen = false;
+    this.irInspectorOpen = false;
     this.error = null;
   }
 

@@ -1,5 +1,5 @@
 import * as api from "../../api/client.js";
-import type { Chunk, SceneStatus } from "../../types/index.js";
+import type { Chunk, NarrativeIR, SceneStatus } from "../../types/index.js";
 import type { ProjectStore, SceneEntry } from "./project.svelte.js";
 
 export type StartupResult = "loaded" | "no-projects" | "multiple-projects" | "error";
@@ -51,12 +51,26 @@ export async function loadProject(store: ProjectStore, projectId: string): Promi
       sceneChunks[scene.plan.id] = await api.apiListChunks(scene.plan.id);
     }
 
+    // Fetch narrative IRs for all scenes in the chapter
+    const sceneIRs: Record<string, NarrativeIR> = {};
+    if (chapterArc) {
+      try {
+        const irs = await api.apiListChapterIRs(chapterArc.id);
+        for (const ir of irs) {
+          sceneIRs[ir.sceneId] = ir;
+        }
+      } catch {
+        // No IRs yet — that's fine
+      }
+    }
+
     store.loadFromServer({
       project,
       bible,
       chapterArc,
       scenes,
       sceneChunks,
+      sceneIRs,
       bibleVersions,
     });
 

@@ -3,6 +3,73 @@ import { createEmptyScenePlan, generateId } from "../types/index.js";
 
 // ─── Types ─────────────────────────────────────────────
 
+export interface ExistingSceneSummary {
+  title: string;
+  povCharacterName: string;
+  povDistance: string;
+  narrativeGoal: string;
+  emotionalBeat: string;
+  readerStateExiting: {
+    knows: string[];
+    suspects: string[];
+    wrongAbout: string[];
+    activeTensions: string[];
+  } | null;
+}
+
+export interface BootstrapChapterArc {
+  workingTitle: string;
+  narrativeFunction: string;
+  dominantRegister: string;
+  pacingTarget: string;
+  endingPosture: string;
+}
+
+export interface BootstrapNarrativeRules {
+  pov: {
+    default: string;
+    distance: string;
+    interiority: string;
+    reliability: string;
+    notes?: string;
+  };
+  subtextPolicy: string | null;
+  expositionPolicy: string | null;
+  sceneEndingPolicy: string | null;
+}
+
+export interface BootstrapCharacterDossier {
+  name: string;
+  role: string;
+  backstory: string | null;
+  contradictions: string[] | null;
+  voice: {
+    vocabularyNotes: string | null;
+    verbalTics: string[];
+    prohibitedLanguage: string[];
+    metaphoricRegister: string | null;
+  };
+  behavior: {
+    stressResponse: string | null;
+    noticesFirst: string | null;
+    emotionPhysicality: string | null;
+  } | null;
+}
+
+export interface BootstrapLocationDetail {
+  name: string;
+  description: string | null;
+  atmosphere: string | null;
+  sounds: string[];
+  smells: string[];
+  prohibitedDefaults: string[];
+}
+
+export interface BootstrapActiveSetup {
+  description: string;
+  status: string;
+}
+
 export interface SceneBootstrapParams {
   direction: string;
   sceneCount: number;
@@ -10,6 +77,15 @@ export interface SceneBootstrapParams {
   locations: { id: string; name: string }[];
   constraints?: string;
   includeChapterArc: boolean;
+  // Optional rich context
+  existingScenes?: ExistingSceneSummary[];
+  chapterArc?: BootstrapChapterArc;
+  narrativeRules?: BootstrapNarrativeRules;
+  activeSetups?: BootstrapActiveSetup[];
+  characterDossiers?: BootstrapCharacterDossier[];
+  locationDetails?: BootstrapLocationDetail[];
+  killList?: string[];
+  structuralBans?: string[];
 }
 
 export interface ParsedSceneBootstrap {
@@ -193,6 +269,98 @@ export const sceneBootstrapSchema: Record<string, unknown> = {
   required: ["scenes", "chapterArc"],
 };
 
+// ─── Condensation Helpers ─────────────────────────────
+
+export function condensedExistingScenes(scenes: ExistingSceneSummary[] | undefined): string {
+  if (!scenes || scenes.length === 0) return "";
+  return scenes
+    .map((s, i) => {
+      const parts = [`${i + 1}. "${s.title}" — POV: ${s.povCharacterName} (${s.povDistance})`];
+      if (s.narrativeGoal) parts.push(`   Goal: ${s.narrativeGoal}`);
+      if (s.emotionalBeat) parts.push(`   Beat: ${s.emotionalBeat}`);
+      if (s.readerStateExiting) {
+        const exit = s.readerStateExiting;
+        const items: string[] = [];
+        if (exit.knows.length > 0) items.push(`knows: ${exit.knows.join("; ")}`);
+        if (exit.suspects.length > 0) items.push(`suspects: ${exit.suspects.join("; ")}`);
+        if (exit.wrongAbout.length > 0) items.push(`wrong about: ${exit.wrongAbout.join("; ")}`);
+        if (exit.activeTensions.length > 0) items.push(`tensions: ${exit.activeTensions.join("; ")}`);
+        if (items.length > 0) parts.push(`   Reader exits: ${items.join(" | ")}`);
+      }
+      return parts.join("\n");
+    })
+    .join("\n");
+}
+
+export function condensedCharacterDossiers(dossiers: BootstrapCharacterDossier[] | undefined): string {
+  if (!dossiers || dossiers.length === 0) return "";
+  return dossiers
+    .map((c) => {
+      const parts = [`- ${c.name} (${c.role})`];
+      if (c.backstory) parts.push(`  Backstory: ${c.backstory}`);
+      if (c.contradictions && c.contradictions.length > 0)
+        parts.push(`  Contradictions: ${c.contradictions.join("; ")}`);
+      const voiceParts: string[] = [];
+      if (c.voice.vocabularyNotes) voiceParts.push(c.voice.vocabularyNotes);
+      if (c.voice.verbalTics.length > 0) voiceParts.push(`tics: ${c.voice.verbalTics.join(", ")}`);
+      if (c.voice.prohibitedLanguage.length > 0)
+        voiceParts.push(`never says: ${c.voice.prohibitedLanguage.join(", ")}`);
+      if (c.voice.metaphoricRegister) voiceParts.push(`metaphor register: ${c.voice.metaphoricRegister}`);
+      if (voiceParts.length > 0) parts.push(`  Voice: ${voiceParts.join(" | ")}`);
+      if (c.behavior) {
+        const bParts: string[] = [];
+        if (c.behavior.stressResponse) bParts.push(`stress: ${c.behavior.stressResponse}`);
+        if (c.behavior.noticesFirst) bParts.push(`notices first: ${c.behavior.noticesFirst}`);
+        if (c.behavior.emotionPhysicality) bParts.push(`emotion: ${c.behavior.emotionPhysicality}`);
+        if (bParts.length > 0) parts.push(`  Behavior: ${bParts.join(" | ")}`);
+      }
+      return parts.join("\n");
+    })
+    .join("\n");
+}
+
+export function condensedLocationDetails(locations: BootstrapLocationDetail[] | undefined): string {
+  if (!locations || locations.length === 0) return "";
+  return locations
+    .map((l) => {
+      const parts = [`- ${l.name}`];
+      if (l.description) parts.push(`  ${l.description}`);
+      if (l.atmosphere) parts.push(`  Atmosphere: ${l.atmosphere}`);
+      const sensory: string[] = [];
+      if (l.sounds.length > 0) sensory.push(`sounds: ${l.sounds.join(", ")}`);
+      if (l.smells.length > 0) sensory.push(`smells: ${l.smells.join(", ")}`);
+      if (sensory.length > 0) parts.push(`  Senses: ${sensory.join(" | ")}`);
+      if (l.prohibitedDefaults.length > 0) parts.push(`  Avoid: ${l.prohibitedDefaults.join(", ")}`);
+      return parts.join("\n");
+    })
+    .join("\n");
+}
+
+export function condensedNarrativeRules(rules: BootstrapNarrativeRules | undefined): string {
+  if (!rules) return "";
+  const parts: string[] = [];
+  const pov = rules.pov;
+  parts.push(
+    `POV CONTRACT: ${pov.default} person, ${pov.distance} distance, ${pov.interiority} interiority, ${pov.reliability} narrator.`,
+  );
+  if (pov.notes) parts.push(`POV notes: ${pov.notes}`);
+  if (rules.subtextPolicy) parts.push(`SUBTEXT POLICY: ${rules.subtextPolicy}`);
+  if (rules.expositionPolicy) parts.push(`EXPOSITION POLICY: ${rules.expositionPolicy}`);
+  if (rules.sceneEndingPolicy) parts.push(`SCENE ENDING POLICY: ${rules.sceneEndingPolicy}`);
+  return parts.join("\n");
+}
+
+export function condensedKillListAndBans(killList: string[] | undefined, structuralBans: string[] | undefined): string {
+  const parts: string[] = [];
+  if (killList && killList.length > 0) {
+    parts.push(`NEVER USE these words/phrases: ${killList.join(", ")}`);
+  }
+  if (structuralBans && structuralBans.length > 0) {
+    parts.push(`STRUCTURAL RULES: ${structuralBans.join("; ")}`);
+  }
+  return parts.join("\n");
+}
+
 export function buildSceneBootstrapPrompt(params: SceneBootstrapParams): CompiledPayload {
   const characterList =
     params.characters.length > 0
@@ -210,10 +378,57 @@ export function buildSceneBootstrapPrompt(params: SceneBootstrapParams): Compile
     ? `\nAlso include a "chapterArc" field with: workingTitle, narrativeFunction, dominantRegister, pacingTarget, endingPosture, readerStateEntering, readerStateExiting.`
     : "";
 
-  const systemMessage = `You are a narrative architect. Given direction for a chapter, generate ${params.sceneCount} scene plans that form a cohesive chapter arc. Each scene must maintain continuity — the readerStateExiting of scene N should inform the readerStateEntering of scene N+1. Be specific and opinionated.`;
+  // Build system message with optional narrative rules and kill list
+  const systemParts = [
+    `You are a narrative architect. Given direction for a chapter, generate ${params.sceneCount} scene plans that form a cohesive chapter arc. Each scene must maintain continuity — the readerStateExiting of scene N should inform the readerStateEntering of scene N+1. Be specific and opinionated.`,
+  ];
+  const rulesBlock = condensedNarrativeRules(params.narrativeRules);
+  if (rulesBlock) systemParts.push("", rulesBlock);
+  const bansBlock = condensedKillListAndBans(params.killList, params.structuralBans);
+  if (bansBlock) systemParts.push("", bansBlock);
+  const systemMessage = systemParts.join("\n");
+
+  // Build context blocks for user message
+  const contextBlocks: string[] = [];
+
+  if (params.chapterArc) {
+    const a = params.chapterArc;
+    contextBlocks.push(
+      `ESTABLISHED CHAPTER ARC:\nTitle: ${a.workingTitle}\nFunction: ${a.narrativeFunction}\nRegister: ${a.dominantRegister}\nPacing: ${a.pacingTarget}\nEnding: ${a.endingPosture}`,
+    );
+  }
+
+  const scenesBlock = condensedExistingScenes(params.existingScenes);
+  if (scenesBlock) {
+    contextBlocks.push(`EXISTING SCENES (do not contradict or duplicate):\n${scenesBlock}`);
+  }
+
+  const dossiersBlock = condensedCharacterDossiers(params.characterDossiers);
+  if (dossiersBlock) {
+    contextBlocks.push(`CHARACTER DOSSIERS:\n${dossiersBlock}`);
+  }
+
+  const locsBlock = condensedLocationDetails(params.locationDetails);
+  if (locsBlock) {
+    contextBlocks.push(`LOCATION DETAILS:\n${locsBlock}`);
+  }
+
+  if (params.activeSetups && params.activeSetups.length > 0) {
+    const setupLines = params.activeSetups.map((s) => `- [${s.status}] ${s.description}`).join("\n");
+    contextBlocks.push(`ACTIVE SETUPS:\n${setupLines}`);
+  }
+
+  const contextSection = contextBlocks.length > 0 ? `\n\n${contextBlocks.join("\n\n")}\n` : "";
+
+  // Continuity note when appending to existing scenes
+  const existingCount = params.existingScenes?.length ?? 0;
+  const continuityNote =
+    existingCount > 0
+      ? `\nYou are generating scenes ${existingCount + 1} through ${existingCount + params.sceneCount}. New scenes must continue seamlessly from existing ones.`
+      : "";
 
   const userMessage = `CHAPTER DIRECTION:
-${params.direction}
+${params.direction}${contextSection}
 
 Generate exactly ${params.sceneCount} scene plans.${characterList}${locationList}${constraintBlock}
 
@@ -222,8 +437,8 @@ Return JSON:
   "scenes": [
     {
       "title": "Scene title",
-      "povCharacterId": "character id from list above, or empty string",
-      "povCharacterName": "character name for reference",
+      "povCharacterId": "REQUIRED — exact character id from the list above",
+      "povCharacterName": "REQUIRED — exact character name matching the id",
       "povDistance": "intimate|close|moderate|distant",
       "narrativeGoal": "What must this scene accomplish?",
       "emotionalBeat": "What should the reader FEEL?",
@@ -275,7 +490,7 @@ Return JSON:
   }
 }
 
-CRITICAL: Maintain reader state continuity across scenes. Scene 2's readerStateEntering must build on Scene 1's readerStateExiting.${chapterArcInstruction}`;
+CRITICAL: Maintain reader state continuity across scenes. Scene 2's readerStateEntering must build on Scene 1's readerStateExiting.${chapterArcInstruction}${continuityNote}`;
 
   return {
     systemMessage,
@@ -284,7 +499,6 @@ CRITICAL: Maintain reader state continuity across scenes. Scene 2's readerStateE
     topP: 0.92,
     maxTokens: 8000,
     model: "claude-sonnet-4-6",
-    outputSchema: sceneBootstrapSchema,
   };
 }
 

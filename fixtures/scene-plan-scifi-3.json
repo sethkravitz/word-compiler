@@ -1,7 +1,7 @@
 {
   "id": "scene-signal-003",
   "projectId": "proj-scifi",
-  "chapterId": null,
+  "chapterId": "arc-scifi-ch1",
   "title": "Echo Location",
   "povCharacterId": "sable",
   "povDistance": "intimate",

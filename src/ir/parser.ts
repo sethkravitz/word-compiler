@@ -1,5 +1,4 @@
 import type { NarrativeIR } from "../types/index.js";
-import { createEmptyNarrativeIR } from "../types/index.js";
 
 // ─── Raw IR shape from LLM ───────────────────────────────
 
@@ -21,7 +20,11 @@ function isStringArray(v: unknown): v is string[] {
 
 function coerceStringArray(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
-  return v.map((x) => (typeof x === "string" ? x : String(x)));
+  return v.map((x) => {
+    if (typeof x === "string") return x;
+    if (x && typeof x === "object") return JSON.stringify(x);
+    return String(x);
+  });
 }
 
 function coerceCharacterPositions(v: unknown): Record<string, string> {
@@ -62,7 +65,7 @@ function coerceCharacterDeltas(v: unknown): NarrativeIR["characterDeltas"] {
 }
 
 function rawToNarrativeIR(raw: RawIR, sceneId: string): NarrativeIR {
-  return {
+  const ir: NarrativeIR = {
     sceneId,
     verified: false,
     events: coerceStringArray(raw.events),
@@ -75,6 +78,18 @@ function rawToNarrativeIR(raw: RawIR, sceneId: string): NarrativeIR {
     characterPositions: coerceCharacterPositions(raw.characterPositions),
     unresolvedTensions: coerceStringArray(raw.unresolvedTensions),
   };
+  // Guard against valid JSON that doesn't match the IR schema at all
+  const hasContent =
+    ir.events.length > 0 ||
+    ir.factsIntroduced.length > 0 ||
+    ir.characterDeltas.length > 0 ||
+    ir.unresolvedTensions.length > 0;
+  if (!hasContent) {
+    throw new Error(
+      "IR extraction returned JSON with no recognizable content — the response may not match the expected schema",
+    );
+  }
+  return ir;
 }
 
 // ─── 3-Tier Parser (mirrors bootstrap strategy) ──────────
@@ -117,8 +132,8 @@ export function parseIRResponse(text: string, sceneId: string): NarrativeIR {
     }
   }
 
-  // Fallback: empty IR (extraction failed — human must fill in)
-  return createEmptyNarrativeIR(sceneId);
+  // All parse strategies failed — throw so the UI shows an error
+  throw new Error(`IR extraction returned unparseable response: ${text.slice(0, 200)}`);
 }
 
 // Re-export for convenience

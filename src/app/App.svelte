@@ -1,6 +1,6 @@
 <script lang="ts">
 import { onMount } from "svelte";
-import { apiCreateProject, apiListProjects } from "../api/client.js";
+import { apiCreateProject, apiListProjects, apiUpdateProject } from "../api/client.js";
 import { checkChunkReviewGate, checkCompileGate, checkScenePlanGate } from "../gates/index.js";
 import { analyzeEdits } from "../learner/diff.js";
 import { applyProposal } from "../learner/proposals.js";
@@ -10,8 +10,8 @@ import { measureVoiceSeparability } from "../metrics/voiceSeparability.js";
 import { countTokens } from "../tokens/index.js";
 import type { Chunk, StyleDriftReport, VoiceSeparabilityReport } from "../types/index.js";
 import { generateId, getCanonicalText } from "../types/index.js";
-import BibleAuthoringModal from "./components/BibleAuthoringModal.svelte";
 import AtlasPane from "./components/AtlasPane.svelte";
+import BibleAuthoringModal from "./components/BibleAuthoringModal.svelte";
 import BootstrapModal from "./components/BootstrapModal.svelte";
 import ChapterArcEditor from "./components/ChapterArcEditor.svelte";
 import CompilerView from "./components/CompilerView.svelte";
@@ -26,7 +26,7 @@ import SceneSequencer from "./components/SceneSequencer.svelte";
 import SetupPayoffPanel from "./components/SetupPayoffPanel.svelte";
 import StyleDriftPanel from "./components/StyleDriftPanel.svelte";
 import VoiceSeparabilityView from "./components/VoiceSeparabilityView.svelte";
-import { Button, ErrorBanner, Select, Tabs } from "./primitives/index.js";
+import { Button, ErrorBanner, Input, Select, Tabs } from "./primitives/index.js";
 import {
   createApiActions,
   createCommands,
@@ -74,15 +74,17 @@ onMount(async () => {
 });
 
 async function createFirstProject() {
+  const title = newProjectTitle.trim() || "Untitled Novel";
   try {
     const project = await apiCreateProject({
       id: generateId(),
-      title: "Untitled Novel",
+      title,
       status: "bootstrap",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
     store.setProject(project);
+    newProjectTitle = "";
     appReady = true;
     currentView = "project";
   } catch (err) {
@@ -100,20 +102,37 @@ async function handleSelectProject(projectId: string) {
 }
 
 async function handleCreateProjectFromList() {
+  const title = newProjectTitle.trim() || "Untitled Novel";
   try {
     const project = await apiCreateProject({
       id: generateId(),
-      title: "Untitled Novel",
+      title,
       status: "bootstrap",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
     store.setProject(project);
+    newProjectTitle = "";
     appReady = true;
     currentView = "project";
   } catch (err) {
     store.setError(err instanceof Error ? err.message : "Failed to create project");
   }
+}
+
+async function handleRenameProject() {
+  const title = editTitleValue.trim();
+  if (!title || !store.project || title === store.project.title) {
+    editingTitle = false;
+    return;
+  }
+  try {
+    const updated = await apiUpdateProject(store.project.id, { title });
+    store.setProject(updated);
+  } catch (err) {
+    store.setError(err instanceof Error ? err.message : "Failed to rename project");
+  }
+  editingTitle = false;
 }
 
 function handleBackToProjects() {
@@ -123,13 +142,18 @@ function handleBackToProjects() {
   startupStatus = "multiple-projects";
   // Refresh project list
   apiListProjects()
-    .then((list) => { projectList = list; })
+    .then((list) => {
+      projectList = list;
+    })
     .catch(() => {});
 }
 
 // ─── Local UI state ─────────────────────────────
 let showArcEditor = $state(false);
 let exportModalOpen = $state(false);
+let newProjectTitle = $state("");
+let editingTitle = $state(false);
+let editTitleValue = $state("");
 let activeTab = $state<"compiler" | "ir" | "simulator" | "drift" | "voice" | "setups" | "learner">("compiler");
 
 const tabItems = [
@@ -430,14 +454,24 @@ function exportState() {
       <p>Loading project...</p>
     {:else if startupStatus === "no-projects"}
       <p>Welcome to Word Compiler. Create your first project to get started.</p>
-      <Button onclick={createFirstProject}>Create Project</Button>
+      <div class="new-project-form">
+        <Input
+          placeholder="Project title"
+          value={newProjectTitle}
+          oninput={(e) => { newProjectTitle = (e.target as HTMLInputElement).value; }}
+          onkeydown={(e) => { if (e.key === "Enter") createFirstProject(); }}
+        />
+        <Button onclick={createFirstProject}>Create Project</Button>
+      </div>
     {:else if startupStatus === "error"}
       <ErrorBanner message={store.error ?? "Failed to load"} onDismiss={() => store.setError(null)} />
     {:else if startupStatus === "multiple-projects"}
       <ProjectList
         projects={projectList}
+        newTitle={newProjectTitle}
         onSelectProject={handleSelectProject}
         onCreateProject={handleCreateProjectFromList}
+        onTitleChange={(t) => { newProjectTitle = t; }}
       />
     {/if}
   </div>
@@ -445,10 +479,26 @@ function exportState() {
 <div class="app">
   <div class="app-header">
     <span class="app-title">Word Compiler</span>
+    {#if editingTitle}
+      <Input
+        value={editTitleValue}
+        oninput={(e) => { editTitleValue = (e.target as HTMLInputElement).value; }}
+        onkeydown={(e) => { if (e.key === "Enter") handleRenameProject(); if (e.key === "Escape") editingTitle = false; }}
+        onblur={handleRenameProject}
+      />
+    {:else}
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <span
+        class="project-title"
+        role="button"
+        tabindex="0"
+        title="Click to rename"
+        onclick={() => { editTitleValue = store.project?.title ?? ""; editingTitle = true; }}
+        onkeydown={(e) => { if (e.key === "Enter") { editTitleValue = store.project?.title ?? ""; editingTitle = true; } }}
+      >{store.project?.title ?? ""}</span>
+    {/if}
     <div class="header-right">
-      {#if projectList.length > 1}
-        <Button size="sm" onclick={handleBackToProjects}>Projects</Button>
-      {/if}
+      <Button size="sm" onclick={handleBackToProjects}>Projects</Button>
       {#if store.chapterArc}
         <Button size="sm" onclick={() => { showArcEditor = true; }}>Chapter Arc</Button>
       {/if}
@@ -511,16 +561,16 @@ function exportState() {
       auditFlags={store.auditFlags}
       sceneIR={store.activeSceneIR}
       isExtractingIR={store.isExtractingIR}
-      onGenerate={generateChunk}
+      onGenerate={() => generateChunk()}
       onUpdateChunk={handleUpdateChunk}
       onRemoveChunk={handleRemoveChunk}
-      onRunAudit={runAuditManual}
-      onRunDeepAudit={runDeepAudit}
+      onRunAudit={() => runAuditManual()}
+      onRunDeepAudit={() => runDeepAudit()}
       onCompleteScene={handleCompleteScene}
       onAutopilot={() => runAutopilot()}
       onCancelAutopilot={() => store.cancelAutopilot()}
       onOpenIRInspector={() => { activeTab = 'ir'; }}
-      onExtractIR={extractSceneIR}
+      onExtractIR={() => extractSceneIR()}
     />
 
     <!-- Right panel: tabbed Phase 2 views -->
@@ -540,7 +590,7 @@ function exportState() {
         sceneTitle={store.activeScenePlan?.title ?? "No scene"}
         isExtracting={store.isExtractingIR}
         canExtract={store.activeScene?.status === "complete"}
-        onExtract={extractSceneIR}
+        onExtract={() => extractSceneIR()}
         onVerify={handleVerifyIR}
         onUpdate={handleUpdateIR}
         onClose={() => { activeTab = 'compiler'; }}
@@ -549,6 +599,7 @@ function exportState() {
       <ForwardSimulator
         scenes={simulatorScenes}
         activeSceneIndex={store.activeSceneIndex}
+        bible={store.bible}
         onSelectScene={(i) => store.setActiveScene(i)}
       />
     {:else if activeTab === "drift"}
@@ -589,4 +640,10 @@ function exportState() {
   }
   .error-margin { margin: 0 8px; }
   .loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 200px; }
+  .new-project-form { display: flex; align-items: center; gap: 8px; }
+  .project-title {
+    font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer;
+    padding: 2px 6px; border-radius: var(--radius-sm); border: 1px solid transparent;
+  }
+  .project-title:hover { border-color: var(--border); color: var(--text-primary); }
 </style>

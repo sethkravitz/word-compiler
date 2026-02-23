@@ -29,9 +29,11 @@ export function setupCompilerEffect(store: ProjectStore): void {
         store.compilationConfig,
         store.chapterArc ?? undefined,
         store.previousSceneLastChunk ?? undefined,
+        store.previousSceneIRs,
       );
       store.setCompiled(result.payload, result.log, result.lintResult);
     } catch (err) {
+      store.setCompiled(null, null, null);
       store.setError(err instanceof Error ? err.message : "Compilation error");
     }
   });
