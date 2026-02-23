@@ -48,14 +48,18 @@ app.post("/api/generate", async (req, res) => {
   try {
     const { systemMessage, userMessage, temperature, topP, maxTokens, model, outputSchema } = req.body;
 
+    const effectiveModel = model || "claude-sonnet-4-6";
+    const effectiveMaxTokens = maxTokens || 2000;
+    console.log(`[generate] Starting: model=${effectiveModel}, max_tokens=${effectiveMaxTokens}`);
+
     // Anthropic API forbids sending both temperature and top_p together.
     // Prefer temperature; only use top_p when temperature is absent.
     const samplingParams: { temperature?: number; top_p?: number } =
       temperature != null ? { temperature } : topP != null ? { top_p: topP } : { temperature: 0.8 };
 
     const response = await client.messages.create({
-      model: model || "claude-sonnet-4-6",
-      max_tokens: maxTokens || 2000,
+      model: effectiveModel,
+      max_tokens: effectiveMaxTokens,
       ...samplingParams,
       system: systemMessage,
       messages: [{ role: "user", content: userMessage }],
@@ -64,8 +68,17 @@ app.post("/api/generate", async (req, res) => {
       }),
     });
 
+    const contentTypes = response.content.map((b: { type: string }) => b.type);
+    console.log(
+      `[generate] Complete: stop_reason=${response.stop_reason}, ` +
+        `content_types=[${contentTypes.join(",")}], usage=${JSON.stringify(response.usage)}`,
+    );
+
     const textBlock = response.content.find((b: { type: string }) => b.type === "text");
     if (!textBlock) {
+      console.warn(
+        `[generate] WARNING: No text block in response. content=${JSON.stringify(response.content).slice(0, 500)}`,
+      );
       res.status(502).json({ error: "LLM response contained no text content" });
       return;
     }
@@ -100,9 +113,13 @@ app.post("/api/generate/stream", async (req, res) => {
   }
 
   try {
+    const effectiveModel = model || "claude-sonnet-4-6";
+    const effectiveMaxTokens = maxTokens || 2000;
+    console.log(`[stream] Starting generation: model=${effectiveModel}, max_tokens=${effectiveMaxTokens}`);
+
     const stream = client.messages.stream({
-      model: model || "claude-sonnet-4-6",
-      max_tokens: maxTokens || 2000,
+      model: effectiveModel,
+      max_tokens: effectiveMaxTokens,
       ...samplingParams,
       system: systemMessage,
       messages: [{ role: "user", content: userMessage }],
@@ -117,16 +134,33 @@ app.post("/api/generate/stream", async (req, res) => {
       stream.abort();
     });
 
+    let textLength = 0;
     stream.on("text", (text: string) => {
+      textLength += text.length;
       safeWrite(`data: ${JSON.stringify({ type: "delta", text })}\n\n`);
     });
 
     stream.on("error", (err: Error) => {
+      console.error(`[stream] Stream error: ${err.message}`);
       safeWrite(`data: ${JSON.stringify({ type: "error", error: err.message })}\n\n`);
       safeEnd();
     });
 
     const finalMessage = await stream.finalMessage();
+    const contentTypes = finalMessage.content.map((b: { type: string }) => b.type);
+    console.log(
+      `[stream] Complete: stop_reason=${finalMessage.stop_reason}, ` +
+        `text_chars=${textLength}, content_types=[${contentTypes.join(",")}], ` +
+        `usage=${JSON.stringify(finalMessage.usage)}`,
+    );
+
+    if (textLength === 0) {
+      console.warn(
+        `[stream] WARNING: Zero text received from API. ` +
+          `stop_reason=${finalMessage.stop_reason}, content=${JSON.stringify(finalMessage.content).slice(0, 500)}`,
+      );
+    }
+
     safeWrite(
       `data: ${JSON.stringify({
         type: "done",

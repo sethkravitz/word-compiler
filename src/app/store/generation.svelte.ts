@@ -46,12 +46,15 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
 
       let fullText = "";
       let streamFailed = false;
+      let stopReason = "";
       await generateStream(store.compiledPayload, {
         onToken: (text) => {
           fullText += text;
           store.updateChunkForScene(sceneId, chunkIndex, { generatedText: fullText });
         },
-        onDone: () => {
+        onDone: (usage, reason) => {
+          stopReason = reason;
+          console.debug("[generation] Stream done:", { stopReason: reason, usage, textLength: fullText.length });
           store.updateChunkForScene(sceneId, chunkIndex, { generatedText: fullText });
         },
         onError: (err) => {
@@ -62,6 +65,17 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
 
       // Abort if stream errored — don't persist partial/invalid prose
       if (streamFailed) return;
+
+      // Guard: reject empty generation (model may have spent tokens on thinking or hit max_tokens)
+      if (!fullText.trim()) {
+        const reason =
+          stopReason === "max_tokens"
+            ? "The model used all output tokens without producing text. Try increasing the output token budget in your generation config."
+            : "Generation produced no text. Check server logs for details.";
+        store.setError(`Empty generation: ${reason}`);
+        store.removeChunkForScene(sceneId, chunkIndex);
+        return;
+      }
 
       // Persist the finalized chunk
       const finalChunk = chunksForScene(sceneId)[chunkIndex];
@@ -128,6 +142,11 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
 
     try {
       const prose = chunks.map((c) => getCanonicalText(c)).join("\n\n");
+      if (!prose.trim()) {
+        store.setError("Cannot extract IR: all chunks are empty. Generate prose content first.");
+        store.setExtractingIR(null);
+        return;
+      }
       const llmClient: IRLLMClient = {
         call: (systemMessage, userMessage, model, maxTokens, outputSchema) =>
           callLLM(systemMessage, userMessage, model, maxTokens, outputSchema),
@@ -195,13 +214,28 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
       while (chunksForScene(sceneId).length < maxChunks) {
         if (store.autopilotCancelled) break;
 
+        const chunkCountBefore = chunksForScene(sceneId).length;
+
         // Generate next chunk (pinned to this scene)
         await generateChunk(sceneId);
         if (store.autopilotCancelled) break;
 
+        // If generateChunk removed the empty chunk (guard triggered), stop autopilot
+        const chunksAfter = chunksForScene(sceneId);
+        if (chunksAfter.length <= chunkCountBefore) {
+          // generateChunk failed or produced empty text — error already set
+          break;
+        }
+
+        // Verify chunk has content before auto-accepting
+        const latestChunk = chunksAfter[chunksAfter.length - 1];
+        if (!latestChunk || !getCanonicalText(latestChunk).trim()) {
+          store.setError("Autopilot stopped: generated chunk has no content.");
+          break;
+        }
+
         // Auto-accept the chunk we just generated
-        const chunks = chunksForScene(sceneId);
-        const chunkIndex = chunks.length - 1;
+        const chunkIndex = chunksAfter.length - 1;
         await commands.updateChunk(sceneId, chunkIndex, { status: "accepted" });
       }
 

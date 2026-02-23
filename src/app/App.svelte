@@ -25,6 +25,7 @@ import SceneAuthoringModal from "./components/SceneAuthoringModal.svelte";
 import SceneSequencer from "./components/SceneSequencer.svelte";
 import SetupPayoffPanel from "./components/SetupPayoffPanel.svelte";
 import StyleDriftPanel from "./components/StyleDriftPanel.svelte";
+import GlossaryPanel from "./components/GlossaryPanel.svelte";
 import VoiceSeparabilityView from "./components/VoiceSeparabilityView.svelte";
 import { Button, ErrorBanner, Input, Select, Tabs } from "./primitives/index.js";
 import {
@@ -626,6 +627,7 @@ function exportState() {
   <BibleAuthoringModal {store} {commands} />
   <SceneAuthoringModal {store} {commands} />
   <ExportModal open={exportModalOpen} onClose={() => { exportModalOpen = false; }} {store} />
+  <GlossaryPanel />
 
   {#if showArcEditor && store.chapterArc}
     <ChapterArcEditor arc={store.chapterArc} {store} {commands} onClose={() => { showArcEditor = false; }} />
