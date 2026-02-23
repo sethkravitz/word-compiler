@@ -1,0 +1,177 @@
+The box had been sitting in the corner of the garage for three weeks, maybe four. He'd meant to go through it after the Hendersons cleared out but there'd been the Paulsen job and then the gutters on his own place needed doing, and so it sat.
+
+He cut the tape with his pocketknife and went through it the way he went through everything: methodically, without expectation. Work gloves. A socket set missing the 10mm, which was always the way. Two extension cords coiled like something sleeping. And at the bottom, wrapped in a gas station plastic bag twisted shut at the neck, the drive.
+
+He set it on the workbench and unwrapped it.
+
+It was smaller than he'd expected, though he wasn't sure what he'd expected. Flat and silver-grey, about the size of a paperback novel but thinner, lighter. He turned it over. The manufacturer's stamp on the back had been worn to almost nothing — he could make out a partial word, maybe a letter or two, but nothing he could place. The casing had a small dent near one corner, the kind you get from being dropped once onto concrete and then never again.
+
+He checked the connections. There was a port on one end he recognized in the loose way you recognize a face from somewhere you can't name. He pressed his thumbnail into it gently. Nothing gave.
+
+He set it down and looked at it.
+
+It didn't look broken. It looked like something that worked fine and simply declined to explain itself. He picked it up again, turned it over twice more, and set it back down in the same spot.
+
+His thumbnail had left a small white crescent in the port's edge.
+
+He went and got the laptop from the kitchen. It was three years old and ran slow and he only used it for invoices and the occasional parts lookup. He found the adapter in the junk drawer after some looking — a small gray dongle he'd bought once for a reason he couldn't remember and kept for a reason he couldn't name. He plugged the drive in. The machine made a sound like it was thinking hard about something.
+
+The screen showed a loading circle for longer than made sense. Then a window opened.
+
+There was something there. The drive registered — a name appeared in the file manager, just a string of characters that could have been a serial number or could have been nothing. Below it, one folder. The folder name was a sequence of letters and numbers that didn't resolve into anything when he looked at it. He looked at it for a while anyway. Then he clicked.
+
+The window went gray. Came back. Gray again. He waited.
+
+What loaded was not text. Not images. A column of characters that scrolled partway down the screen and stopped — some recognizable, most not, the kind of thing you see when a file opens in the wrong program and the machine tries to make sense of something it wasn't built to read. He scrolled through it. Nothing cohered. He scrolled back up.
+
+The folder name was still there, sitting at the top of the window. He tried clicking it again. Same gray. Same column of nothing.
+
+He unplugged the drive and plugged it back in. The machine went through the whole sequence again and returned the same result, identical, like it was reading from a script.
+
+He wrote the letters down on the back of an envelope, like they might mean something later.
+
+He set the drive on the table.
+
+It was small. Smaller than his palm. The casing was black and unremarkable, one corner slightly scuffed, and it sat there between the salt shaker and the edge of the placemat like it was waiting for something he didn't know how to give it. He looked at the envelope. The letters he'd written were his own handwriting but they didn't feel like his — too neat, too careful, the way you write something down when you're not sure you've seen it right.
+
+He picked at the edge of his thumbnail.
+
+The thing was, he knew how to find what was wrong with something. You looked at it. You took it apart. You held the pieces up and they told you where the failure was, usually — a crack, a rust bloom, a bearing worn smooth on one side. Objects had a logic to them. They broke in ways that made sense if you knew where to look.
+
+This didn't break. It just — refused. Quiet and complete, the way a door refuses when there's no handle on your side.
+
+He turned the drive over. Turned it back. The scuff on the corner might have been years old or might have been last week. There was no way to know. He set it down again in the same spot, same orientation, like placing it back might reset something.
+
+It didn't.
+
+He folded the envelope once and put it in his shirt pocket. The drive stayed on the table. He left it there when he got up to turn off the kitchen light, and in the dark the room felt different than it had that morning — not wrong, exactly. Just slightly rearranged.
+
+* * *
+
+The library's sale table was outside, under a canopy that didn't quite reach the corners. Three folding tables pushed together, paperbacks for a quarter, hardcovers for fifty cents, a hand-lettered sign that had been rained on once and dried wavy. He wasn't there for books. He'd come to return a socket set he'd borrowed from Dale Fricke, who worked the desk on Tuesdays, and Dale wasn't in yet, and he had twenty minutes.
+
+He looked at the tables the way he looked at most things. Methodically, left to right.
+
+The book was wedged between a Tom Clancy novel and something about container gardening. *Understanding Your Computer: A Plain-Language Guide to How Machines Think.* The cover was the particular shade of teal that belonged exclusively to the late eighties. A line drawing of a desktop computer on the front, the boxy kind with the monitor stacked on top. He turned it over. The back had a photograph of the author — a man with a beard and the satisfied expression of someone who had recently explained something to someone else's satisfaction. *For the curious non-specialist,* the copy read. *No prior knowledge assumed.*
+
+He paid the fifty cents.
+
+In the truck he put it on the passenger seat and didn't open it for a while. Drove back. Made coffee. The drive was still on the table where he'd left it. He sat down across from it with the mug and the book and opened to the table of contents.
+
+Chapter seven: *Keeping Secrets: How Computers Protect Information.*
+
+He went there directly, the way you go straight to the part of the manual that covers the thing that's broken.
+
+The writing was patient in the way of a man who has had to explain the same thing many times and has made peace with it. Short sentences. Analogies. The author liked analogies — padlocks, safety deposit boxes, a letter sealed in wax. He used the word *elegant* twice in the first two pages, which Brutus noticed without knowing exactly why it bothered him.
+
+He read slowly. He was not a fast reader and he didn't pretend to be.
+
+The analogy, when he got to it, was a lockbox. Not a padlock, not a safe — a lockbox with a combination dial, except the combination wasn't four digits or six. The author put it this way: imagine a number so large that if every person who had ever lived spent every second of their life trying combinations, they still wouldn't reach it. Brutus read that sentence and stopped. He read it again. The coffee had gone lukewarm and he didn't touch it.
+
+The number wasn't hidden. That was the part that kept snagging. The number wasn't hidden anywhere — it was just large. Large enough that finding it by trying was not a strategy. Large enough that *trying* was not even the right word for what you'd be doing. You'd be doing something that looked like trying but was actually just dying in a particular direction.
+
+He looked at the envelope on the table. The folder name was still there in his handwriting: *SABLE-7_encr_final_DO-NOT-DISTRIBUTE.* Fourteen characters he'd copied down because they seemed important. He hadn't known why, exactly. He'd done it the way you write down a license plate — not because you know what you'll need it for, but because something in you says *write it down.*
+
+He looked at it differently now.
+
+The letters weren't random. He'd known that. But they weren't a label the way a label on a jar was a label. They were more like the outside of the lockbox. The part you could see. The part that told you nothing.
+
+He read the passage a third time. The author used the phrase *computationally infeasible* and then, perhaps feeling guilty about it, explained it with another analogy involving grains of sand and the observable universe. Brutus did not find the second analogy more helpful. He found the first one sufficient. He sat with it.
+
+He closed the book on his thumb and sat there. Someone had not wanted this read. That was a different thing entirely from a drive that was broken.
+
+He picked at the edge of the envelope's flap. One corner, then the same corner again.
+
+He set the book face-down on the table and looked at the envelope.
+
+Then he picked the book back up.
+
+There was a chapter he'd skimmed — he'd moved past it because it had a diagram, and the diagram had looked like the kind of thing that would take longer to understand than it was worth. He found it again. The diagram was a simple thing: two boxes connected by an arrow, and the arrow was labeled *key.* The box on the left said *ciphertext.* The box on the right said *plaintext.* Below the diagram, the author had written, in a tone Brutus was beginning to recognize as the author's version of patience: *The key is not a physical object. It is information. It exists, or it does not. Without it, the locked data is not difficult to read. It is, for all practical purposes, gone.*
+
+Brutus read that sentence again.
+
+*For all practical purposes, gone.*
+
+He looked at the wall above the table. There was a nail hole there from something he'd taken down years ago and never replaced. He'd been meaning to fill it. He looked at it for a while.
+
+The thing about a physical lock — a padlock, a deadbolt, a hasp — was that the mechanism was there. You could see the problem. You could measure the shackle, feel the pins, understand what was holding. Even if you couldn't open it, you knew what you were dealing with. The object had a shape.
+
+This had no shape. The key was information. The key lived somewhere, or it didn't, and either way it left no mark on the drive itself. The drive just sat there. Identical, either way.
+
+He turned to the envelope. The folder name, in his own handwriting. Eight characters that told him nothing except that someone had known what they were doing.
+
+He didn't know who had the key. He didn't know if the key still existed. Those were two different problems, and he understood, sitting there with the nail hole and the book and the envelope, that the second one was the kind he couldn't solve from this room.
+
+He put the book on top of the envelope.
+
+* * *
+
+The drive had been made by someone. That was the thing. Not found that way, not defaulted to encryption — made that way. Chosen.
+
+He picked up the drive and set it down.
+
+When.
+
+The casing was scratched but not cracked. The USB connector showed wear at the port edge, that slight oxidation that came from years of insertion and removal, not from sitting. Someone had used this. It wasn't a backup left once and forgotten. Or it was, but it had been used before that. He turned it over. No manufacture date stamped anywhere he could find. That meant nothing. Most didn't have them.
+
+Where had it been, exactly.
+
+He walked to the window and stood there not looking out. The nail hole was in the east wall, chest height, plaster that had been painted over twice at minimum. The envelope with the book had been on the shelf. He tried to remember if they'd been touching. If the book had been leaning against anything, or just standing.
+
+He couldn't remember. He'd picked up the book first. That was the problem.
+
+He went back to the shelf and looked at the dust. There was a rectangle where the book had been. Next to it, a smaller rectangle, fainter. The envelope, maybe. Or something envelope-sized that had been there longer.
+
+They'd been together. Or close enough.
+
+He stood with his thumb moving across the edge of the shelf, feeling the dust line, the small ridge of it.
+
+Together didn't mean connected. But it didn't mean separate either.
+
+He went back to the table. The envelope was there, folder name face-up.
+
+*SYS_ARCH/REMNANT_7/keyfile_escrow_FINAL*
+
+He'd read it before as noise. He read it again.
+
+Not noise.
+
+He didn't know what *REMNANT* meant in this context. He didn't know what *7* indexed against. But *keyfile* was in there plain as anything, and *FINAL* meant there had been versions before it, and someone had named this thing, had sat down and typed these words in a specific order, and the order was not arbitrary. He got a piece of paper and copied it out exactly, character by character, the underscores and the capitalization. He didn't know why. Evidence of something he hadn't identified yet.
+
+He opened the book again. Found the section on escrow. Read it twice.
+
+A third party. Someone who wasn't the sender, wasn't the receiver. Held the key in case of — the book listed reasons: legal requirement, organizational policy, death of the keyholder.
+
+He stopped on that one.
+
+He looked at the wall.
+
+Death of the keyholder.
+
+He wrote *key escrow — third party holds key* beneath the folder name on the paper. His handwriting was worse than usual. He didn't notice until he'd already put the pen down.
+
+The book didn't say how to find the third party. It didn't say how you'd know who they were, or whether they'd tell you, or what you'd have to give them to make them.
+
+He picked at the edge of his thumbnail.
+
+The light through the kitchen window had gone orange without him noticing. He looked up and the wall was the wrong color and it took him a moment to understand why.
+
+He'd been here for hours.
+
+The drive sat on the table. The book. The envelope with the folder name written on it in handwriting that looked like someone else's. He could put the drive back in the box. Put the box back in the garage. He'd touched plenty of things in that garage and left them where they were.
+
+He looked at the folder name on the envelope. *SUCCESSION_PROTOCOL_v4_FINAL.* The underscores. Someone had typed that. Had decided that was the right name. Had decided there were three things before this that weren't final enough.
+
+He thought about the book. Thought about where a book like that came from, out here, in a box in a garage in New Atchinson. It wasn't the kind of book you ordered by accident.
+
+He picked at his thumbnail. Stopped.
+
+The room had gone quieter with the light. He could hear the refrigerator. He could hear, faintly, a truck on the highway that ran east of town.
+
+He picked up the envelope.
+
+He folded it once, along the length. The paper was thin and it creased clean.
+
+He put it in his shirt pocket.
+
+He folded the envelope and put it in his shirt pocket. That was the decision, even if he didn't call it one.

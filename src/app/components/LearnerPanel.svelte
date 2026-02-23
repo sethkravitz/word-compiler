@@ -2,20 +2,27 @@
 import type { EditPattern } from "../../learner/diff.js";
 import { accumulatePatterns, mapToProposedAction, type PatternGroup } from "../../learner/patterns.js";
 import { type BibleProposal, generateProposals } from "../../learner/proposals.js";
+import type { TuningProposal } from "../../learner/tuning.js";
 import { Badge, Button, CollapsibleSection, Pane, ProgressBar } from "../primitives/index.js";
 
 let {
   editPatterns,
   sceneOrder,
   projectId,
+  tuningProposals = [],
   onAcceptProposal,
   onRejectProposal,
+  onAcceptTuning,
+  onRejectTuning,
 }: {
   editPatterns: EditPattern[];
   sceneOrder: Map<string, number>;
   projectId: string;
+  tuningProposals?: TuningProposal[];
   onAcceptProposal?: (proposal: BibleProposal) => void;
   onRejectProposal?: (proposal: BibleProposal) => void;
+  onAcceptTuning?: (proposal: TuningProposal) => void;
+  onRejectTuning?: (proposal: TuningProposal) => void;
 } = $props();
 
 let promoted = $derived(accumulatePatterns(editPatterns, sceneOrder));
@@ -32,6 +39,19 @@ function handleAccept(proposal: BibleProposal) {
 function handleReject(proposal: BibleProposal) {
   decisions[proposal.id] = "rejected";
   onRejectProposal?.(proposal);
+}
+
+// Track tuning decisions
+let tuningDecisions = $state<Record<string, "accepted" | "rejected">>({});
+
+function handleAcceptTuning(proposal: TuningProposal) {
+  tuningDecisions[proposal.id] = "accepted";
+  onAcceptTuning?.(proposal);
+}
+
+function handleRejectTuning(proposal: TuningProposal) {
+  tuningDecisions[proposal.id] = "rejected";
+  onRejectTuning?.(proposal);
 }
 
 function formatConfidence(c: number): string {
@@ -122,6 +142,43 @@ function formatAction(proposal: BibleProposal): string {
   {/if}
 </Pane>
 
+{#if tuningProposals.length > 0}
+  <Pane title="Tuning Suggestions">
+    {#snippet headerRight()}
+      <Badge variant="info">{tuningProposals.length}</Badge>
+    {/snippet}
+
+    <div class="tuning-proposals">
+      {#each tuningProposals as tp (tp.id)}
+        {@const decision = tuningDecisions[tp.id]}
+        <div class="proposal" class:proposal-accepted={decision === "accepted"} class:proposal-rejected={decision === "rejected"}>
+          <div class="proposal-header">
+            <span class="proposal-title">{tp.parameter}</span>
+            <span class="proposal-confidence">{Math.round(tp.confidence * 100)}%</span>
+          </div>
+          <div class="tuning-values">
+            <span class="tuning-current">{tp.currentValue}</span>
+            <span class="tuning-arrow">&rarr;</span>
+            <span class="tuning-suggested">{tp.suggestedValue}</span>
+          </div>
+          <div class="proposal-meta">{tp.rationale}</div>
+          <ProgressBar value={tp.confidence} max={1} />
+          {#if !decision}
+            <div class="proposal-actions">
+              <Button onclick={() => handleAcceptTuning(tp)} title="Apply this tuning suggestion">Accept</Button>
+              <Button onclick={() => handleRejectTuning(tp)} title="Dismiss this suggestion">Reject</Button>
+            </div>
+          {:else}
+            <div class="proposal-decision">
+              {decision === "accepted" ? "Applied" : "Dismissed"}
+            </div>
+          {/if}
+        </div>
+      {/each}
+    </div>
+  </Pane>
+{/if}
+
 <style>
   .learner-empty { color: var(--text-muted); padding: 20px; text-align: center; font-size: 12px; }
   .learner-proposals { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
@@ -149,4 +206,13 @@ function formatAction(proposal: BibleProposal): string {
     font-size: 11px; color: var(--text-muted); margin-top: 8px;
     text-transform: uppercase; letter-spacing: 0.05em;
   }
+  .tuning-proposals { display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+  .tuning-values {
+    display: flex; align-items: center; gap: 8px; font-size: 13px;
+    font-family: var(--font-mono); margin-top: 4px; padding: 4px 8px;
+    background: var(--bg-secondary, var(--bg-primary)); border-radius: var(--radius-sm);
+  }
+  .tuning-current { color: var(--text-muted); }
+  .tuning-arrow { color: var(--text-secondary); }
+  .tuning-suggested { color: var(--accent); font-weight: 600; }
 </style>

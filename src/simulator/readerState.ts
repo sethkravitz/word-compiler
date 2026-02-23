@@ -1,4 +1,4 @@
-import type { NarrativeIR, ScenePlan } from "../types/index.js";
+import type { Bible, NarrativeIR, ScenePlan } from "../types/index.js";
 
 export interface ReaderState {
   knownFacts: Set<string>;
@@ -25,7 +25,7 @@ export interface SceneReaderState {
 
 export interface EpistemicWarning {
   sceneId: string;
-  type: "knowledge_ahead" | "unrevealed_fact" | "premature_setup_ref";
+  type: "knowledge_ahead" | "premature_setup_ref";
   message: string;
 }
 
@@ -61,7 +61,7 @@ export function accumulateReaderState(scenes: SceneInput[]): SceneReaderState[] 
     const setupsPlanted: string[] = [];
     const payoffsExecuted: string[] = [];
 
-    if (ir && ir.verified) {
+    if (ir?.verified) {
       // Accumulate facts revealed to reader
       for (const fact of ir.factsRevealedToReader) {
         if (!current.knownFacts.has(fact)) {
@@ -134,49 +134,152 @@ export function accumulateReaderState(scenes: SceneInput[]): SceneReaderState[] 
   return results;
 }
 
+/** Resolve a character ID to a human-readable name via the bible. */
+function resolveCharacterName(characterId: string, bible?: Bible): string {
+  if (!bible) return `[${characterId}]`;
+  const char = bible.characters.find((c) => c.id === characterId);
+  return char ? char.name : `[unknown: ${characterId}]`;
+}
+
+const STOP_WORDS = new Set([
+  "the",
+  "and",
+  "was",
+  "are",
+  "for",
+  "not",
+  "but",
+  "has",
+  "had",
+  "his",
+  "her",
+  "its",
+  "can",
+  "did",
+  "will",
+  "from",
+  "that",
+  "this",
+  "with",
+  "they",
+  "been",
+  "have",
+  "each",
+  "which",
+  "were",
+  "then",
+  "than",
+  "into",
+  "also",
+  "some",
+  "what",
+  "when",
+  "who",
+  "how",
+  "all",
+  "out",
+  "about",
+  "would",
+  "could",
+  "should",
+  "their",
+  "there",
+  "where",
+  "being",
+  "does",
+  "more",
+  "most",
+  "very",
+  "just",
+  "only",
+  "over",
+]);
+
+/** Extract meaningful keywords from a string (3+ chars, no stop words). */
+function extractKeywords(s: string): string[] {
+  return s
+    .toLowerCase()
+    .split(/\W+/)
+    .filter((w) => w.length >= 3 && !STOP_WORDS.has(w));
+}
+
+/** Check if string `a` shares meaningful keywords with string `b`. */
+function hasOverlap(a: string, b: string): boolean {
+  const wordsA = extractKeywords(a);
+  const wordsB = new Set(extractKeywords(b));
+
+  // If either side has no meaningful keywords, fall back to substring check
+  if (wordsA.length === 0 || wordsB.size === 0) {
+    const normA = a.toLowerCase().trim();
+    const normB = b.toLowerCase().trim();
+    return normA.length > 0 && normB.length > 0 && (normA.includes(normB) || normB.includes(normA));
+  }
+
+  return wordsA.some((w) => wordsB.has(w));
+}
+
 /**
  * Detect epistemic inconsistencies across accumulated reader states.
- * Checks for: characters acting on unrevealed knowledge, premature setup references.
+ * Checks for: characters acting on explicitly withheld knowledge, unmatched payoffs.
  */
-export function detectEpistemicIssues(scenes: SceneInput[], readerStates: SceneReaderState[]): EpistemicWarning[] {
+export function detectEpistemicIssues(
+  scenes: SceneInput[],
+  readerStates: SceneReaderState[],
+  bible?: Bible,
+): EpistemicWarning[] {
   const warnings: EpistemicWarning[] = [];
   const allSetups = new Set<string>();
-  const stateByScene = new Map(readerStates.map((rs) => [rs.sceneId, rs]));
+  const readerStateIds = new Set(readerStates.map((rs) => rs.sceneId));
   const sorted = [...scenes].sort((a, b) => a.sceneOrder - b.sceneOrder);
+
+  // Cumulative withheld facts across all prior scenes
+  const withheldFacts = new Set<string>();
 
   for (const scene of sorted) {
     const ir = scene.ir;
-    const readerState = stateByScene.get(scene.plan.id);
-    if (!ir || !ir.verified || !readerState) continue;
+    if (!ir || !ir.verified || !readerStateIds.has(scene.plan.id)) continue;
 
-    // Check: character acts on knowledge reader doesn't have
+    // Update withheld set before checking deltas:
+    // add new withheld facts, then remove any revealed in this scene
+    for (const fact of ir.factsWithheld) {
+      withheldFacts.add(fact);
+    }
+    for (const fact of ir.factsRevealedToReader) {
+      withheldFacts.delete(fact);
+    }
+
+    // Check: character acts on knowledge explicitly withheld from the reader
     for (const delta of ir.characterDeltas) {
       if (delta.learned) {
-        // If a character learned something, check if reader also knows it
-        if (!readerState.state.knownFacts.has(delta.learned)) {
-          warnings.push({
-            sceneId: scene.plan.id,
-            type: "knowledge_ahead",
-            message: `Character "${delta.characterId}" acts on "${delta.learned}" but reader doesn't know this yet`,
-          });
+        for (const withheld of withheldFacts) {
+          if (hasOverlap(delta.learned, withheld)) {
+            const name = resolveCharacterName(delta.characterId, bible);
+            warnings.push({
+              sceneId: scene.plan.id,
+              type: "knowledge_ahead",
+              message: `${name} acts on "${delta.learned}" — overlaps with withheld fact: "${withheld}"`,
+            });
+            break;
+          }
         }
       }
     }
 
-    // Check: payoff references a setup that hasn't been planted yet
+    // Check: payoff without a matching setup (keyword overlap, not exact match)
     for (const payoff of ir.payoffsExecuted) {
-      if (!allSetups.has(payoff.toLowerCase())) {
+      const matchesSetup = [...allSetups].some((setup) => hasOverlap(payoff, setup));
+      if (!matchesSetup) {
         warnings.push({
           sceneId: scene.plan.id,
           type: "premature_setup_ref",
-          message: `Payoff "${payoff}" executed before any matching setup was planted`,
+          message: `Payoff "${payoff}" has no matching prior setup`,
         });
       }
     }
 
     // Accumulate setups for future payoff checks
     for (const setup of ir.setupsPlanted) {
-      allSetups.add(setup.toLowerCase());
+      allSetups.add(setup);
     }
   }
 

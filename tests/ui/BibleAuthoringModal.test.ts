@@ -94,4 +94,41 @@ describe("BibleAuthoringModal", () => {
     expect(screen.getByText("Back")).toBeInTheDocument();
     expect(screen.getByText("Cancel")).toBeInTheDocument();
   });
+
+  // ─── Genre Selector ──────────────────────────────
+
+  it("renders genre selector dropdown on Guided Form tab", async () => {
+    render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
+    await fireEvent.click(screen.getByText("Guided Form"));
+    expect(screen.getByText("Genre Template")).toBeInTheDocument();
+    expect(screen.getByText(/select a genre to pre-fill/i)).toBeInTheDocument();
+  });
+
+  it("genre options include all 4 templates", async () => {
+    render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
+    await fireEvent.click(screen.getByText("Guided Form"));
+    expect(screen.getByText(/Literary Fiction/)).toBeInTheDocument();
+    expect(screen.getByText(/Thriller/)).toBeInTheDocument();
+    expect(screen.getByText(/Romance/)).toBeInTheDocument();
+    expect(screen.getByText(/Science Fiction/)).toBeInTheDocument();
+  });
+
+  it("genre selector is not visible on AI Bootstrap tab", () => {
+    render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
+    // Default tab is AI Bootstrap
+    expect(screen.queryByText("Genre Template")).not.toBeInTheDocument();
+  });
+
+  it("genre select has correct option values for all 4 templates", async () => {
+    render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
+    await fireEvent.click(screen.getByText("Guided Form"));
+
+    // Verify the select element contains all 4 genre option values
+    const select = screen.getByRole("combobox") as HTMLSelectElement;
+    const options = Array.from(select.options).map((o) => o.value);
+    expect(options).toContain("literary-fiction");
+    expect(options).toContain("thriller");
+    expect(options).toContain("romance");
+    expect(options).toContain("sci-fi");
+  });
 });

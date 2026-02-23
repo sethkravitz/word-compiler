@@ -15,7 +15,10 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
 
   async function generateChunk(pinnedSceneId?: string) {
     const plan = store.activeScenePlan;
-    if (!store.compiledPayload || !store.bible || !plan) return;
+    if (!store.compiledPayload || !store.bible || !plan) {
+      store.setError("Cannot generate: missing compiled payload, bible, or scene plan");
+      return;
+    }
 
     const sceneId = pinnedSceneId ?? plan.id;
 
@@ -82,11 +85,17 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
 
   function runAuditManual(pinnedSceneId?: string) {
     const plan = store.activeScenePlan;
-    if (!store.bible || !plan) return;
+    if (!store.bible || !plan) {
+      store.setError("Cannot audit: missing bible or scene plan");
+      return;
+    }
 
     const sceneId = pinnedSceneId ?? plan.id;
     const chunks = chunksForScene(sceneId);
-    if (chunks.length === 0) return;
+    if (chunks.length === 0) {
+      store.setError("Cannot audit: no chunks for this scene");
+      return;
+    }
 
     const allText = chunks.map((c) => getCanonicalText(c)).join("\n\n");
     const { flags, metrics } = runAudit(allText, store.bible, sceneId);
@@ -95,11 +104,21 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
 
   async function extractSceneIR(pinnedSceneId?: string) {
     const plan = store.activeScenePlan;
-    if (!store.bible || !plan) return;
+    if (!plan) {
+      store.setError("Cannot extract IR: no active scene plan");
+      return;
+    }
+    if (!store.bible) {
+      store.setError("Cannot extract IR: no bible loaded");
+      return;
+    }
 
     const sceneId = pinnedSceneId ?? plan.id;
     const chunks = chunksForScene(sceneId);
-    if (chunks.length === 0) return;
+    if (chunks.length === 0) {
+      store.setError("Cannot extract IR: no chunks for this scene");
+      return;
+    }
 
     // Find the plan for the pinned scene (may differ from active)
     const scenePlan = store.scenes.find((s) => s.plan.id === sceneId)?.plan ?? plan;
@@ -125,11 +144,17 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
 
   async function runDeepAudit(pinnedSceneId?: string) {
     const plan = store.activeScenePlan;
-    if (!store.bible || !plan) return;
+    if (!store.bible || !plan) {
+      store.setError("Cannot run deep audit: missing bible or scene plan");
+      return;
+    }
 
     const sceneId = pinnedSceneId ?? plan.id;
     const chunks = chunksForScene(sceneId);
-    if (chunks.length === 0) return;
+    if (chunks.length === 0) {
+      store.setError("Cannot run deep audit: no chunks for this scene");
+      return;
+    }
 
     const scenePlan = store.scenes.find((s) => s.plan.id === sceneId)?.plan ?? plan;
 
@@ -155,7 +180,10 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
 
   async function runAutopilot() {
     const plan = store.activeScenePlan;
-    if (!plan || !store.compiledPayload || !store.bible) return;
+    if (!plan || !store.compiledPayload || !store.bible) {
+      store.setError("Cannot start autopilot: missing scene plan, compiled payload, or bible");
+      return;
+    }
 
     // Pin the scene context so switching scenes mid-autopilot can't break the loop
     const sceneId = plan.id;

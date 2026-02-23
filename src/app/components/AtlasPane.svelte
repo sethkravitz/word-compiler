@@ -33,6 +33,7 @@ let planDebounce: ReturnType<typeof setTimeout> | undefined;
 function handleBibleChange(text: string) {
   try {
     const parsed = JSON.parse(text) as Bible;
+    store.setBible(parsed);
     clearTimeout(bibleDebounce);
     bibleDebounce = setTimeout(() => commands.saveBible(parsed), 500);
   } catch {
@@ -44,7 +45,9 @@ function handleArcChange(text: string) {
   try {
     const parsed = JSON.parse(text) as ChapterArc;
     clearTimeout(arcDebounce);
-    arcDebounce = setTimeout(() => commands.updateChapterArc(parsed), 500);
+    // Use saveChapterArc (upsert) instead of updateChapterArc so edits
+    // persist even when no chapter arc row exists yet.
+    arcDebounce = setTimeout(() => commands.saveChapterArc(parsed), 500);
   } catch {
     // Invalid JSON
   }
@@ -97,7 +100,7 @@ async function handleLoadArc() {
 }
 </script>
 
-<Pane title="Bible + Plan" contentClass="bible-content">
+<Pane title="Project Atlas" contentClass="bible-content">
   {#snippet headerRight()}
     <div class="pane-actions">
       {#if onAuthor}
@@ -130,14 +133,12 @@ async function handleLoadArc() {
         <CodeMirror value={planJson} on:change={(e) => handlePlanChange(e.detail)} {extensions} />
       </div>
     </div>
-    {#if arcJson}
-      <div class="editor-section">
-        <div class="editor-label">Chapter Arc JSON</div>
-        <div class="editor-wrapper">
-          <CodeMirror value={arcJson} on:change={(e) => handleArcChange(e.detail)} {extensions} />
-        </div>
+    <div class="editor-section">
+      <div class="editor-label">Chapter Arc JSON</div>
+      <div class="editor-wrapper">
+        <CodeMirror value={arcJson} on:change={(e) => handleArcChange(e.detail)} {extensions} />
       </div>
-    {/if}
+    </div>
 </Pane>
 
 <style>

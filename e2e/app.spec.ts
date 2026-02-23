@@ -11,9 +11,9 @@ test.describe("Word Compiler App", () => {
     await expect(page.locator("text=Word Compiler").first()).toBeVisible();
   });
 
-  test("shows Bible + Plan pane", async ({ page }) => {
+  test("shows Project Atlas pane", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("text=Bible + Plan")).toBeVisible();
+    await expect(page.locator("text=Project Atlas")).toBeVisible();
   });
 
   test("shows Draft Engine tab active by default", async ({ page }) => {
@@ -66,6 +66,12 @@ test.describe("Word Compiler App", () => {
     await expect(page.locator("select")).toBeVisible();
     const options = await page.locator("select option").count();
     expect(options).toBeGreaterThan(0);
+  });
+
+  test("Learner tab shows empty state", async ({ page }) => {
+    await page.goto("/");
+    await page.locator("button", { hasText: "Learner" }).click();
+    await expect(page.locator("text=No edit patterns yet")).toBeVisible();
   });
 
   test("no JavaScript errors on load", async ({ page }) => {

@@ -3,6 +3,8 @@ import { tick } from "svelte";
 import { describe, expect, it, vi } from "vitest";
 import LearnerPanel from "../../src/app/components/LearnerPanel.svelte";
 import type { EditPattern } from "../../src/learner/diff.js";
+import type { TuningProposal } from "../../src/learner/tuning.js";
+import { generateId } from "../../src/types/index.js";
 
 function makeEdit(overrides: Partial<EditPattern> = {}): EditPattern {
   return {
@@ -15,6 +17,22 @@ function makeEdit(overrides: Partial<EditPattern> = {}): EditPattern {
     originalText: "well",
     editedText: "",
     context: null,
+    createdAt: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+function makeTuningProposal(overrides: Partial<TuningProposal> = {}): TuningProposal {
+  return {
+    id: generateId(),
+    projectId: "p1",
+    parameter: "defaultTemperature",
+    currentValue: 0.85,
+    suggestedValue: 0.65,
+    rationale: "Average edit ratio is 45% across 12 chunks. Lowering temperature should produce closer prose.",
+    confidence: 0.82,
+    evidence: { editedChunkCount: 12, sceneCount: 4, avgEditRatio: 0.45 },
+    status: "pending",
     createdAt: new Date().toISOString(),
     ...overrides,
   };
@@ -102,6 +120,69 @@ describe("LearnerPanel", () => {
     screen.getByText("Accept").click();
     await tick();
     // After clicking, the decision text should appear
+    expect(screen.getByText("Applied")).toBeTruthy();
+  });
+
+  // ─── Tuning Proposals ─────────────────────────────────
+
+  it("shows tuning section when tuningProposals is non-empty", () => {
+    render(LearnerPanel, {
+      editPatterns: [],
+      sceneOrder: new Map(),
+      projectId: "p1",
+      tuningProposals: [makeTuningProposal()],
+    });
+    expect(screen.getByText("Tuning Suggestions")).toBeTruthy();
+    expect(screen.getByText("defaultTemperature")).toBeTruthy();
+  });
+
+  it("hides tuning section when tuningProposals is empty", () => {
+    render(LearnerPanel, {
+      editPatterns: [],
+      sceneOrder: new Map(),
+      projectId: "p1",
+      tuningProposals: [],
+    });
+    expect(screen.queryByText("Tuning Suggestions")).toBeNull();
+  });
+
+  it("displays current → suggested value and confidence", () => {
+    render(LearnerPanel, {
+      editPatterns: [],
+      sceneOrder: new Map(),
+      projectId: "p1",
+      tuningProposals: [makeTuningProposal({ currentValue: 0.85, suggestedValue: 0.65, confidence: 0.82 })],
+    });
+    expect(screen.getByText("0.85")).toBeTruthy();
+    expect(screen.getByText("0.65")).toBeTruthy();
+    expect(screen.getByText("82%")).toBeTruthy();
+  });
+
+  it("calls onAcceptTuning when Accept is clicked on a tuning proposal", async () => {
+    const onAcceptTuning = vi.fn();
+    const tp = makeTuningProposal();
+    render(LearnerPanel, {
+      editPatterns: [],
+      sceneOrder: new Map(),
+      projectId: "p1",
+      tuningProposals: [tp],
+      onAcceptTuning,
+    });
+    // The tuning Accept button is the only Accept on screen (no bible proposals)
+    screen.getByText("Accept").click();
+    expect(onAcceptTuning).toHaveBeenCalledTimes(1);
+    expect(onAcceptTuning.mock.calls[0]![0]).toHaveProperty("parameter", "defaultTemperature");
+  });
+
+  it("shows Applied state after accepting a tuning proposal", async () => {
+    render(LearnerPanel, {
+      editPatterns: [],
+      sceneOrder: new Map(),
+      projectId: "p1",
+      tuningProposals: [makeTuningProposal()],
+    });
+    screen.getByText("Accept").click();
+    await tick();
     expect(screen.getByText("Applied")).toBeTruthy();
   });
 });

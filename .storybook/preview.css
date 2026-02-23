@@ -1,0 +1,10 @@
+/*
+ * Override the app's global `overflow: hidden` on html/body/#root.
+ * The full app is a fixed-layout editor that must not scroll, but
+ * Storybook docs pages need scrollable preview containers.
+ */
+html,
+body,
+#root {
+  overflow: auto;
+}

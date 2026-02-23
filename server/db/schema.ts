@@ -120,6 +120,22 @@ export function createSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_edit_patterns_project ON edit_patterns(project_id, sub_type);
     CREATE INDEX IF NOT EXISTS idx_edit_patterns_scene ON edit_patterns(scene_id);
 
+    -- Profile Adjustments (auto-tuning proposals)
+    CREATE TABLE IF NOT EXISTS profile_adjustments (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id),
+      parameter TEXT NOT NULL,
+      current_value REAL NOT NULL,
+      suggested_value REAL NOT NULL,
+      rationale TEXT NOT NULL,
+      confidence REAL NOT NULL,
+      evidence TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_profile_adjustments_project ON profile_adjustments(project_id, status);
+
     -- Learned Patterns (accumulated from edit_patterns)
     CREATE TABLE IF NOT EXISTS learned_patterns (
       id TEXT PRIMARY KEY,

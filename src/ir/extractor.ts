@@ -13,60 +13,6 @@ export interface IRLLMClient {
   ): Promise<string>;
 }
 
-// ─── JSON Schema for Structured Output ───────────────────
-
-export const narrativeIRSchema: Record<string, unknown> = {
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    events: { type: "array", items: { type: "string" } },
-    factsIntroduced: { type: "array", items: { type: "string" } },
-    factsRevealedToReader: { type: "array", items: { type: "string" } },
-    factsWithheld: { type: "array", items: { type: "string" } },
-    characterDeltas: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          characterId: { type: "string" },
-          learned: { type: ["string", "null"] },
-          suspicionGained: { type: ["string", "null"] },
-          emotionalShift: { type: ["string", "null"] },
-          relationshipChange: { type: ["string", "null"] },
-        },
-        required: ["characterId", "learned", "suspicionGained", "emotionalShift", "relationshipChange"],
-      },
-    },
-    setupsPlanted: { type: "array", items: { type: "string" } },
-    payoffsExecuted: { type: "array", items: { type: "string" } },
-    characterPositions: {
-      type: "array",
-      items: {
-        type: "object",
-        additionalProperties: false,
-        properties: {
-          characterId: { type: "string" },
-          position: { type: "string" },
-        },
-        required: ["characterId", "position"],
-      },
-    },
-    unresolvedTensions: { type: "array", items: { type: "string" } },
-  },
-  required: [
-    "events",
-    "factsIntroduced",
-    "factsRevealedToReader",
-    "factsWithheld",
-    "characterDeltas",
-    "setupsPlanted",
-    "payoffsExecuted",
-    "characterPositions",
-    "unresolvedTensions",
-  ],
-};
-
 // ─── Prompt Builder ──────────────────────────────────────
 
 export function buildIRExtractionPrompt(prose: string, plan: ScenePlan, bible: Bible): string {
@@ -117,7 +63,7 @@ Extract the narrative internal record for this scene. Return ONLY valid JSON in 
   "unresolvedTensions": ["tensions still active at scene end — what keeps the reader wanting to turn the page"]
 }
 
-Be specific and factual. Do not add commentary. Do not invent facts not present in the prose.`;
+Be specific and factual. Keep each string value TERSE (under 15 words). Do not add commentary. Do not invent facts not present in the prose.`;
 }
 
 // ─── Extractor ───────────────────────────────────────────
@@ -132,6 +78,9 @@ export async function extractIR(
   model = "claude-sonnet-4-6",
 ): Promise<NarrativeIR> {
   const userMessage = buildIRExtractionPrompt(prose, plan, bible);
-  const responseText = await llmClient.call(IR_SYSTEM_MESSAGE, userMessage, model, 2000, narrativeIRSchema);
+  const responseText = await llmClient.call(IR_SYSTEM_MESSAGE, userMessage, model, 4096);
+  if (!responseText || !responseText.trim()) {
+    throw new Error("IR extraction failed: LLM returned an empty response");
+  }
   return parseIRResponse(responseText, plan.id);
 }

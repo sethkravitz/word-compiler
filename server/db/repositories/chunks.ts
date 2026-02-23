@@ -11,7 +11,7 @@ export function createChunk(db: Database.Database, chunk: Chunk): Chunk {
        sequence_number = excluded.sequence_number,
        data = excluded.data,
        updated_at = excluded.updated_at`,
-  ).run(chunk.id, chunk.sceneId, chunk.sequenceNumber, JSON.stringify(chunk), now, now);
+  ).run(chunk.id, chunk.sceneId, chunk.sequenceNumber ?? 0, JSON.stringify(chunk), now, now);
   return chunk;
 }
 

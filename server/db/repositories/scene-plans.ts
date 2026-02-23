@@ -14,7 +14,7 @@ export function createScenePlan(db: Database.Database, plan: ScenePlan, sceneOrd
        scene_order = excluded.scene_order,
        data = excluded.data,
        updated_at = excluded.updated_at`,
-  ).run(plan.id, plan.projectId, plan.chapterId, sceneOrder, "planned", JSON.stringify(plan), now, now);
+  ).run(plan.id, plan.projectId, plan.chapterId ?? null, sceneOrder, "planned", JSON.stringify(plan), now, now);
   return plan;
 }
 

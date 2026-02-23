@@ -4,6 +4,31 @@ import BibleAuthoringModalStory from "./BibleAuthoringModalStory.svelte";
 const meta: Meta<BibleAuthoringModalStory> = {
   title: "Components/BibleAuthoringModal",
   component: BibleAuthoringModalStory,
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      story: { height: "600px" },
+      description: {
+        component:
+          "Bible authoring modal — create or edit the story bible via direct form entry or LLM bootstrap from a synopsis.",
+      },
+    },
+  },
+  argTypes: {
+    mode: {
+      control: "select",
+      options: ["bootstrap", "form"],
+      description: "Which authoring mode to start in.",
+    },
+    prePopulated: {
+      control: "boolean",
+      description: "Whether to pre-populate with sample Bible data.",
+    },
+    withGenre: {
+      control: "boolean",
+      description: "Whether to apply Literary Fiction genre template defaults.",
+    },
+  },
 };
 
 export default meta;
@@ -19,4 +44,8 @@ export const EmptyForm: Story = {
 
 export const PrePopulatedForm: Story = {
   args: { mode: "form", prePopulated: true },
+};
+
+export const WithGenrePresets: Story = {
+  args: { mode: "form", prePopulated: true, withGenre: true },
 };

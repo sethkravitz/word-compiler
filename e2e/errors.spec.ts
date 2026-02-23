@@ -96,7 +96,7 @@ test.describe("Error handling", () => {
     page.on("pageerror", (error) => errors.push(error.message));
 
     await page.goto("/");
-    await expect(page.locator("text=Bible + Plan")).toBeVisible();
+    await expect(page.locator("text=Project Atlas")).toBeVisible();
 
     // Navigate through all tabs
     for (const tab of ["Scene Blueprint", "Reader Journey", "Voice Consistency", "Character Voices", "Draft Engine"]) {

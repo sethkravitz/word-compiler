@@ -11,6 +11,7 @@ let { size = "md" }: { size?: "sm" | "md" } = $props();
     border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+    flex-shrink: 0;
   }
   .spinner-sm { width: 10px; height: 10px; }
   .spinner-md { width: 16px; height: 16px; }

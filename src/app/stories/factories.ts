@@ -1,3 +1,5 @@
+import type { EditPattern } from "../../learner/diff.js";
+import type { TuningProposal } from "../../learner/tuning.js";
 import type {
   AuditFlag,
   ChapterArc,
@@ -8,6 +10,7 @@ import type {
   LintIssue,
   LintResult,
   NarrativeIR,
+  Project,
   ProseMetrics,
   ScenePlan,
   StyleDriftReport,
@@ -276,6 +279,57 @@ export function makeChapterArc(overrides: Partial<ChapterArc> = {}): ChapterArc 
       wrongAbout: [],
       activeTensions: ["What will Alice do with the letter?", "Is Bob dangerous?"],
     },
+    sourcePrompt: null,
+    ...overrides,
+  };
+}
+
+// ─── Edit Pattern ─────────────────────────────────────
+
+export function makeEditPattern(overrides: Partial<EditPattern> = {}): EditPattern {
+  return {
+    id: generateId(),
+    chunkId: "c1",
+    sceneId: "s1",
+    projectId: "p1",
+    editType: "DELETION",
+    subType: "CUT_FILLER",
+    originalText: "well",
+    editedText: "",
+    context: null,
+    createdAt: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+// ─── Tuning Proposal ──────────────────────────────────
+
+export function makeTuningProposal(overrides: Partial<TuningProposal> = {}): TuningProposal {
+  return {
+    id: generateId(),
+    projectId: "p1",
+    parameter: "defaultTemperature",
+    currentValue: 0.85,
+    suggestedValue: 0.65,
+    rationale:
+      "Average edit ratio is 45% across 12 chunks. Lowering temperature should produce prose closer to your preferred style.",
+    confidence: 0.82,
+    evidence: { editedChunkCount: 12, sceneCount: 4, avgEditRatio: 0.45 },
+    status: "pending",
+    createdAt: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+// ─── Project ──────────────────────────────────────────
+
+export function makeProject(overrides: Partial<Project> = {}): Project {
+  return {
+    id: generateId(),
+    title: "Untitled Project",
+    status: "bootstrap",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
     ...overrides,
   };
 }

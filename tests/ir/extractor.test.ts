@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildIRExtractionPrompt, extractIR, type IRLLMClient, narrativeIRSchema } from "../../src/ir/extractor.js";
+import { buildIRExtractionPrompt, extractIR, type IRLLMClient } from "../../src/ir/extractor.js";
 import { createEmptyBible, createEmptyScenePlan } from "../../src/types/index.js";
 
 function makeMockClient(responseText: string): IRLLMClient {
@@ -137,17 +137,15 @@ describe("extractIR", () => {
     expect(callArgs[2]).toBe("claude-opus-4-6");
   });
 
-  it("passes narrativeIRSchema as outputSchema to the LLM client", async () => {
+  it("does not pass outputSchema (relies on prompt + parser)", async () => {
     const client = makeMockClient(VALID_IR_JSON);
     await extractIR("prose", makePlan(), makeBible(), client);
     const callArgs = (client.call as ReturnType<typeof vi.fn>).mock.calls[0]!;
-    expect(callArgs[4]).toBe(narrativeIRSchema);
+    expect(callArgs[4]).toBeUndefined();
   });
 
-  it("returns empty IR when LLM returns unparseable response", async () => {
+  it("throws when LLM returns unparseable response", async () => {
     const client = makeMockClient("I cannot do this task.");
-    const ir = await extractIR("prose", makePlan(), makeBible(), client);
-    expect(ir.sceneId).toBe(SCENE_ID);
-    expect(ir.events).toHaveLength(0);
+    await expect(extractIR("prose", makePlan(), makeBible(), client)).rejects.toThrow("unparseable response");
   });
 });

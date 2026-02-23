@@ -1,7 +1,7 @@
 {
   "id": "scene-signal-002",
   "projectId": "proj-scifi",
-  "chapterId": null,
+  "chapterId": "arc-scifi-ch1",
   "title": "Pattern Recognition",
   "povCharacterId": "sable",
   "povDistance": "intimate",

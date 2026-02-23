@@ -8,7 +8,7 @@ test.describe("Scene authoring workflow", () => {
   test.beforeEach(async ({ page }) => {
     await mockStartup(page);
     await page.goto("/");
-    await expect(page.locator("text=Bible + Plan")).toBeVisible();
+    await expect(page.locator("text=Project Atlas")).toBeVisible();
 
     // Load Bible fixture first
     const [fileChooser] = await Promise.all([

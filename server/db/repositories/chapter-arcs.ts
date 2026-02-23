@@ -10,7 +10,12 @@ export function createChapterArc(db: Database.Database, arc: ChapterArc): Chapte
        data = excluded.data,
        updated_at = excluded.updated_at`,
   ).run(arc.id, arc.projectId, arc.chapterNumber, JSON.stringify(arc), now, now);
-  return arc;
+  // On conflict the row keeps its original id — read it back so the caller
+  // (and downstream scene-plan FK references) use the persisted id.
+  const row = db
+    .prepare("SELECT id FROM chapter_arcs WHERE project_id = ? AND chapter_number = ?")
+    .get(arc.projectId, arc.chapterNumber) as { id: string };
+  return { ...arc, id: row.id };
 }
 
 export function getChapterArc(db: Database.Database, id: string): ChapterArc | null {

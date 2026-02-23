@@ -5,6 +5,13 @@ const meta: Meta<SegmentedBar> = {
   title: "Primitives/SegmentedBar",
   component: SegmentedBar,
   parameters: { layout: "padded" },
+  argTypes: {
+    legendLayout: {
+      control: "select",
+      options: ["horizontal", "vertical"],
+      description: "Legend layout direction (only visible when height < 20px)",
+    },
+  },
 };
 
 export default meta;
@@ -30,6 +37,17 @@ export const SignalNoise: Story = {
   },
 };
 
+export const SignalNoiseVerticalLegend: Story = {
+  args: {
+    segments: [
+      { label: "3 actionable", flex: 3, variant: "actionable" },
+      { label: "2 noise", flex: 2, variant: "noise" },
+    ],
+    height: 8,
+    legendLayout: "vertical",
+  },
+};
+
 export const Flagged: Story = {
   args: {
     segments: [
@@ -37,5 +55,38 @@ export const Flagged: Story = {
       { label: "R2 800", flex: 15, variant: "r2" },
       { label: "R3 2,200", flex: 41, variant: "r3", starved: true },
     ],
+  },
+};
+
+export const FlaggedThinWithLegend: Story = {
+  args: {
+    segments: [
+      { label: "R1 2,400", flex: 44, variant: "r1", flagged: true },
+      { label: "R2 800", flex: 15, variant: "r2" },
+      { label: "R3 2,200", flex: 41, variant: "r3", starved: true },
+    ],
+    height: 10,
+  },
+};
+
+export const NarrowSegments: Story = {
+  args: {
+    segments: [
+      { label: "R1 523", flex: 25, variant: "r1" },
+      { label: "R2 244", flex: 12, variant: "r2" },
+      { label: "R3 1,334", flex: 63, variant: "r3" },
+    ],
+  },
+};
+
+export const FlaggedThinVerticalLegend: Story = {
+  args: {
+    segments: [
+      { label: "R1 2,400", flex: 44, variant: "r1", flagged: true },
+      { label: "R2 800", flex: 15, variant: "r2" },
+      { label: "R3 2,200", flex: 41, variant: "r3", starved: true },
+    ],
+    height: 10,
+    legendLayout: "vertical",
   },
 };
