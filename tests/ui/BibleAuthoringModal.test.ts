@@ -115,8 +115,8 @@ describe("BibleAuthoringModal", () => {
 
   it("genre selector is not visible on AI Bootstrap tab", () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    // Default tab is AI Bootstrap
-    expect(screen.queryByText("Genre Template")).not.toBeInTheDocument();
+    // Default tab is AI Bootstrap — form tab is rendered but hidden
+    expect(screen.queryByText("Genre Template")).not.toBeVisible();
   });
 
   it("genre select has correct option values for all 4 templates", async () => {
