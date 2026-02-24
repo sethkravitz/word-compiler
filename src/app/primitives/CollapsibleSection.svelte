@@ -50,6 +50,12 @@ function resolveInitialOpen(): boolean {
 
 let isOpen = $state(resolveInitialOpen());
 
+// Re-resolve persisted state when sectionId changes (e.g. list reordering reuses this instance)
+$effect(() => {
+  void sectionId;
+  isOpen = resolveInitialOpen();
+});
+
 function onToggle(e: Event) {
   const details = e.currentTarget as HTMLDetailsElement;
   isOpen = details.open;

@@ -132,11 +132,15 @@ app.post("/api/generate/stream", async (req, res) => {
       messages: [{ role: "user", content: userMessage }],
     });
 
-    // Abort the upstream Anthropic stream when the client disconnects
-    // to prevent wasting API tokens on responses nobody is reading
-    req.on("close", () => {
-      console.warn(`[stream] Client disconnected, aborting upstream stream (${textLength} chars sent so far)`);
-      stream.abort();
+    // Abort the upstream Anthropic stream when the client disconnects.
+    // Use res "close" (not req "close") — req emits close when the request
+    // body is consumed, which for POST happens immediately. res emits close
+    // when the SSE connection is actually torn down by the client.
+    res.on("close", () => {
+      if (!res.writableEnded) {
+        console.warn(`[stream] Client disconnected, aborting upstream stream (${textLength} chars sent so far)`);
+        stream.abort();
+      }
     });
 
     let textLength = 0;
