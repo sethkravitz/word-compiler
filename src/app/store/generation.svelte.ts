@@ -13,6 +13,32 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
     return store.sceneChunks[sceneId] ?? [];
   }
 
+  /** Helper: guard against empty generation, returns true if generation was empty */
+  function handleEmptyGeneration(fullText: string, stopReason: string, sceneId: string, chunkIndex: number): boolean {
+    if (fullText.trim()) return false;
+    const reason =
+      stopReason === "max_tokens"
+        ? "The model used all output tokens without producing text. Try increasing the output token budget in your generation config."
+        : "Generation produced no text. Check server logs for details.";
+    store.setError(`Empty generation: ${reason}`);
+    store.removeChunkForScene(sceneId, chunkIndex);
+    return true;
+  }
+
+  /** Helper: persist finalized chunk and run + save audit */
+  async function persistChunkAndAudit(sceneId: string, chunkIndex: number, pendingChunk: Chunk, fullText: string) {
+    const finalChunk = chunksForScene(sceneId)[chunkIndex];
+    if (finalChunk) await commands.saveChunk(finalChunk);
+
+    const allText = [...chunksForScene(sceneId).slice(0, chunkIndex), { ...pendingChunk, generatedText: fullText }]
+      .map((c) => getCanonicalText(c))
+      .join("\n\n");
+    const { flags, metrics } = runAudit(allText, store.bible!, sceneId);
+    store.setAudit(flags, metrics);
+
+    await commands.saveAuditFlags(flags);
+  }
+
   async function generateChunk(pinnedSceneId?: string) {
     const plan = store.activeScenePlan;
     if (!store.compiledPayload || !store.bible || !plan) {
@@ -66,30 +92,9 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
       // Abort if stream errored — don't persist partial/invalid prose
       if (streamFailed) return;
 
-      // Guard: reject empty generation (model may have spent tokens on thinking or hit max_tokens)
-      if (!fullText.trim()) {
-        const reason =
-          stopReason === "max_tokens"
-            ? "The model used all output tokens without producing text. Try increasing the output token budget in your generation config."
-            : "Generation produced no text. Check server logs for details.";
-        store.setError(`Empty generation: ${reason}`);
-        store.removeChunkForScene(sceneId, chunkIndex);
-        return;
-      }
+      if (handleEmptyGeneration(fullText, stopReason, sceneId, chunkIndex)) return;
 
-      // Persist the finalized chunk
-      const finalChunk = chunksForScene(sceneId)[chunkIndex];
-      if (finalChunk) await commands.saveChunk(finalChunk);
-
-      // Run audit on all chunks for this scene
-      const allText = [...chunksForScene(sceneId).slice(0, chunkIndex), { ...pendingChunk, generatedText: fullText }]
-        .map((c) => getCanonicalText(c))
-        .join("\n\n");
-      const { flags, metrics } = runAudit(allText, store.bible, sceneId);
-      store.setAudit(flags, metrics);
-
-      // Persist audit flags
-      await commands.saveAuditFlags(flags);
+      await persistChunkAndAudit(sceneId, chunkIndex, pendingChunk, fullText);
     } catch (err) {
       store.setError(err instanceof Error ? err.message : "Generation failed");
     } finally {
@@ -112,46 +117,56 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
     }
 
     const allText = chunks.map((c) => getCanonicalText(c)).join("\n\n");
-    const { flags, metrics } = runAudit(allText, store.bible, sceneId);
+    const { flags, metrics } = runAudit(allText, store.bible!, sceneId);
     store.setAudit(flags, metrics);
   }
 
-  async function extractSceneIR(pinnedSceneId?: string) {
+  /** Helper: validate preconditions for IR extraction, returning context or null */
+  function validateIRExtraction(
+    pinnedSceneId?: string,
+  ): { plan: typeof store.activeScenePlan & object; sceneId: string; prose: string } | null {
     const plan = store.activeScenePlan;
     if (!plan) {
       store.setError("Cannot extract IR: no active scene plan");
-      return;
+      return null;
     }
     if (!store.bible) {
       store.setError("Cannot extract IR: no bible loaded");
-      return;
+      return null;
     }
 
     const sceneId = pinnedSceneId ?? plan.id;
     const chunks = chunksForScene(sceneId);
     if (chunks.length === 0) {
       store.setError("Cannot extract IR: no chunks for this scene");
-      return;
+      return null;
     }
 
-    // Find the plan for the pinned scene (may differ from active)
+    const prose = chunks.map((c) => getCanonicalText(c)).join("\n\n");
+    if (!prose.trim()) {
+      store.setError("Cannot extract IR: all chunks are empty. Generate prose content first.");
+      return null;
+    }
+
+    return { plan, sceneId, prose };
+  }
+
+  async function extractSceneIR(pinnedSceneId?: string) {
+    const validated = validateIRExtraction(pinnedSceneId);
+    if (!validated) return;
+
+    const { plan, sceneId, prose } = validated;
     const scenePlan = store.scenes.find((s) => s.plan.id === sceneId)?.plan ?? plan;
 
     store.setExtractingIR(sceneId);
     store.setError(null);
 
     try {
-      const prose = chunks.map((c) => getCanonicalText(c)).join("\n\n");
-      if (!prose.trim()) {
-        store.setError("Cannot extract IR: all chunks are empty. Generate prose content first.");
-        store.setExtractingIR(null);
-        return;
-      }
       const llmClient: IRLLMClient = {
         call: (systemMessage, userMessage, model, maxTokens, outputSchema) =>
           callLLM(systemMessage, userMessage, model, maxTokens, outputSchema),
       };
-      const ir = await extractIR(prose, scenePlan, store.bible, llmClient);
+      const ir = await extractIR(prose, scenePlan, store.bible!, llmClient);
       await commands.saveSceneIR(sceneId, ir);
       store.setIRInspectorOpen(true);
     } catch (err) {
@@ -197,6 +212,43 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
     }
   }
 
+  /** Helper: run one iteration of the autopilot loop. Returns false to stop looping. */
+  async function runAutopilotIteration(sceneId: string): Promise<boolean> {
+    if (store.autopilotCancelled) return false;
+
+    const chunkCountBefore = chunksForScene(sceneId).length;
+
+    await generateChunk(sceneId);
+    if (store.autopilotCancelled) return false;
+
+    const chunksAfter = chunksForScene(sceneId);
+    if (chunksAfter.length <= chunkCountBefore) {
+      return false;
+    }
+
+    const latestChunk = chunksAfter[chunksAfter.length - 1];
+    if (!latestChunk || !getCanonicalText(latestChunk).trim()) {
+      store.setError("Autopilot stopped: generated chunk has no content.");
+      return false;
+    }
+
+    const chunkIndex = chunksAfter.length - 1;
+    await commands.updateChunk(sceneId, chunkIndex, { status: "accepted" });
+    return true;
+  }
+
+  /** Helper: finalize autopilot by completing scene and extracting IR */
+  async function finalizeAutopilot(sceneId: string) {
+    if (store.autopilotCancelled) return;
+
+    const result = await commands.completeScene(sceneId);
+    if (!result.ok) {
+      store.setError(`Autopilot finished but scene cannot be completed: ${result.error}`);
+    } else {
+      await extractSceneIR(sceneId);
+    }
+  }
+
   async function runAutopilot() {
     const plan = store.activeScenePlan;
     if (!plan || !store.compiledPayload || !store.bible) {
@@ -212,43 +264,11 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
 
     try {
       while (chunksForScene(sceneId).length < maxChunks) {
-        if (store.autopilotCancelled) break;
-
-        const chunkCountBefore = chunksForScene(sceneId).length;
-
-        // Generate next chunk (pinned to this scene)
-        await generateChunk(sceneId);
-        if (store.autopilotCancelled) break;
-
-        // If generateChunk removed the empty chunk (guard triggered), stop autopilot
-        const chunksAfter = chunksForScene(sceneId);
-        if (chunksAfter.length <= chunkCountBefore) {
-          // generateChunk failed or produced empty text — error already set
-          break;
-        }
-
-        // Verify chunk has content before auto-accepting
-        const latestChunk = chunksAfter[chunksAfter.length - 1];
-        if (!latestChunk || !getCanonicalText(latestChunk).trim()) {
-          store.setError("Autopilot stopped: generated chunk has no content.");
-          break;
-        }
-
-        // Auto-accept the chunk we just generated
-        const chunkIndex = chunksAfter.length - 1;
-        await commands.updateChunk(sceneId, chunkIndex, { status: "accepted" });
+        const shouldContinue = await runAutopilotIteration(sceneId);
+        if (!shouldContinue) break;
       }
 
-      if (!store.autopilotCancelled) {
-        // Gate check + complete via commands (gates enforced inside)
-        const result = await commands.completeScene(sceneId);
-        if (!result.ok) {
-          store.setError(`Autopilot finished but scene cannot be completed: ${result.error}`);
-        } else {
-          // Auto-extract IR after successful scene completion
-          await extractSceneIR(sceneId);
-        }
-      }
+      await finalizeAutopilot(sceneId);
     } catch (err) {
       store.setError(err instanceof Error ? err.message : "Autopilot failed");
     } finally {

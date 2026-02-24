@@ -3,10 +3,12 @@ import cors from "cors";
 import express from "express";
 import { createApiRouter } from "./api/routes.js";
 import { getDatabase } from "./db/connection.js";
+import { errorHandler, requestLogger } from "./middleware.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(requestLogger);
 
 // Initialize database and mount REST API
 const db = getDatabase();
@@ -20,9 +22,11 @@ let modelsCache: Array<{ id: string; displayName: string; contextWindow: number;
 app.get("/api/models", async (_req, res) => {
   try {
     if (modelsCache) {
+      console.debug(`[models] Serving ${modelsCache.length} models from cache`);
       res.json({ models: modelsCache });
       return;
     }
+    console.log("[models] Fetching models from Anthropic API");
 
     const response = await client.models.list({ limit: 100 });
     const models = response.data
@@ -36,10 +40,12 @@ app.get("/api/models", async (_req, res) => {
       .sort((a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id));
 
     modelsCache = models;
+    console.log(`[models] Cached ${models.length} models`);
     res.json({ models });
   } catch (err: unknown) {
     const status = (err as { status?: number }).status || 500;
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error(`[models] Error: ${message}`);
     res.status(status).json({ error: message });
   }
 });
@@ -90,13 +96,14 @@ app.post("/api/generate", async (req, res) => {
   } catch (err: unknown) {
     const status = (err as { status?: number }).status || 500;
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error(`[generate] Error: ${message}`);
     res.status(status).json({ error: message });
   }
 });
 
-// Streaming endpoint — SSE
+// Streaming endpoint — SSE (does not support outputSchema; use /api/generate for structured output)
 app.post("/api/generate/stream", async (req, res) => {
-  const { systemMessage, userMessage, temperature, topP, maxTokens, model, outputSchema } = req.body;
+  const { systemMessage, userMessage, temperature, topP, maxTokens, model } = req.body;
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -123,14 +130,12 @@ app.post("/api/generate/stream", async (req, res) => {
       ...samplingParams,
       system: systemMessage,
       messages: [{ role: "user", content: userMessage }],
-      ...(outputSchema && {
-        output_config: { format: { type: "json_schema" as const, schema: outputSchema } },
-      }),
     });
 
     // Abort the upstream Anthropic stream when the client disconnects
     // to prevent wasting API tokens on responses nobody is reading
     req.on("close", () => {
+      console.warn(`[stream] Client disconnected, aborting upstream stream (${textLength} chars sent so far)`);
       stream.abort();
     });
 
@@ -171,10 +176,14 @@ app.post("/api/generate/stream", async (req, res) => {
     safeEnd();
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
+    console.error(`[stream] Unhandled error: ${message}`);
     safeWrite(`data: ${JSON.stringify({ type: "error", error: message })}\n\n`);
     safeEnd();
   }
 });
+
+// Error handler must be registered after all routes
+app.use(errorHandler);
 
 export { app };
 
