@@ -63,6 +63,32 @@ describe("buildSceneBootstrapPrompt", () => {
     expect(payload.userMessage).toContain("chapterArc");
   });
 
+  it("instructs LLM to skip characters when none selected", () => {
+    const payload = buildSceneBootstrapPrompt({
+      direction: "A quiet scene",
+      sceneCount: 1,
+      characters: [],
+      locations: [],
+      includeChapterArc: false,
+    });
+    expect(payload.userMessage).toContain("No characters have been selected");
+    expect(payload.userMessage).toContain('"povCharacterId": ""');
+    expect(payload.userMessage).not.toContain("exact character name from the list above");
+  });
+
+  it("instructs name-based character selection when characters are selected", () => {
+    const payload = buildSceneBootstrapPrompt({
+      direction: "A tense scene",
+      sceneCount: 1,
+      characters,
+      locations: [],
+      includeChapterArc: false,
+    });
+    expect(payload.userMessage).toContain("exact character name from the list above");
+    expect(payload.userMessage).toContain("ID will be resolved automatically");
+    expect(payload.userMessage).not.toContain("No characters have been selected");
+  });
+
   it("includes constraints when provided", () => {
     const payload = buildSceneBootstrapPrompt({
       direction: "Test",
@@ -214,6 +240,46 @@ describe("mapSceneBootstrapToPlans", () => {
       actualConversation: "Power struggle",
       enforcementRule: "Never state power explicitly",
     });
+  });
+
+  it("resolves character by fuzzy token match (underscore slug)", () => {
+    const parsed = {
+      scenes: [{ title: "Test", povCharacterId: "marcus_cole", povCharacterName: "" }],
+    };
+    const plans = mapSceneBootstrapToPlans(parsed, "proj-1", characters, locations);
+    expect(plans[0]!.povCharacterId).toBe("c1");
+  });
+
+  it("resolves character by fuzzy token match (partial name)", () => {
+    const parsed = {
+      scenes: [{ title: "Test", povCharacterName: "Elena" }],
+    };
+    const plans = mapSceneBootstrapToPlans(parsed, "proj-1", [{ id: "c2", name: "Elena Voss" }], []);
+    expect(plans[0]!.povCharacterId).toBe("c2");
+  });
+
+  it("resolves location by fuzzy token match", () => {
+    const parsed = {
+      scenes: [{ title: "Test", locationName: "the velvet lounge" }],
+    };
+    const plans = mapSceneBootstrapToPlans(parsed, "proj-1", [], locations);
+    expect(plans[0]!.locationId).toBe("l1");
+  });
+
+  it("returns empty string for unresolvable character", () => {
+    const parsed = {
+      scenes: [{ title: "Test", povCharacterId: "made-up-id", povCharacterName: "Imaginary Person" }],
+    };
+    const plans = mapSceneBootstrapToPlans(parsed, "proj-1", characters, locations);
+    expect(plans[0]!.povCharacterId).toBe("");
+  });
+
+  it("returns null for unresolvable location", () => {
+    const parsed = {
+      scenes: [{ title: "Test", locationId: "made-up-id", locationName: "Narnia" }],
+    };
+    const plans = mapSceneBootstrapToPlans(parsed, "proj-1", characters, locations);
+    expect(plans[0]!.locationId).toBeNull();
   });
 
   it("validates enum values and falls back to defaults", () => {

@@ -13,6 +13,7 @@ function createMockStore(overrides = {}) {
   return {
     bible: null,
     activeScenePlan: null,
+    chapterArc: null,
     activeSceneIndex: 0,
     scenes: [],
     loadFile: vi.fn(),
@@ -69,13 +70,16 @@ describe("AtlasPane", () => {
     expect(screen.getByText("Bootstrap")).toBeInTheDocument();
   });
 
-  it("shows 'Load Bible' button", () => {
+  it("renders tab buttons for Bible, Scene, Arc, JSON", () => {
     render(AtlasPane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
-    expect(screen.getByText("Load Bible")).toBeInTheDocument();
+    expect(screen.getByText("Bible")).toBeInTheDocument();
+    expect(screen.getByText("Scene")).toBeInTheDocument();
+    expect(screen.getByText("Arc")).toBeInTheDocument();
+    expect(screen.getByText("JSON")).toBeInTheDocument();
   });
 
-  it("Save Bible button is disabled when no bible", () => {
+  it("shows bible empty state when no bible exists on bible tab", () => {
     render(AtlasPane, { store: createMockStore(), commands: createMockCommands(), onBootstrap: vi.fn() });
-    expect(screen.getByText("Save Bible")).toBeDisabled();
+    expect(screen.getByText("No story bible yet.")).toBeInTheDocument();
   });
 });

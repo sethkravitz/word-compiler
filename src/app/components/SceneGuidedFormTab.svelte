@@ -13,6 +13,7 @@ import {
   TextArea,
 } from "../primitives/index.js";
 import { getExamples } from "./field-examples.js";
+import ReaderStateFields from "./ReaderStateFields.svelte";
 
 export type FormFooterState = {
   formStep: string;
@@ -148,37 +149,17 @@ export function save() {
 
   {:else if formStep === "reader"}
     <div class="form-step">
-      <fieldset class="form-fieldset">
-        <legend>Reader State Entering</legend>
-        <FormField label="Knows">
-          <TagInput tags={formPlan.readerStateEntering?.knows ?? []} onchange={(v) => updatePlan({ readerStateEntering: { ...formPlan.readerStateEntering ?? { knows: [], suspects: [], wrongAbout: [], activeTensions: [] }, knows: v } })} />
-        </FormField>
-        <FormField label="Suspects">
-          <TagInput tags={formPlan.readerStateEntering?.suspects ?? []} onchange={(v) => updatePlan({ readerStateEntering: { ...formPlan.readerStateEntering ?? { knows: [], suspects: [], wrongAbout: [], activeTensions: [] }, suspects: v } })} />
-        </FormField>
-        <FormField label="Wrong About" fieldId="readerStateWrongAbout">
-          <TagInput tags={formPlan.readerStateEntering?.wrongAbout ?? []} onchange={(v) => updatePlan({ readerStateEntering: { ...formPlan.readerStateEntering ?? { knows: [], suspects: [], wrongAbout: [], activeTensions: [] }, wrongAbout: v } })} />
-          <ExamplesDrawer fieldId="readerStateWrongAbout" examples={getExamples("readerStateWrongAbout")} />
-        </FormField>
-        <FormField label="Active Tensions">
-          <TagInput tags={formPlan.readerStateEntering?.activeTensions ?? []} onchange={(v) => updatePlan({ readerStateEntering: { ...formPlan.readerStateEntering ?? { knows: [], suspects: [], wrongAbout: [], activeTensions: [] }, activeTensions: v } })} />
-        </FormField>
-      </fieldset>
-      <fieldset class="form-fieldset">
-        <legend>Reader State Exiting</legend>
-        <FormField label="Knows">
-          <TagInput tags={formPlan.readerStateExiting?.knows ?? []} onchange={(v) => updatePlan({ readerStateExiting: { ...formPlan.readerStateExiting ?? { knows: [], suspects: [], wrongAbout: [], activeTensions: [] }, knows: v } })} />
-        </FormField>
-        <FormField label="Suspects">
-          <TagInput tags={formPlan.readerStateExiting?.suspects ?? []} onchange={(v) => updatePlan({ readerStateExiting: { ...formPlan.readerStateExiting ?? { knows: [], suspects: [], wrongAbout: [], activeTensions: [] }, suspects: v } })} />
-        </FormField>
-        <FormField label="Wrong About">
-          <TagInput tags={formPlan.readerStateExiting?.wrongAbout ?? []} onchange={(v) => updatePlan({ readerStateExiting: { ...formPlan.readerStateExiting ?? { knows: [], suspects: [], wrongAbout: [], activeTensions: [] }, wrongAbout: v } })} />
-        </FormField>
-        <FormField label="Active Tensions">
-          <TagInput tags={formPlan.readerStateExiting?.activeTensions ?? []} onchange={(v) => updatePlan({ readerStateExiting: { ...formPlan.readerStateExiting ?? { knows: [], suspects: [], wrongAbout: [], activeTensions: [] }, activeTensions: v } })} />
-        </FormField>
-      </fieldset>
+      <ReaderStateFields
+        state={formPlan.readerStateEntering}
+        label="Reader State Entering"
+        showExamples
+        onUpdate={(rs) => updatePlan({ readerStateEntering: rs })}
+      />
+      <ReaderStateFields
+        state={formPlan.readerStateExiting}
+        label="Reader State Exiting"
+        onUpdate={(rs) => updatePlan({ readerStateExiting: rs })}
+      />
     </div>
 
   {:else if formStep === "texture"}
@@ -286,14 +267,6 @@ export function save() {
 <style>
   .guided-form { padding: 8px 0; }
   .form-step { display: flex; flex-direction: column; gap: 10px; }
-  .form-fieldset {
-    border: 1px solid var(--border); border-radius: var(--radius-md); padding: 8px; margin: 0;
-    display: flex; flex-direction: column; gap: 8px;
-  }
-  .form-fieldset :global(legend) {
-    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
-    color: var(--accent); padding: 0 6px;
-  }
   .anchor-fields { display: flex; flex-direction: column; gap: 4px; }
   .checkbox-option {
     display: flex; align-items: center; gap: 4px; cursor: pointer;

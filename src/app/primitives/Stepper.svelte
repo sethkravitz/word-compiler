@@ -74,6 +74,7 @@ function getStepState(stepId: string, _index: number): "completed" | "current" |
   .stepper-number { font-size: 10px; }
   .stepper-label {
     font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;
+    white-space: nowrap;
   }
   .stepper-step-current .stepper-label { color: var(--accent); }
   .stepper-step-future .stepper-label { color: var(--text-muted); }

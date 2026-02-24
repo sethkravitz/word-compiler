@@ -53,3 +53,7 @@ export const GuidedFormEmpty: Story = {
 export const GuidedFormWithBible: Story = {
   args: { withBible: true, initialTab: "form" },
 };
+
+export const GuidedFormRichData: Story = {
+  args: { withBible: true, richData: true, initialTab: "form" },
+};

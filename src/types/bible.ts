@@ -178,3 +178,19 @@ export function createEmptyCharacterDossier(name: string): CharacterDossier {
     behavior: null,
   };
 }
+
+export function createEmptyLocation(name: string): Location {
+  return {
+    id: generateId(),
+    name,
+    description: null,
+    sensoryPalette: {
+      sounds: [],
+      smells: [],
+      textures: [],
+      lightQuality: null,
+      atmosphere: null,
+      prohibitedDefaults: [],
+    },
+  };
+}
