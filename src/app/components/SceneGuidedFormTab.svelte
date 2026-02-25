@@ -190,6 +190,23 @@ export function save() {
           <Input value={formPlan.locationId ?? ""} oninput={(e) => updatePlan({ locationId: (e.target as HTMLInputElement).value || null })} placeholder="Location ID" />
         {/if}
       </FormField>
+      {#if characters.length > 0}
+        <FormField label="Present Characters" hint="Characters physically in this scene (POV + speaking characters are always included)">
+          <div class="character-checklist">
+            {#each characters as char (char.id)}
+              <label class="checkbox-option">
+                <input type="checkbox" checked={formPlan.presentCharacterIds.includes(char.id)} onchange={() => {
+                  const ids = formPlan.presentCharacterIds.includes(char.id)
+                    ? formPlan.presentCharacterIds.filter((id) => id !== char.id)
+                    : [...formPlan.presentCharacterIds, char.id];
+                  updatePlan({ presentCharacterIds: ids });
+                }} />
+                <span>{char.name} ({char.role})</span>
+              </label>
+            {/each}
+          </div>
+        </FormField>
+      {/if}
       <FormField label="Prohibitions">
         <TagInput tags={formPlan.sceneSpecificProhibitions} onchange={(v) => updatePlan({ sceneSpecificProhibitions: v })} placeholder="Add prohibition..." />
       </FormField>
@@ -271,6 +288,9 @@ export function save() {
   .checkbox-option {
     display: flex; align-items: center; gap: 4px; cursor: pointer;
     font-size: 11px; color: var(--text-secondary);
+  }
+  .character-checklist {
+    display: flex; flex-direction: column; gap: 4px;
   }
   .json-preview {
     font-family: var(--font-mono); font-size: 10px; background: var(--bg-input);
