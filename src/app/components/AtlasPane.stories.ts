@@ -8,23 +8,22 @@ const meta: Meta<AtlasPaneStory> = {
     docs: {
       description: {
         component:
-          "Editor pane for Bible, Scene Plan, and Chapter Arc JSON with CodeMirror integration, file load/save buttons, and bootstrap trigger. Requires a `ProjectStore` instance (mocked here via a wrapper).",
+          "Tabbed worldbuilding panel with Bible (characters, locations, style, narrative rules), Scene Plan, Chapter Arc, and raw JSON editor tabs.",
       },
     },
   },
   argTypes: {
-    hasBible: {
+    hasBible: { control: "boolean", description: "Seed store with an empty bible" },
+    hasBibleRich: {
       control: "boolean",
-      description:
-        "When true, initializes the mock store with an empty Bible (shows JSON editor). When false, Bible editor is blank.",
+      description: "Seed store with a rich bible (characters, locations, style guide, narrative rules)",
     },
-    hasScenes: {
-      control: "boolean",
-      description: "When true, initializes the mock store with an empty scene plan (shows Scene Plan JSON editor).",
-    },
-    hasArc: {
-      control: "boolean",
-      description: "When true, initializes the mock store with a filled Chapter Arc (shows Chapter Arc JSON editor).",
+    hasScenes: { control: "boolean", description: "Seed store with a scene plan" },
+    hasArc: { control: "boolean", description: "Seed store with a chapter arc" },
+    initialTab: {
+      control: "select",
+      options: ["bible", "scene", "arc", "json"],
+      description: "Which tab to show initially",
     },
   },
 };
@@ -32,18 +31,26 @@ const meta: Meta<AtlasPaneStory> = {
 export default meta;
 type Story = StoryObj<AtlasPaneStory>;
 
-export const NoBible: Story = {
-  args: { hasBible: false, hasScenes: false },
+export const EmptyProject: Story = {
+  args: { hasBible: false, hasScenes: false, hasArc: false },
 };
 
-export const WithBible: Story = {
+export const BibleTabEmpty: Story = {
   args: { hasBible: true, hasScenes: false },
 };
 
-export const WithScenes: Story = {
-  args: { hasBible: true, hasScenes: true },
+export const BibleTabRich: Story = {
+  args: { hasBibleRich: true, hasScenes: false },
 };
 
-export const WithArc: Story = {
-  args: { hasBible: true, hasScenes: true, hasArc: true },
+export const SceneTab: Story = {
+  args: { hasBibleRich: true, hasScenes: true, initialTab: "scene" },
+};
+
+export const ArcTab: Story = {
+  args: { hasBibleRich: true, hasScenes: true, hasArc: true, initialTab: "arc" },
+};
+
+export const JsonTab: Story = {
+  args: { hasBibleRich: true, hasScenes: true, hasArc: true, initialTab: "json" },
 };

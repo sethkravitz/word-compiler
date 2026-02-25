@@ -22,3 +22,4 @@ export { default as Table } from "./Table.svelte";
 export { default as Tabs } from "./Tabs.svelte";
 export { default as TagInput } from "./TagInput.svelte";
 export { default as TextArea } from "./TextArea.svelte";
+export { default as TruncatedProse } from "./TruncatedProse.svelte";

@@ -87,6 +87,7 @@ async function handleFormSave(plan: ScenePlan) {
       bind:this={bootstrapRef}
       bind:footerState={bootstrapFooter}
       {store}
+      {commands}
       onCommit={handleBootstrapCommit}
     />
   </div>

@@ -9,8 +9,9 @@ import {
 } from "../../bootstrap/sceneBootstrap.js";
 import { generateStream } from "../../llm/client.js";
 import type { ChapterArc, ScenePlan } from "../../types/index.js";
-import { createEmptyChapterArc } from "../../types/index.js";
+import { createEmptyChapterArc, createEmptyCharacterDossier, createEmptyLocation } from "../../types/index.js";
 import { Button, ErrorBanner, FormField, Input, Spinner, TextArea } from "../primitives/index.js";
+import type { Commands } from "../store/commands.js";
 import type { ProjectStore } from "../store/project.svelte.js";
 
 export type BootstrapFooterState = {
@@ -22,10 +23,12 @@ export type BootstrapFooterState = {
 
 let {
   store,
+  commands,
   onCommit,
   footerState = $bindable({ loading: false, canGenerate: false, hasPlans: false, acceptCount: 0 }),
 }: {
   store: ProjectStore;
+  commands: Commands;
   onCommit: (plans: ScenePlan[], arc: ChapterArc | null, sourcePrompt: string) => Promise<void>;
   footerState?: BootstrapFooterState;
 } = $props();
@@ -252,11 +255,17 @@ async function handleGenerate() {
       return;
     }
 
+    const selectedChars = bibleCharacters
+      .filter((c) => selectedCharIds.includes(c.id))
+      .map((c) => ({ id: c.id, name: c.name }));
+    const selectedLocs = bibleLocations
+      .filter((l) => selectedLocIds.includes(l.id))
+      .map((l) => ({ id: l.id, name: l.name }));
     const plans = mapSceneBootstrapToPlans(
       parsed,
       store.project?.id ?? `proj-${Date.now()}`,
-      bibleCharacters.map((c) => ({ id: c.id, name: c.name })),
-      bibleLocations.map((l) => ({ id: l.id, name: l.name })),
+      selectedChars,
+      selectedLocs,
     );
 
     generatedPlans = plans;
@@ -298,6 +307,56 @@ async function commitAccepted() {
 
 function findCharName(id: string): string {
   return bibleCharacters.find((c) => c.id === id)?.name ?? id;
+}
+
+function findLocName(id: string | null): string {
+  if (!id) return "";
+  return bibleLocations.find((l) => l.id === id)?.name ?? id;
+}
+
+/** Check if a scene's POV character is resolved (exists in bible). */
+function isCharResolved(plan: ScenePlan): boolean {
+  return !plan.povCharacterId || bibleCharacters.some((c) => c.id === plan.povCharacterId);
+}
+
+/** Check if a scene's location is resolved (exists in bible or null). */
+function isLocResolved(plan: ScenePlan): boolean {
+  return !plan.locationId || bibleLocations.some((l) => l.id === plan.locationId);
+}
+
+/** Check if any accepted scene has unresolved references. */
+let hasUnresolved = $derived.by(() => {
+  return generatedPlans.some((plan, i) => acceptedIndices.has(i) && (!isCharResolved(plan) || !isLocResolved(plan)));
+});
+
+/** Resolve a scene's POV character to an existing bible character. */
+function resolveSceneChar(sceneIndex: number, charId: string) {
+  generatedPlans = generatedPlans.map((p, i) => (i === sceneIndex ? { ...p, povCharacterId: charId } : p));
+}
+
+/** Resolve a scene's location to an existing bible location. */
+function resolveSceneLoc(sceneIndex: number, locId: string) {
+  generatedPlans = generatedPlans.map((p, i) => (i === sceneIndex ? { ...p, locationId: locId || null } : p));
+}
+
+/** Create a new character stub in the bible and assign it to the scene. */
+async function createAndAssignChar(sceneIndex: number, name: string) {
+  const bible = store.bible;
+  if (!bible) return;
+  const newChar = createEmptyCharacterDossier(name);
+  const updated = { ...bible, characters: [...bible.characters, newChar] };
+  await commands.saveBible(updated);
+  resolveSceneChar(sceneIndex, newChar.id);
+}
+
+/** Create a new location stub in the bible and assign it to the scene. */
+async function createAndAssignLoc(sceneIndex: number, name: string) {
+  const bible = store.bible;
+  if (!bible) return;
+  const newLoc = createEmptyLocation(name);
+  const updated = { ...bible, locations: [...bible.locations, newLoc] };
+  await commands.saveBible(updated);
+  resolveSceneLoc(sceneIndex, newLoc.id);
 }
 
 // ─── Exported methods for parent footer ─────────
@@ -381,25 +440,62 @@ export function reset() {
     <span class="preview-count">{generatedPlans.length} scenes generated</span>
     <div class="preview-actions">
       <Button size="sm" onclick={acceptAll}>Select All</Button>
-      <Button size="sm" variant="primary" onclick={commitAccepted} disabled={acceptedIndices.size === 0}>
-        Accept {acceptedIndices.size} Scene{acceptedIndices.size !== 1 ? "s" : ""}
+      <Button size="sm" variant="primary" onclick={commitAccepted} disabled={acceptedIndices.size === 0 || hasUnresolved}>
+        {#if hasUnresolved}Resolve Links First{:else}Accept {acceptedIndices.size} Scene{acceptedIndices.size !== 1 ? "s" : ""}{/if}
       </Button>
     </div>
   </div>
   <div class="preview-grid">
     {#each generatedPlans as plan, i (plan.id)}
-      <button
-        type="button"
+      {@const charOk = isCharResolved(plan)}
+      {@const locOk = isLocResolved(plan)}
+      <div
         class="preview-card"
         class:preview-card-selected={acceptedIndices.has(i)}
+        class:preview-card-warn={!charOk || !locOk}
+        role="button"
+        tabindex="0"
         onclick={() => toggleAccept(i)}
+        onkeydown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggleAccept(i); } }}
       >
         <div class="preview-card-title">{plan.title || `Scene ${i + 1}`}</div>
-        <div class="preview-card-detail"><span class="preview-label">POV:</span> {findCharName(plan.povCharacterId) || "—"}</div>
+
+        {#if charOk}
+          <div class="preview-card-detail"><span class="preview-label">POV:</span> {findCharName(plan.povCharacterId) || "—"}</div>
+        {:else}
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div class="resolve-row" onclick={(e) => e.stopPropagation()}>
+            <span class="resolve-warn">POV: "{plan.povCharacterId}" not in bible</span>
+            <select class="resolve-select" onchange={(e) => { const v = (e.target as HTMLSelectElement).value; if (v === "__new__") { createAndAssignChar(i, plan.povCharacterId); } else if (v) { resolveSceneChar(i, v); } }}>
+              <option value="">Map to...</option>
+              {#each bibleCharacters as c (c.id)}
+                <option value={c.id}>{c.name} ({c.role})</option>
+              {/each}
+              <option value="__new__">+ New "{plan.povCharacterId}"</option>
+            </select>
+          </div>
+        {/if}
+
         <div class="preview-card-detail"><span class="preview-label">Goal:</span> {plan.narrativeGoal || "—"}</div>
         <div class="preview-card-detail"><span class="preview-label">Beat:</span> {plan.emotionalBeat || "—"}</div>
         <div class="preview-card-detail"><span class="preview-label">Words:</span> {plan.estimatedWordCount[0]}–{plan.estimatedWordCount[1]}</div>
-      </button>
+
+        {#if !locOk}
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div class="resolve-row" onclick={(e) => e.stopPropagation()}>
+            <span class="resolve-warn">Location: "{plan.locationId}" not in bible</span>
+            <select class="resolve-select" onchange={(e) => { const v = (e.target as HTMLSelectElement).value; if (v === "__new__") { createAndAssignLoc(i, plan.locationId ?? "New Location"); } else { resolveSceneLoc(i, v); } }}>
+              <option value="">Map to...</option>
+              {#each bibleLocations as l (l.id)}
+                <option value={l.id}>{l.name}</option>
+              {/each}
+              <option value="__new__">+ New "{plan.locationId}"</option>
+            </select>
+          </div>
+        {/if}
+      </div>
     {/each}
   </div>
   {#if generatedArc}
@@ -447,8 +543,21 @@ export function reset() {
   }
   .preview-card:hover { border-color: var(--accent-dim); }
   .preview-card-selected { border-color: var(--accent); background: rgba(0, 212, 255, 0.08); }
+  .preview-card-warn { border-color: var(--warning); }
   .preview-card-title { font-size: 12px; color: var(--text-primary); font-weight: 500; }
   .preview-card-detail { font-size: 10px; color: var(--text-secondary); }
   .preview-label { color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
   .preview-arc { padding: 6px 0; font-size: 11px; color: var(--text-secondary); }
+  .resolve-row {
+    display: flex; flex-direction: column; gap: 3px; padding: 4px 6px; margin: 2px -6px;
+    background: color-mix(in srgb, var(--warning) 8%, transparent);
+    border-radius: var(--radius-sm); border-left: 2px solid var(--warning);
+  }
+  .resolve-warn { font-size: 10px; color: var(--warning); }
+  .resolve-select {
+    font-size: 10px; font-family: var(--font-mono); padding: 2px 4px;
+    background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text-primary); cursor: pointer;
+  }
+  .resolve-select:focus { outline: none; border-color: var(--accent); }
 </style>

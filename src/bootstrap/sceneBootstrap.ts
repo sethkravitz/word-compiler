@@ -448,15 +448,20 @@ export function buildSceneBootstrapPrompt(params: SceneBootstrapParams): Compile
   const userMessage = `CHAPTER DIRECTION:
 ${params.direction}${contextSection}
 
-Generate exactly ${params.sceneCount} scene plans.${characterList}${locationList}${constraintBlock}
+Generate exactly ${params.sceneCount} scene plans.${characterList}${locationList}${constraintBlock}${params.characters.length === 0 ? "\nIMPORTANT: No characters have been selected for this chapter. Leave povCharacterId and povCharacterName as empty strings. Do NOT invent or reference specific named characters — write scenes that work without assigned POV characters." : ""}
 
 Return JSON:
 {
   "scenes": [
     {
       "title": "Scene title",
-      "povCharacterId": "REQUIRED — exact character id from the list above",
-      "povCharacterName": "REQUIRED — exact character name matching the id",
+      ${
+        params.characters.length > 0
+          ? `"povCharacterId": "",
+      "povCharacterName": "REQUIRED — exact character name from the list above (ID will be resolved automatically)",`
+          : `"povCharacterId": "",
+      "povCharacterName": "",`
+      }
       "povDistance": "intimate|close|moderate|distant",
       "narrativeGoal": "What must this scene accomplish?",
       "emotionalBeat": "What should the reader FEEL?",
@@ -465,8 +470,8 @@ Return JSON:
       "density": "sparse|moderate|dense",
       "pacing": "Pacing notes",
       "sensoryNotes": "Key sensory details to anchor the scene",
-      "locationId": "location id from list above, or null",
-      "locationName": "location name for reference",
+      "locationId": "",
+      "locationName": "exact location name from the list above, or empty string if none (ID will be resolved automatically)",
       "estimatedWordCount": [min, max],
       "chunkCount": 3,
       "chunkDescriptions": ["what happens in chunk 1", "chunk 2", "chunk 3"],
@@ -547,8 +552,41 @@ function resolveReaderState(raw?: {
   };
 }
 
-/** Resolve a character ID by trying the raw ID first, then falling back to name match. */
-function resolveCharacterId(
+/** Tokenize a name into lowercase words for fuzzy matching. */
+function tokenize(name: string): string[] {
+  return name
+    .toLowerCase()
+    .split(/[\s_-]+/)
+    .filter((t) => t.length > 0);
+}
+
+/** Score how well two names match by token overlap (0 to 1). */
+export function tokenMatchScore(a: string, b: string): number {
+  const tokensA = tokenize(a);
+  const tokensB = tokenize(b);
+  if (tokensA.length === 0 || tokensB.length === 0) return 0;
+  const setB = new Set(tokensB);
+  const matches = tokensA.filter((t) => setB.has(t)).length;
+  return matches / Math.max(tokensA.length, tokensB.length);
+}
+
+/** Find the best fuzzy token match among named entities. Returns the ID if score >= threshold. */
+function fuzzyMatchId(raw: string, entities: { id: string; name: string }[], threshold = 0.5): string {
+  let bestScore = 0;
+  let bestId = "";
+  for (const e of entities) {
+    const score = tokenMatchScore(raw, e.name);
+    if (score > bestScore) {
+      bestScore = score;
+      bestId = e.id;
+    }
+  }
+  return bestScore >= threshold ? bestId : "";
+}
+
+/** Resolve a character ID by trying exact ID, exact name, then fuzzy name match.
+ *  Returns the raw name/ID as-is when resolution fails, so the UI can surface it as unresolved. */
+export function resolveCharacterId(
   rawId: string | undefined,
   rawName: string | undefined,
   characters: { id: string; name: string }[],
@@ -556,18 +594,30 @@ function resolveCharacterId(
   const id = rawId || "";
   const nameLower = (rawName || "").toLowerCase();
 
+  // 1. Exact ID match
   if (id && characters.some((c) => c.id === id)) return id;
 
+  // 2. Exact name match (case-insensitive)
   if (nameLower) {
     const byName = characters.find((c) => c.name.toLowerCase() === nameLower);
     if (byName) return byName.id;
   }
 
-  return id;
+  // 3. Fuzzy token match — try name first, fall back to ID as slug
+  const rawForFuzzy = rawName || rawId || "";
+  if (rawForFuzzy && characters.length > 0) {
+    const matched = fuzzyMatchId(rawForFuzzy, characters);
+    if (matched) return matched;
+  }
+
+  // 4. Preserve raw reference so resolution UI can surface it
+  return rawName || rawId || "";
 }
 
-/** Resolve a location ID by trying the raw ID first, then falling back to name match. */
-function resolveLocationId(
+/** Resolve a location ID by trying exact ID, exact name, then fuzzy name match.
+ *  Returns the raw name/ID as-is when resolution fails, so the UI can surface it as unresolved.
+ *  Returns null only when no location was specified at all. */
+export function resolveLocationId(
   rawId: string | undefined,
   rawName: string | undefined,
   locations: { id: string; name: string }[],
@@ -575,14 +625,24 @@ function resolveLocationId(
   const id = rawId || null;
   const nameLower = (rawName || "").toLowerCase();
 
+  // 1. Exact ID match
   if (id && locations.some((l) => l.id === id)) return id;
 
+  // 2. Exact name match (case-insensitive)
   if (nameLower) {
     const byName = locations.find((l) => l.name.toLowerCase() === nameLower);
     if (byName) return byName.id;
   }
 
-  return id;
+  // 3. Fuzzy token match
+  const rawForFuzzy = rawName || rawId || "";
+  if (rawForFuzzy && locations.length > 0) {
+    const matched = fuzzyMatchId(rawForFuzzy, locations);
+    if (matched) return matched;
+  }
+
+  // 4. Preserve raw reference so resolution UI can surface it
+  return rawName || rawId || null;
 }
 
 /** Normalize a raw word count (array or single number) into a [min, max] tuple. */

@@ -9,14 +9,14 @@ import {
   ExamplesDrawer,
   FormField,
   Input,
-  NumberRange,
   RadioGroup,
   Select,
   Stepper,
   TagInput,
-  TextArea,
 } from "../primitives/index.js";
+import CharacterFormFields from "./CharacterFormFields.svelte";
 import { getExamples } from "./field-examples.js";
+import LocationFormFields from "./LocationFormFields.svelte";
 
 export type FormFooterState = {
   currentStep: string;
@@ -278,79 +278,7 @@ function removeVocabPref(index: number) {
       onRemove={removeCharacter}
     >
       {#snippet renderItem(char, i)}
-        <div class="char-card">
-          <FormField label="Name" fieldId="characterName" required>
-            <Input value={char.name} oninput={(e) => updateCharacter(i, { name: (e.target as HTMLInputElement).value })} placeholder="Character name" />
-          </FormField>
-          <FormField label="Role" fieldId="characterRole">
-            <RadioGroup name={`charRole${i}`} value={char.role} options={[
-              { value: "protagonist", label: "Protagonist" },
-              { value: "antagonist", label: "Antagonist" },
-              { value: "supporting", label: "Supporting" },
-              { value: "minor", label: "Minor" },
-            ]} onchange={(v) => updateCharacter(i, { role: v as any })} />
-          </FormField>
-
-          <CollapsibleSection summary="Appearance & Background" priority="helpful" sectionId={`bible-char-appearance-${char.id}`}>
-            <div class="char-section">
-              <FormField label="Physical Description" fieldId="physicalDescription">
-                <TextArea value={char.physicalDescription ?? ""} variant="compact" rows={2} oninput={(e) => updateCharacter(i, { physicalDescription: (e.target as HTMLTextAreaElement).value || null })} placeholder="What does the reader SEE?" />
-              </FormField>
-              <FormField label="Backstory" fieldId="backstory">
-                <TextArea value={char.backstory ?? ""} variant="compact" rows={2} oninput={(e) => updateCharacter(i, { backstory: (e.target as HTMLTextAreaElement).value || null })} placeholder="Brief but specific" />
-              </FormField>
-            </div>
-          </CollapsibleSection>
-
-          <CollapsibleSection summary="Voice" priority="helpful" sectionId={`bible-char-voice-${char.id}`}>
-            <div class="char-section">
-              <FormField label="Vocabulary Notes" fieldId="vocabularyNotes">
-                <TextArea value={char.voice.vocabularyNotes ?? ""} variant="compact" rows={2} oninput={(e) => updateCharacter(i, { voice: { ...char.voice, vocabularyNotes: (e.target as HTMLTextAreaElement).value || null } })} />
-                <ExamplesDrawer fieldId="vocabularyNotes" examples={getExamples("vocabularyNotes")} onApplyTemplate={(content) => updateCharacter(i, { voice: { ...char.voice, vocabularyNotes: content } })} />
-              </FormField>
-              <FormField label="Verbal Tics" fieldId="verbalTics">
-                <TagInput tags={char.voice.verbalTics} onchange={(v) => updateCharacter(i, { voice: { ...char.voice, verbalTics: v } })} placeholder="um, you know..." />
-              </FormField>
-              <FormField label="Metaphoric Register" fieldId="metaphoricRegister">
-                <Input value={char.voice.metaphoricRegister ?? ""} oninput={(e) => updateCharacter(i, { voice: { ...char.voice, metaphoricRegister: (e.target as HTMLInputElement).value || null } })} />
-              </FormField>
-              <FormField label="Prohibited Language" fieldId="prohibitedLanguage">
-                <TagInput tags={char.voice.prohibitedLanguage} onchange={(v) => updateCharacter(i, { voice: { ...char.voice, prohibitedLanguage: v } })} placeholder="Words this character would never use..." />
-              </FormField>
-              <FormField label="Dialogue Samples" fieldId="dialogueSamples">
-                <TagInput tags={char.voice.dialogueSamples} onchange={(v) => updateCharacter(i, { voice: { ...char.voice, dialogueSamples: v } })} placeholder="Example dialogue lines..." />
-              </FormField>
-              <FormField label="Sentence Length Range" fieldId="sentenceLengthRange">
-                <NumberRange
-                  value={char.voice.sentenceLengthRange ?? [5, 25]}
-                  onchange={(v) => updateCharacter(i, { voice: { ...char.voice, sentenceLengthRange: v } })}
-                  labels={["min", "max"]}
-                />
-              </FormField>
-            </div>
-          </CollapsibleSection>
-
-          <CollapsibleSection summary="Behavior" priority="advanced" sectionId={`bible-char-behavior-${char.id}`}>
-            <div class="char-section">
-              <FormField label="Stress Response" fieldId="stressResponse">
-                <TextArea value={char.behavior?.stressResponse ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...(char.behavior ?? {}), stressResponse: (e.target as HTMLTextAreaElement).value || null } })} />
-              </FormField>
-              <FormField label="Social Posture" fieldId="socialPosture">
-                <TextArea value={char.behavior?.socialPosture ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...(char.behavior ?? {}), socialPosture: (e.target as HTMLTextAreaElement).value || null } })} />
-              </FormField>
-              <FormField label="Notices First" fieldId="noticesFirst">
-                <TextArea value={char.behavior?.noticesFirst ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...(char.behavior ?? {}), noticesFirst: (e.target as HTMLTextAreaElement).value || null } })} />
-              </FormField>
-              <FormField label="Lying Style" fieldId="lyingStyle">
-                <TextArea value={char.behavior?.lyingStyle ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...(char.behavior ?? {}), lyingStyle: (e.target as HTMLTextAreaElement).value || null } })} />
-              </FormField>
-              <FormField label="Emotion Physicality" fieldId="emotionPhysicality">
-                <TextArea value={char.behavior?.emotionPhysicality ?? ""} variant="compact" rows={1} oninput={(e) => updateCharacter(i, { behavior: { ...(char.behavior ?? {}), emotionPhysicality: (e.target as HTMLTextAreaElement).value || null } })} />
-                <ExamplesDrawer fieldId="emotionPhysicality" examples={getExamples("emotionPhysicality")} onApplyTemplate={(content) => updateCharacter(i, { behavior: { ...(char.behavior ?? {}), emotionPhysicality: content } })} />
-              </FormField>
-            </div>
-          </CollapsibleSection>
-        </div>
+        <CharacterFormFields character={char} onUpdate={(changes) => updateCharacter(i, changes)} />
       {/snippet}
     </CardList>
 
@@ -363,37 +291,7 @@ function removeVocabPref(index: number) {
       onRemove={removeLocation}
     >
       {#snippet renderItem(loc, i)}
-        <div class="loc-card">
-          <FormField label="Name" fieldId="locationName" required>
-            <Input value={loc.name} oninput={(e) => updateLocation(i, { name: (e.target as HTMLInputElement).value })} placeholder="Location name" />
-          </FormField>
-          <FormField label="Description" fieldId="locationDescription">
-            <TextArea value={loc.description ?? ""} variant="compact" rows={2} oninput={(e) => updateLocation(i, { description: (e.target as HTMLTextAreaElement).value || null })} />
-          </FormField>
-
-          <CollapsibleSection summary="Sensory Palette" priority="helpful" sectionId={`bible-loc-sensory-${loc.id}`}>
-            <div class="loc-section">
-              <FormField label="Sounds" fieldId="sounds">
-                <TagInput tags={loc.sensoryPalette.sounds} onchange={(v) => updateLocation(i, { sensoryPalette: { ...loc.sensoryPalette, sounds: v } })} placeholder="Specific sounds..." />
-              </FormField>
-              <FormField label="Smells" fieldId="smells">
-                <TagInput tags={loc.sensoryPalette.smells} onchange={(v) => updateLocation(i, { sensoryPalette: { ...loc.sensoryPalette, smells: v } })} placeholder="Specific smells..." />
-              </FormField>
-              <FormField label="Textures" fieldId="textures">
-                <TagInput tags={loc.sensoryPalette.textures} onchange={(v) => updateLocation(i, { sensoryPalette: { ...loc.sensoryPalette, textures: v } })} placeholder="What do hands touch here..." />
-              </FormField>
-              <FormField label="Light Quality" fieldId="lightQuality">
-                <Input value={loc.sensoryPalette.lightQuality ?? ""} oninput={(e) => updateLocation(i, { sensoryPalette: { ...loc.sensoryPalette, lightQuality: (e.target as HTMLInputElement).value || null } })} placeholder="What does the light do?" />
-              </FormField>
-              <FormField label="Atmosphere" fieldId="atmosphere">
-                <Input value={loc.sensoryPalette.atmosphere ?? ""} oninput={(e) => updateLocation(i, { sensoryPalette: { ...loc.sensoryPalette, atmosphere: (e.target as HTMLInputElement).value || null } })} />
-              </FormField>
-              <FormField label="Prohibited Defaults" fieldId="prohibitedDefaults">
-                <TagInput tags={loc.sensoryPalette.prohibitedDefaults} onchange={(v) => updateLocation(i, { sensoryPalette: { ...loc.sensoryPalette, prohibitedDefaults: v } })} placeholder="Generic sensory details to avoid..." />
-              </FormField>
-            </div>
-          </CollapsibleSection>
-        </div>
+        <LocationFormFields location={loc} onUpdate={(changes) => updateLocation(i, changes)} />
       {/snippet}
     </CardList>
 
@@ -511,8 +409,6 @@ function removeVocabPref(index: number) {
   }
   .form-body { padding: 8px 0; }
   .form-step { display: flex; flex-direction: column; gap: 10px; }
-  .char-card, .loc-card { display: flex; flex-direction: column; gap: 8px; }
-  .char-section, .loc-section { display: flex; flex-direction: column; gap: 8px; padding: 4px 0; }
   .kill-row { display: flex; flex-direction: column; gap: 4px; }
   .vocab-row { display: flex; align-items: center; gap: 6px; }
   .vocab-arrow { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
