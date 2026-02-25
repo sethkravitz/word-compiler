@@ -153,7 +153,7 @@ A new Ring 3 section listing who is physically in the scene, with a spotlight st
 | **Foreground** | POV + characters in `dialogueConstraints` | Full voice fingerprint, physical description, relationship to POV | 80–120 per character |
 | **Background** | In `presentCharacterIds` but not speaking | Name + role + 1–2 line physical/behavioral cue | 20–30 per character |
 
-**Hard cap:** 6 characters in foreground detail. Beyond 6, degrade to name-only stubs.
+**Hard caps:** 6 characters in foreground detail (beyond 6, degrade to name-only stubs). 8 characters in background detail (beyond 8, omit entirely). This prevents unbounded token growth in crowd scenes — family gatherings, meetings, etc.
 
 **Section properties:**
 - **Name:** `SCENE_CAST`
@@ -257,11 +257,10 @@ function applyCharacterProposal(bible: Bible, proposal: BibleProposal): void {
   const action = proposal.action;
   if (action.target === "characters.create") {
     const data = JSON.parse(action.value);
-    bible.characters.push(createEmptyCharacterDossier({
-      name: data.name,
-      role: data.inferredRole ?? "minor",
-      isCameo: data.isCameo ?? false,
-    }));
+    const character = createEmptyCharacterDossier(data.name);
+    character.role = data.inferredRole ?? "minor";
+    character.isCameo = data.isCameo ?? false;
+    bible.characters.push(character);
   } else {
     // Existing vocabulary-update logic
   }
@@ -335,7 +334,7 @@ Sections are dropped highest-priority-number first when over budget:
 
 ### Worst-Case Budget Addition
 
-Phase A adds ~315 tokens worst-case (220 interiority + 70 location + 25 behavior). Phase B adds ~480–720 tokens (6 foreground × 80–120). Total worst-case: ~1,035 tokens — well within the Ring 3 ≥60% budget allocation for a typical 8K-token context window.
+Phase A adds ~315 tokens worst-case (220 interiority + 70 location + 25 behavior). Phase B adds ~720–960 tokens (6 foreground × 80–120 + 8 background × 20–30). Total worst-case: ~1,275 tokens — well within the Ring 3 ≥60% budget allocation for a typical 8K-token context window.
 
 ---
 
@@ -345,9 +344,11 @@ Four guardrails prevent the expanded context from causing common LLM failure mod
 
 ### 1. Non-Invention Rule
 
-**Location:** Ring 1 (`STRUCTURAL_RULES` section, immune)
+**Location:** Ring 1 (`NARRATIVE_RULES` section, immune — NOT `STRUCTURAL_RULES`)
 **Text:** `"Do not invent physical appearance, backstory, or biographical facts beyond what is provided in context."`
 **Prevents:** LLM hallucinating character details not in the bible.
+
+**Note:** This must go in `NARRATIVE_RULES` (always emitted), not `STRUCTURAL_RULES` (conditional on `styleGuide.structuralBans` being non-empty). Placing it in a conditional section would silently drop the anti-hallucination guardrail in projects without structural bans.
 
 ### 2. Interiority Constraint
 
@@ -385,20 +386,20 @@ Four guardrails prevent the expanded context from causing common LLM failure mod
 | File | Change |
 |------|--------|
 | `src/types/scene.ts` | Add `presentCharacterIds: string[]` to `ScenePlan` |
-| `src/types/index.ts` | Update `createEmptyScenePlan()` default |
+| `src/types/scene.ts` | Update `createEmptyScenePlan()` default |
 | `src/compiler/ring3.ts` | Add `buildSceneCast()`. Emit `SCENE_CAST` section. |
 | `src/compiler/helpers.ts` | Add `formatForegroundCharacter()`, `formatBackgroundCharacter()` |
 | `src/bootstrap/sceneBootstrap.ts` | Include `presentCharacterIds` in generation prompt |
 | `src/app/components/SceneAuthoringModal.svelte` | Character multi-select for `presentCharacterIds` |
-| `server/db/repositories/scene.ts` | Persist `presentCharacterIds` (JSON column, existing pattern) |
-| `server/api/scenes.ts` | Include field in scene CRUD endpoints |
+| `server/db/repositories/scene-plans.ts` | Persist `presentCharacterIds` (JSON column, existing pattern) |
+| `server/api/routes.ts` | Include field in scene CRUD endpoints |
 
 ### Phase C (deferred)
 
 | File | Change |
 |------|--------|
-| `src/types/chunk.ts` or `index.ts` | Add `keyBeats: string[]` to chunk type |
-| `src/types/bible.ts` or `index.ts` | Add `worldContext: string \| null` to `NarrativeRules` |
+| `src/types/scene.ts` | Add `keyBeats: string[]` to `Chunk` type |
+| `src/types/bible.ts` | Add `worldContext: string \| null` to `NarrativeRules` |
 | `src/compiler/ring3.ts` | Build `SCENE_RECAP` from chunk key beats |
 | `src/compiler/ring1.ts` | Build `WORLD_CONTEXT` section |
 | DB migration | New columns for `keyBeats` and `worldContext` |
@@ -410,12 +411,12 @@ Four guardrails prevent the expanded context from causing common LLM failure mod
 | `src/auditor/index.ts` | Add `checkUnknownCharacters()` to `runAudit()` pipeline |
 | `src/auditor/unknownCharacters.ts` | New file: Haiku Reflector call, tag parsing, alias matching |
 | `src/learner/proposals.ts` | Extend `applyCharacterProposal()` for `characters.create`. Add stub proposal generation. |
-| `src/types/bible.ts` or `index.ts` | Add `isCameo: boolean` to `CharacterDossier`. Add `aliases: string[]` to `CharacterDossier`. |
-| `src/types/index.ts` | Update `createEmptyCharacterDossier()` factory with `isCameo` and `aliases` defaults |
+| `src/types/bible.ts` | Add `isCameo: boolean` to `CharacterDossier`. Add `aliases: string[]` to `CharacterDossier`. |
+| `src/types/bible.ts` | Update `createEmptyCharacterDossier()` factory with `isCameo` and `aliases` defaults |
 | `src/compiler/ring3.ts` | Split SCENE_CAST into immune guardrail sub-section + compressible character blurbs |
 | `src/app/components/LearnerPanel.svelte` | "Enrich from text" button on stub dossiers. Link-before-create UI for alias suggestions. |
-| `server/db/repositories/bible.ts` | Persist `isCameo` and `aliases` fields |
-| `server/api/bibles.ts` | Include new fields in bible CRUD endpoints |
+| `server/db/repositories/bibles.ts` | Persist `isCameo` and `aliases` fields |
+| `server/api/routes.ts` | Include new fields in bible CRUD endpoints |
 
 ---
 
@@ -446,7 +447,7 @@ New test cases following the established mirror pattern (`tests/compiler/*.test.
 | `buildSceneCast` — 6-character cap | `tests/compiler/ring3.test.ts` | 7th foreground character degrades to stub |
 | `buildSceneCast` — empty presentCharacterIds | `tests/compiler/ring3.test.ts` | Falls back to speaking-only (backward compat) |
 | Presence guardrail in output | `tests/compiler/ring3.test.ts` | Footer text about cast discipline included |
-| `presentCharacterIds` factory default | `tests/types.test.ts` | `createEmptyScenePlan()` returns `[]` |
+| `presentCharacterIds` factory default | `tests/types/scene.test.ts` | `createEmptyScenePlan()` returns `[]` |
 
 ### Phase D Tests
 
