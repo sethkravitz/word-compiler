@@ -28,7 +28,8 @@ const tabs = [
   { id: "json", label: "JSON" },
 ];
 
-let activeTab = $state(initialTab);
+const validTabIds = new Set(tabs.map((t) => t.id));
+let activeTab = $state(validTabIds.has(initialTab) ? initialTab : "bible");
 </script>
 
 <Pane title="Project Atlas" contentClass="atlas-content">

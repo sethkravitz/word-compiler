@@ -29,11 +29,11 @@ let needsTruncation = $derived(truncated !== text);
   {#if expanded || !needsTruncation}
     {text}
     {#if expanded}
-      <button class="prose-toggle" onclick={() => (expanded = false)}>less</button>
+      <button type="button" class="prose-toggle" onclick={() => (expanded = false)}>less</button>
     {/if}
   {:else}
     {truncated}
-    <button class="prose-toggle" onclick={() => (expanded = true)}>more</button>
+    <button type="button" class="prose-toggle" onclick={() => (expanded = true)}>more</button>
   {/if}
 </span>
 

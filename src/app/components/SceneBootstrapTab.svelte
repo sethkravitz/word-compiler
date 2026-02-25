@@ -456,7 +456,7 @@ export function reset() {
         role="button"
         tabindex="0"
         onclick={() => toggleAccept(i)}
-        onkeydown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleAccept(i); } }}
+        onkeydown={(e) => { if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggleAccept(i); } }}
       >
         <div class="preview-card-title">{plan.title || `Scene ${i + 1}`}</div>
 
