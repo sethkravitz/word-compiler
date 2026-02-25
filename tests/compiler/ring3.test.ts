@@ -102,6 +102,7 @@ describe("buildRing3", () => {
     expect(names).toContain("SCENE_CONTRACT");
     expect(names).toContain("VOICE_MARCUS"); // POV char
     expect(names).toContain("VOICE_ELENA"); // speaking char
+    expect(names).toContain("POV_INTERIORITY"); // POV character interiority
     expect(names).toContain("SENSORY_PALETTE");
     expect(names).toContain("ANCHOR_LINES");
     expect(names).toContain("ANTI_ABLATION");
@@ -204,6 +205,85 @@ describe("buildRing3", () => {
 
     expect(sensory!.immune).toBe(false);
     expect(sensory!.priority).toBe(4);
+  });
+
+  it("POV_INTERIORITY emitted for POV character with close distance (immune)", () => {
+    const char = makeChar("marcus", "Marcus");
+    char.backstory = "Grew up on a ranch";
+    char.behavior = {
+      emotionPhysicality: "Jaw tightens",
+      stressResponse: "Goes still",
+      socialPosture: null,
+      noticesFirst: null,
+      lyingStyle: null,
+    };
+    const bible = makeBible([char]);
+    const plan = makePlan({ dialogueConstraints: {}, povDistance: "close" as ScenePlan["povDistance"] });
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const interiority = result.sections.find((s) => s.name === "POV_INTERIORITY");
+
+    expect(interiority).toBeDefined();
+    expect(interiority!.text).toContain("POV INTERIORITY: MARCUS");
+    expect(interiority!.text).toContain("Backstory:");
+    expect(interiority!.text).toContain("ranch");
+    expect(interiority!.immune).toBe(true);
+    expect(interiority!.priority).toBe(0);
+  });
+
+  it("POV_INTERIORITY with moderate distance is compressible (priority 2)", () => {
+    const char = makeChar("marcus", "Marcus");
+    char.contradictions = ["Sees himself as calm, but panics easily"];
+    char.behavior = {
+      emotionPhysicality: "Jaw tightens",
+      stressResponse: null,
+      socialPosture: null,
+      noticesFirst: null,
+      lyingStyle: null,
+    };
+    const bible = makeBible([char]);
+    const plan = makePlan({ dialogueConstraints: {}, povDistance: "moderate" as ScenePlan["povDistance"] });
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const interiority = result.sections.find((s) => s.name === "POV_INTERIORITY");
+
+    expect(interiority).toBeDefined();
+    expect(interiority!.text).toContain("Contradictions");
+    expect(interiority!.text).not.toContain("Backstory:");
+    expect(interiority!.immune).toBe(false);
+    expect(interiority!.priority).toBe(2);
+  });
+
+  it("POV_INTERIORITY appears after voice sections and before SENSORY_PALETTE", () => {
+    const char = makeChar("marcus", "Marcus");
+    char.behavior = {
+      emotionPhysicality: "Jaw tightens",
+      stressResponse: null,
+      socialPosture: null,
+      noticesFirst: null,
+      lyingStyle: null,
+    };
+    const bible = makeBible([char]);
+    const plan = makePlan({ dialogueConstraints: {} });
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const names = result.sections.map((s) => s.name);
+
+    const voiceIdx = names.indexOf("VOICE_MARCUS");
+    const interiorIdx = names.indexOf("POV_INTERIORITY");
+    const sensoryIdx = names.indexOf("SENSORY_PALETTE");
+
+    expect(voiceIdx).toBeLessThan(interiorIdx);
+    expect(interiorIdx).toBeLessThan(sensoryIdx);
+  });
+
+  it("POV_INTERIORITY gracefully skipped when POV character not in bible", () => {
+    const bible = makeBible([]); // no characters
+    const plan = makePlan({ dialogueConstraints: {} });
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const names = result.sections.map((s) => s.name);
+    expect(names).not.toContain("POV_INTERIORITY");
   });
 
   // --- Cross-scene bridge tests ---

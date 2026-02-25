@@ -122,8 +122,11 @@ function buildPovSection(bible: Bible): RingSection | null {
   };
 }
 
-function buildNarrativeRulesSection(bible: Bible): RingSection | null {
-  const rules: string[] = [];
+const NON_INVENTION_GUARDRAIL =
+  "Do not invent backstory, appearance, or world facts beyond what is provided in context";
+
+function buildNarrativeRulesSection(bible: Bible): RingSection {
+  const rules: string[] = [NON_INVENTION_GUARDRAIL];
   if (bible.narrativeRules.subtextPolicy) {
     rules.push(bible.narrativeRules.subtextPolicy);
   }
@@ -133,7 +136,6 @@ function buildNarrativeRulesSection(bible: Bible): RingSection | null {
   if (bible.narrativeRules.sceneEndingPolicy) {
     rules.push(bible.narrativeRules.sceneEndingPolicy);
   }
-  if (rules.length === 0) return null;
   return {
     name: "NARRATIVE_RULES",
     text: `NARRATIVE RULES: ${rules.join(". ")}`,

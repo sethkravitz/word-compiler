@@ -13,6 +13,7 @@ import {
   assembleSections,
   formatAntiAblation,
   formatCharacterVoice,
+  formatPovInteriority,
   formatSceneContract,
   formatSensoryPalette,
 } from "./helpers.js";
@@ -126,6 +127,18 @@ export function buildRing3(
     speakingCharIds.unshift(plan.povCharacterId);
   }
   sections.push(...buildVoiceFingerprints(speakingCharIds, bible, plan));
+
+  // --- POV Interiority (immune for intimate/close, compressible for moderate/distant) ---
+  const povChar = bible.characters.find((c) => c.id === plan.povCharacterId);
+  if (povChar) {
+    const isDeepPov = plan.povDistance === "intimate" || plan.povDistance === "close";
+    sections.push({
+      name: "POV_INTERIORITY",
+      text: formatPovInteriority(povChar, plan.povDistance),
+      priority: isDeepPov ? 0 : 2,
+      immune: isDeepPov,
+    });
+  }
 
   // --- Sensory Palette (compressible) ---
   if (plan.locationId) {
