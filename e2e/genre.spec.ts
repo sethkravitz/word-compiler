@@ -8,18 +8,15 @@ test.describe("Genre Templates", () => {
 
   test("genre selector visible in Bible Authoring Guided Form", async ({ page }) => {
     await page.goto("/");
-    // Open Bible Authoring modal
-    await page.locator("button", { hasText: "New Bible" }).click();
-    // Switch to Guided Form tab
-    await page.locator("button", { hasText: "Guided Form" }).click();
+    // Bootstrap stage — click "Build Manually" to open BibleAuthoringModal (guided form directly)
+    await page.locator(".bootstrap-card", { hasText: "Build Manually" }).click();
     // Genre template selector should be visible
     await expect(page.locator("text=Genre Template")).toBeVisible();
   });
 
   test("genre selector shows all 4 genre options", async ({ page }) => {
     await page.goto("/");
-    await page.locator("button", { hasText: "New Bible" }).click();
-    await page.locator("button", { hasText: "Guided Form" }).click();
+    await page.locator(".bootstrap-card", { hasText: "Build Manually" }).click();
     // Check all 4 genre names are present as options
     await expect(page.locator("option", { hasText: "Literary Fiction" })).toBeAttached();
     await expect(page.locator("option", { hasText: "Thriller" })).toBeAttached();
@@ -29,14 +26,14 @@ test.describe("Genre Templates", () => {
 
   test("guided form shows stepper and foundations step", async ({ page }) => {
     await page.goto("/");
-    await page.locator("button", { hasText: "New Bible" }).click();
-    await page.locator("button", { hasText: "Guided Form" }).click();
-    // Stepper steps are visible (use role locators to avoid matching hidden tab text)
-    await expect(page.getByRole("button", { name: "Foundations" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Characters" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Review" })).toBeVisible();
+    await page.locator(".bootstrap-card", { hasText: "Build Manually" }).click();
+    // Stepper steps within the modal are visible
+    const modal = page.locator(".modal-overlay");
+    await expect(modal.getByRole("button", { name: "Foundations" })).toBeVisible();
+    await expect(modal.locator(".stepper-step", { hasText: "Characters" })).toBeVisible();
+    await expect(modal.locator(".stepper-step", { hasText: "Review" })).toBeVisible();
     // Can navigate with Next button
-    await page.locator("button", { hasText: "Next" }).click();
-    await expect(page.locator("text=Add Character")).toBeVisible();
+    await modal.locator("button", { hasText: "Next" }).click();
+    await expect(modal.locator("text=Add Character")).toBeVisible();
   });
 });

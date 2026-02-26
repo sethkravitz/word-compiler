@@ -15,8 +15,8 @@ test.describe("Error handling", () => {
 
     await page.goto("/");
 
-    // Open bootstrap modal
-    await page.locator("button", { hasText: "New Bible" }).click();
+    // Bootstrap stage — click "Start from Synopsis"
+    await page.locator("text=Start from Synopsis").click();
 
     const textarea = page.locator("textarea").first();
     await expect(textarea).toBeVisible();
@@ -24,10 +24,8 @@ test.describe("Error handling", () => {
     await page.locator("button", { hasText: "Bootstrap Bible" }).click();
 
     // Should show some error state — either error banner or the button re-enables
-    // Give it a moment to fail
     await page.waitForTimeout(2000);
 
-    // The UI should not be stuck — either shows an error or returns to input state
     const hasError = await page.locator("text=failed").isVisible().catch(() => false);
     const hasButton = await page
       .locator("button", { hasText: "Bootstrap Bible" })
@@ -48,17 +46,15 @@ test.describe("Error handling", () => {
 
     await page.goto("/");
 
-    await page.locator("button", { hasText: "New Bible" }).click();
+    await page.locator("text=Start from Synopsis").click();
 
     const textarea = page.locator("textarea").first();
     await expect(textarea).toBeVisible();
     await textarea.fill("Another test synopsis.");
     await page.locator("button", { hasText: "Bootstrap Bible" }).click();
 
-    // Wait for processing
     await page.waitForTimeout(2000);
 
-    // Should show parse failure or return to usable state
     const hasParseError = await page.locator("text=Parse failed").isVisible().catch(() => false);
     const hasError = await page.locator("text=failed").isVisible().catch(() => false);
     const isUsable = await page
@@ -80,7 +76,7 @@ test.describe("Error handling", () => {
 
     await page.goto("/");
 
-    await page.locator("button", { hasText: "New Bible" }).click();
+    await page.locator("text=Start from Synopsis").click();
 
     const textarea = page.locator("textarea").first();
     await expect(textarea).toBeVisible();
@@ -91,16 +87,17 @@ test.describe("Error handling", () => {
     await expect(page.locator("text=failed").first()).toBeVisible({ timeout: 5000 });
   });
 
-  test("no JavaScript errors during normal navigation", async ({ page }) => {
+  test("no JavaScript errors during stage navigation", async ({ page }) => {
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
 
     await page.goto("/");
-    await expect(page.locator("text=Project Atlas")).toBeVisible();
+    await expect(page.locator("text=Create Your Story Bible")).toBeVisible();
 
-    // Navigate through all tabs
-    for (const tab of ["Scene Blueprint", "Reader Journey", "Voice Consistency", "Character Voices", "Draft Engine"]) {
-      await page.locator("button", { hasText: tab }).click();
+    // Navigate through all stage buttons
+    const stageLabels = ["Plan", "Draft", "Audit", "Complete", "Export", "Bootstrap"];
+    for (const label of stageLabels) {
+      await page.locator('[aria-label="Progress"] button', { hasText: label }).click();
       await page.waitForTimeout(200);
     }
 

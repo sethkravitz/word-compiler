@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockStartup, switchToJsonTab } from "./helpers.js";
+import { mockStartup } from "./helpers.js";
 
 const MOCK_BOOTSTRAP_RESPONSE = JSON.stringify({
   characters: [
@@ -38,7 +38,7 @@ test.describe("Bootstrap workflow", () => {
     await mockStartup(page);
   });
 
-  test("open bootstrap modal, mock SSE stream, verify bible populated", async ({ page }) => {
+  test("open bootstrap via Start from Synopsis, mock SSE stream, verify bible populated", async ({ page }) => {
     // Mock the streaming endpoint
     await page.route("**/api/generate/stream", (route) => {
       route.fulfill({
@@ -57,11 +57,10 @@ test.describe("Bootstrap workflow", () => {
 
     await page.goto("/");
 
-    // Open bootstrap modal via New Bible -> AI Bootstrap tab
-    await page.locator("button", { hasText: "New Bible" }).click();
-    await expect(page.locator("text=Bible Authoring")).toBeVisible();
+    // Bootstrap stage shows two entry cards — click "Start from Synopsis"
+    await page.locator("text=Start from Synopsis").click();
 
-    // Should be on AI Bootstrap tab by default — look for the synopsis textarea
+    // Should open BootstrapModal with synopsis textarea
     const textarea = page.locator("textarea").first();
     await expect(textarea).toBeVisible();
 
@@ -72,16 +71,10 @@ test.describe("Bootstrap workflow", () => {
     await page.locator("button", { hasText: "Bootstrap Bible" }).click();
 
     // Wait for the modal to close (bootstrap completes and closes after 600ms)
-    await expect(page.locator("text=Bible Authoring")).not.toBeVisible({ timeout: 5000 });
+    await expect(textarea).not.toBeVisible({ timeout: 5000 });
 
-    // Switch to JSON tab to verify bible data
-    await switchToJsonTab(page);
-
-    // Bible should be loaded — check version badge
+    // Bible should be loaded — version badge should appear
     await expect(page.locator(".bible-version")).toBeVisible({ timeout: 3000 });
-
-    // CodeMirror should contain the character name
-    await expect(page.locator(".cm-content").first()).toContainText("Marcus Cole", { timeout: 3000 });
   });
 
   test("shows error banner on parse failure", async ({ page }) => {
@@ -99,7 +92,8 @@ test.describe("Bootstrap workflow", () => {
 
     await page.goto("/");
 
-    await page.locator("button", { hasText: "New Bible" }).click();
+    // Click "Start from Synopsis" card
+    await page.locator("text=Start from Synopsis").click();
 
     const textarea = page.locator("textarea").first();
     await expect(textarea).toBeVisible();

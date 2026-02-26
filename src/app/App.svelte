@@ -1,33 +1,20 @@
 <script lang="ts">
 import { onMount } from "svelte";
+import { fade } from "svelte/transition";
 import { apiCreateProject, apiListProjects, apiUpdateProject } from "../api/client.js";
-import { checkChunkReviewGate, checkCompileGate, checkScenePlanGate } from "../gates/index.js";
-import { analyzeEdits } from "../learner/diff.js";
-import { applyProposal } from "../learner/proposals.js";
-import { generateTuningProposals } from "../learner/tuning.js";
-import { computeStyleDriftFromProse } from "../metrics/styleDrift.js";
-import { measureVoiceSeparability } from "../metrics/voiceSeparability.js";
 import { countTokens } from "../tokens/index.js";
-import type { Chunk, StyleDriftReport, VoiceSeparabilityReport } from "../types/index.js";
 import { generateId, getCanonicalText } from "../types/index.js";
-import AtlasPane from "./components/AtlasPane.svelte";
-import BibleAuthoringModal from "./components/BibleAuthoringModal.svelte";
-import BootstrapModal from "./components/BootstrapModal.svelte";
-import ChapterArcEditor from "./components/ChapterArcEditor.svelte";
-import CompilerView from "./components/CompilerView.svelte";
-import DraftingDesk from "./components/DraftingDesk.svelte";
-import ExportModal from "./components/ExportModal.svelte";
-import ForwardSimulator from "./components/ForwardSimulator.svelte";
 import GlossaryPanel from "./components/GlossaryPanel.svelte";
-import IRInspector from "./components/IRInspector.svelte";
-import LearnerPanel from "./components/LearnerPanel.svelte";
 import ProjectList from "./components/ProjectList.svelte";
-import SceneAuthoringModal from "./components/SceneAuthoringModal.svelte";
-import SceneSequencer from "./components/SceneSequencer.svelte";
-import SetupPayoffPanel from "./components/SetupPayoffPanel.svelte";
-import StyleDriftPanel from "./components/StyleDriftPanel.svelte";
-import VoiceSeparabilityView from "./components/VoiceSeparabilityView.svelte";
-import { Button, ErrorBanner, Input, Select, Tabs } from "./primitives/index.js";
+import StageCTA from "./components/StageCTA.svelte";
+import AuditStage from "./components/stages/AuditStage.svelte";
+import BootstrapStage from "./components/stages/BootstrapStage.svelte";
+import CompleteStage from "./components/stages/CompleteStage.svelte";
+import DraftStage from "./components/stages/DraftStage.svelte";
+import ExportStage from "./components/stages/ExportStage.svelte";
+import PlanStage from "./components/stages/PlanStage.svelte";
+import WorkflowRail from "./components/WorkflowRail.svelte";
+import { Button, ErrorBanner, Input, Select } from "./primitives/index.js";
 import {
   createApiActions,
   createCommands,
@@ -38,6 +25,7 @@ import {
   store,
 } from "./store/index.svelte.js";
 import { theme } from "./store/theme.svelte.js";
+import { STAGES, WorkflowStore } from "./store/workflow.svelte.js";
 
 // Set up compiler auto-recompile effect
 setupCompilerEffect(store);
@@ -52,6 +40,33 @@ const { generateChunk, runAuditManual, runDeepAudit, extractSceneIR, runAutopilo
   commands,
 );
 
+// Workflow store
+const workflow = new WorkflowStore(store);
+
+// ─── Keyboard shortcuts ─────────────────────────
+function handleKeydown(e: KeyboardEvent) {
+  if (!appReady) return;
+  const isCtrl = e.ctrlKey || e.metaKey;
+  if (!isCtrl) return;
+
+  // Ctrl+1-6: stage navigation
+  const digit = Number.parseInt(e.key);
+  if (digit >= 1 && digit <= 6) {
+    const stage = STAGES[digit - 1];
+    if (stage && workflow.getStageStatus(stage.id) !== "locked") {
+      e.preventDefault();
+      workflow.goToStage(stage.id);
+    }
+    return;
+  }
+
+  // Ctrl+Enter: advance to next stage
+  if (e.key === "Enter" && workflow.nextStageCTA) {
+    e.preventDefault();
+    workflow.goToStage(workflow.nextStageCTA.id);
+  }
+}
+
 // ─── Startup ────────────────────────────────────
 let appReady = $state(false);
 let startupStatus = $state<string>("loading");
@@ -65,7 +80,6 @@ onMount(async () => {
     appReady = true;
     currentView = "project";
   } else if (result === "multiple-projects") {
-    // Load the project list for selection
     try {
       projectList = await apiListProjects();
     } catch {
@@ -141,7 +155,6 @@ function handleBackToProjects() {
   appReady = false;
   currentView = "project-list";
   startupStatus = "multiple-projects";
-  // Refresh project list
   apiListProjects()
     .then((list) => {
       projectList = list;
@@ -150,196 +163,17 @@ function handleBackToProjects() {
 }
 
 // ─── Local UI state ─────────────────────────────
-let showArcEditor = $state(false);
-let exportModalOpen = $state(false);
 let newProjectTitle = $state("");
 let editingTitle = $state(false);
 let editTitleValue = $state("");
-let activeTab = $state<"compiler" | "ir" | "simulator" | "drift" | "voice" | "setups" | "learner">("compiler");
 
-const tabItems = [
-  { id: "compiler", label: "Draft Engine" },
-  { id: "ir", label: "Scene Blueprint" },
-  { id: "simulator", label: "Reader Journey" },
-  { id: "drift", label: "Voice Consistency" },
-  { id: "voice", label: "Character Voices" },
-  { id: "setups", label: "Setups" },
-  { id: "learner", label: "Learner" },
-];
-
-// ─── Derived values ─────────────────────────────
-let canGenerate = $derived(!!store.bible && !!store.activeScenePlan && !!store.compiledPayload);
-
-let gateMessages = $derived.by(() => {
-  const msgs: string[] = [];
-  if (!store.bible) msgs.push("No bible loaded.");
-  if (!store.activeScenePlan) msgs.push("No scene plan selected.");
-  if (store.activeScenePlan) {
-    const planGate = checkScenePlanGate(store.activeScenePlan);
-    msgs.push(...planGate.messages);
-  }
-  if (store.lintResult) {
-    const compileGate = checkCompileGate(store.lintResult);
-    msgs.push(...compileGate.messages);
-  }
-  if (store.activeSceneChunks.length > 0) {
-    const lastChunk = store.activeSceneChunks[store.activeSceneChunks.length - 1]!;
-    const reviewGate = checkChunkReviewGate(lastChunk);
-    msgs.push(...reviewGate.messages);
-  }
-  return msgs;
-});
-
-// Forward simulator scene nodes (include IRs)
-let simulatorScenes = $derived(
-  store.scenes.map((s) => ({
-    plan: s.plan,
-    ir: store.sceneIRs[s.plan.id] ?? null,
-    sceneOrder: s.sceneOrder,
-  })),
-);
-
-// Style drift reports (computed across completed scenes)
-let styleDriftReports = $derived.by((): StyleDriftReport[] => {
-  if (!store.bible) return [];
-  const completedScenes = store.scenes.filter((s) => s.status === "complete");
-  if (completedScenes.length < 2) return [];
-
-  const reports: StyleDriftReport[] = [];
-  const baselineId = completedScenes[0]!.plan.id;
-  const baselineChunks = store.sceneChunks[baselineId] ?? [];
-  if (baselineChunks.length === 0) return [];
-  const baselineProse = baselineChunks.map((c) => getCanonicalText(c)).join("\n\n");
-
-  for (let i = 1; i < completedScenes.length; i++) {
-    const scene = completedScenes[i]!;
-    const chunks = store.sceneChunks[scene.plan.id] ?? [];
-    if (chunks.length === 0) continue;
-    const prose = chunks.map((c) => getCanonicalText(c)).join("\n\n");
-    const report = computeStyleDriftFromProse(baselineId, baselineProse, scene.plan.id, prose);
-    reports.push(report);
-  }
-  return reports;
-});
-
-let baselineSceneTitle = $derived(store.scenes.find((s) => s.status === "complete")?.plan.title ?? "Scene 1");
-
-// Scene title lookup for drift panel
-let sceneTitles = $derived(Object.fromEntries(store.scenes.map((s) => [s.plan.id, s.plan.title])));
-
-// Learner: extract edit patterns from all edited chunks
-let editPatterns = $derived.by(() => {
-  const projectId = store.project?.id ?? "";
-  const patterns = [];
-  for (const scene of store.scenes) {
-    const chunks = store.sceneChunks[scene.plan.id] ?? [];
-    for (const chunk of chunks) {
-      if (chunk.editedText !== null) {
-        patterns.push(...analyzeEdits(chunk.generatedText, chunk.editedText, chunk.id, scene.plan.id, projectId));
-      }
-    }
-  }
-  return patterns;
-});
-
-let sceneOrderMap = $derived(new Map(store.scenes.map((s) => [s.plan.id, s.sceneOrder])));
-
-// Tuning proposals from edit ratio analysis
-let tuningProposals = $derived.by(() => {
-  const allChunks = store.scenes.flatMap((s) => store.sceneChunks[s.plan.id] ?? []);
-  return generateTuningProposals(allChunks, store.compilationConfig, store.project?.id ?? "");
-});
-
-// Voice separability (computed across all scene prose)
-let voiceReport = $derived.by((): VoiceSeparabilityReport | null => {
-  if (!store.bible || store.bible.characters.length < 2) return null;
-  const sceneTexts = store.scenes
-    .map((s) => ({
-      sceneId: s.plan.id,
-      prose: (store.sceneChunks[s.plan.id] ?? []).map((c) => getCanonicalText(c)).join("\n\n"),
-    }))
-    .filter((s) => s.prose.length > 0);
-  if (sceneTexts.length === 0) return null;
-  return measureVoiceSeparability(sceneTexts, store.bible);
-});
-
-// ─── Handlers ──────────────────────────────────
-let editDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
-
-function handleUpdateChunk(index: number, changes: Partial<Chunk>) {
-  const sceneId = store.activeScenePlan?.id;
-  if (!sceneId) return;
-
-  // Immediate store mutation for UI responsiveness
-  store.updateChunkForScene(sceneId, index, changes);
-
-  // Debounce API persistence for text edits, keyed per scene
-  if (changes.editedText !== undefined || changes.humanNotes !== undefined) {
-    const key = `${sceneId}:${index}`;
-    const existing = editDebounceTimers.get(key);
-    if (existing) clearTimeout(existing);
-    editDebounceTimers.set(
-      key,
-      setTimeout(() => {
-        commands.persistChunk(sceneId, index);
-        editDebounceTimers.delete(key);
-      }, 500),
-    );
-  } else {
-    // Non-text changes persist immediately
-    commands.persistChunk(sceneId, index);
-  }
-}
-
-function handleRemoveChunk(index: number) {
-  const sceneId = store.activeScenePlan?.id;
-  if (!sceneId) return;
-  commands.removeChunk(sceneId, index);
-}
-
-async function handleCompleteScene() {
-  const sceneId = store.activeScenePlan?.id;
-  if (!sceneId) return;
-  const result = await commands.completeScene(sceneId);
-  if (result.ok) {
-    extractSceneIR(sceneId);
-  }
-}
-
-async function handleResolveFlag(flagId: string, action: string) {
-  await commands.resolveAuditFlag(flagId, action, true);
-}
-
-async function handleDismissFlag(flagId: string) {
-  await commands.dismissAuditFlag(flagId);
-}
-
-async function handleVerifyIR() {
-  const sceneId = store.activeScenePlan?.id;
-  if (sceneId) await commands.verifySceneIR(sceneId);
-}
-
-async function handleUpdateIR(ir: import("../types/index.js").NarrativeIR) {
-  const sceneId = store.activeScenePlan?.id;
-  if (sceneId) await commands.saveSceneIR(sceneId, ir);
-}
-
-// ─── Learner Handlers ────────────────────────────
-async function handleAcceptProposal(proposal: import("../learner/proposals.js").BibleProposal) {
-  if (!store.bible) return;
-  const updated = applyProposal(store.bible, proposal);
-  await commands.saveBible(updated);
-}
-
-// ─── Prose Export ────────────────────────────────
+// ─── Prose word count ───────────────────────────
 let totalWordCount = $derived(
   store.scenes.reduce((sum, scene) => {
     const chunks = store.sceneChunks[scene.plan.id] ?? [];
     return sum + chunks.reduce((s, c) => s + getCanonicalText(c).split(/\s+/).filter(Boolean).length, 0);
   }, 0),
 );
-
-let hasAnyProse = $derived(store.scenes.some((scene) => (store.sceneChunks[scene.plan.id] ?? []).length > 0));
 
 // ─── State Export ────────────────────────────────
 function truncate(text: string, maxLen: number): string {
@@ -442,11 +276,12 @@ function exportState() {
       alert("State snapshot copied to clipboard. Paste it into Claude for debugging.");
     })
     .catch(() => {
-      // Fallback: download as file
       store.saveFile(snapshot, `wc-state-${Date.now()}.json`);
     });
 }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 {#if !appReady}
   <div class="app loading-screen">
@@ -500,38 +335,34 @@ function exportState() {
     {/if}
     <div class="header-right">
       <Button size="sm" onclick={handleBackToProjects}>Projects</Button>
-      {#if store.chapterArc}
-        <Button size="sm" onclick={() => { showArcEditor = true; }}>Chapter Arc</Button>
+      {#if workflow.activeStage === "draft"}
+        <label class="model-selector">
+          Model:
+          <Select
+            value={store.compilationConfig.defaultModel}
+            onchange={(e) => store.selectModel((e.target as HTMLSelectElement).value)}
+          >
+            {#if store.availableModels.length > 0}
+              {#each store.availableModels as m (m.id)}
+                <option value={m.id}>{m.label} ({(m.contextWindow / 1000).toFixed(0)}k ctx, {(m.maxOutput / 1000).toFixed(0)}k out)</option>
+              {/each}
+            {:else}
+              <option value={store.compilationConfig.defaultModel}>{store.compilationConfig.defaultModel}</option>
+            {/if}
+          </Select>
+        </label>
       {/if}
-      <label class="model-selector">
-        Model:
-        <Select
-          value={store.compilationConfig.defaultModel}
-          onchange={(e) => store.selectModel((e.target as HTMLSelectElement).value)}
-        >
-          {#if store.availableModels.length > 0}
-            {#each store.availableModels as m (m.id)}
-              <option value={m.id}>{m.label} ({(m.contextWindow / 1000).toFixed(0)}k ctx, {(m.maxOutput / 1000).toFixed(0)}k out)</option>
-            {/each}
-          {:else}
-            <option value={store.compilationConfig.defaultModel}>{store.compilationConfig.defaultModel}</option>
-          {/if}
-        </Select>
-      </label>
-      <Button size="sm" onclick={() => { exportModalOpen = true; }} disabled={!hasAnyProse} title="Export prose">
-        Export Prose{#if totalWordCount > 0} ({totalWordCount.toLocaleString()}w){/if}
-      </Button>
+      {#if totalWordCount > 0}
+        <span class="app-status">{totalWordCount.toLocaleString()}w</span>
+      {/if}
       <Button size="sm" onclick={exportState} title="Copy state snapshot to clipboard">Export</Button>
       <Button size="sm" onclick={() => theme.toggle()} title="Toggle dark/light theme">
         {theme.current === "dark" ? "Light" : "Dark"}
       </Button>
-      <span class="app-status">
-        {store.bible ? `Bible v${store.bible.version}` : "No bible"} |
-        {store.activeScenePlan ? `Scene: ${store.activeScenePlan.title}` : "No scene plan"} |
-        Chunks: {store.activeSceneChunks.length}{store.activeScenePlan ? `/${store.activeScenePlan.chunkCount}` : ""}
-      </span>
     </div>
   </div>
+
+  <WorkflowRail {workflow} />
 
   {#if store.error}
     <div class="error-margin">
@@ -539,99 +370,46 @@ function exportState() {
     </div>
   {/if}
 
-  <SceneSequencer
-    scenes={store.scenes}
-    activeSceneIndex={store.activeSceneIndex}
-    sceneChunks={store.sceneChunks}
-    onSelectScene={(i) => store.setActiveScene(i)}
-    onAddScene={() => store.setSceneAuthoringOpen(true)}
-  />
+  <StageCTA nextStage={workflow.nextStageCTA} onclick={(stage) => workflow.goToStage(stage.id)} />
 
-  <Tabs items={tabItems} active={activeTab} onSelect={(id) => { activeTab = id as typeof activeTab; }} />
-
-  <div class="cockpit">
-    <AtlasPane {store} {commands} onBootstrap={() => store.setBootstrapOpen(true)} onAuthor={() => store.setBibleAuthoringOpen(true)} />
-    <DraftingDesk
-      chunks={store.activeSceneChunks}
-      scenePlan={store.activeScenePlan}
-      sceneStatus={store.activeScene?.status ?? null}
-      isGenerating={store.isGenerating}
-      isAutopilot={store.isAutopilot}
-      {canGenerate}
-      {gateMessages}
-      auditFlags={store.auditFlags}
-      sceneIR={store.activeSceneIR}
-      isExtractingIR={store.isExtractingIR}
-      onGenerate={() => generateChunk()}
-      onUpdateChunk={handleUpdateChunk}
-      onRemoveChunk={handleRemoveChunk}
-      onRunAudit={() => runAuditManual()}
-      onRunDeepAudit={() => runDeepAudit()}
-      onCompleteScene={handleCompleteScene}
-      onAutopilot={() => runAutopilot()}
-      onCancelAutopilot={() => store.cancelAutopilot()}
-      onOpenIRInspector={() => { activeTab = 'ir'; }}
-      onExtractIR={() => extractSceneIR()}
-    />
-
-    <!-- Right panel: tabbed Phase 2 views -->
-    {#if activeTab === "compiler"}
-      <CompilerView
-        payload={store.compiledPayload}
-        log={store.compilationLog}
-        lintResult={store.lintResult}
-        auditFlags={store.auditFlags}
-        metrics={store.metrics}
-        onResolveFlag={handleResolveFlag}
-        onDismissFlag={handleDismissFlag}
-      />
-    {:else if activeTab === "ir"}
-      <IRInspector
-        ir={store.activeSceneIR}
-        sceneTitle={store.activeScenePlan?.title ?? "No scene"}
-        isExtracting={store.isExtractingIR}
-        canExtract={store.activeScene?.status === "complete"}
-        onExtract={() => extractSceneIR()}
-        onVerify={handleVerifyIR}
-        onUpdate={handleUpdateIR}
-        onClose={() => { activeTab = 'compiler'; }}
-      />
-    {:else if activeTab === "simulator"}
-      <ForwardSimulator
-        scenes={simulatorScenes}
-        activeSceneIndex={store.activeSceneIndex}
-        bible={store.bible}
-        onSelectScene={(i) => store.setActiveScene(i)}
-      />
-    {:else if activeTab === "drift"}
-      <StyleDriftPanel reports={styleDriftReports} {baselineSceneTitle} {sceneTitles} />
-    {:else if activeTab === "voice"}
-      <VoiceSeparabilityView report={voiceReport} />
-    {:else if activeTab === "setups"}
-      <SetupPayoffPanel sceneIRs={store.sceneIRs} {sceneTitles} sceneOrders={Object.fromEntries(store.scenes.map((s) => [s.plan.id, s.sceneOrder]))} />
-    {:else if activeTab === "learner"}
-      <LearnerPanel
-        {editPatterns}
-        sceneOrder={sceneOrderMap}
-        projectId={store.project?.id ?? ""}
-        {tuningProposals}
-        onAcceptProposal={handleAcceptProposal}
-        onAcceptTuning={(tp) => {
-          store.setConfig({ ...store.compilationConfig, [tp.parameter]: tp.suggestedValue });
-        }}
-      />
-    {/if}
+  <div class="stage-workspace">
+    {#key workflow.activeStage}
+      <div class="stage-content" in:fade={{ duration: 150, delay: 50 }} out:fade={{ duration: 100 }}>
+        {#if workflow.activeStage === "bootstrap"}
+          <BootstrapStage {store} {commands} />
+        {:else if workflow.activeStage === "draft"}
+          <DraftStage
+            {store}
+            {commands}
+            onGenerate={() => generateChunk()}
+            onRunAudit={() => runAuditManual()}
+            onRunDeepAudit={() => runDeepAudit()}
+            onAutopilot={() => runAutopilot()}
+            onExtractIR={(sceneId) => extractSceneIR(sceneId)}
+          />
+        {:else if workflow.activeStage === "plan"}
+          <PlanStage {store} {commands} />
+        {:else if workflow.activeStage === "audit"}
+          <AuditStage
+            {store}
+            {commands}
+            onRunAudit={() => runAuditManual()}
+            onRunDeepAudit={() => runDeepAudit()}
+          />
+        {:else if workflow.activeStage === "complete"}
+          <CompleteStage
+            {store}
+            {commands}
+            onExtractIR={(sceneId) => extractSceneIR(sceneId)}
+          />
+        {:else if workflow.activeStage === "export"}
+          <ExportStage {store} />
+        {/if}
+      </div>
+    {/key}
   </div>
 
-  <BootstrapModal {store} {commands} />
-  <BibleAuthoringModal {store} {commands} />
-  <SceneAuthoringModal {store} {commands} />
-  <ExportModal open={exportModalOpen} onClose={() => { exportModalOpen = false; }} {store} />
   <GlossaryPanel />
-
-  {#if showArcEditor && store.chapterArc}
-    <ChapterArcEditor arc={store.chapterArc} {store} {commands} onClose={() => { showArcEditor = false; }} />
-  {/if}
 </div>
 {/if}
 
@@ -640,6 +418,7 @@ function exportState() {
   .model-selector {
     display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary);
   }
+  .stage-content { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .error-margin { margin: 0 8px; }
   .loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 200px; }
   .new-project-form { display: flex; align-items: center; gap: 8px; }

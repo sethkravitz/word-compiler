@@ -8,56 +8,61 @@ A task-oriented guide to writing fiction with Word Compiler. For technical inter
 
 1. **Create a project** — On first launch you'll see a welcome screen. Click "Create Project". If you already have projects, the Project List appears instead — click "New Project".
 
-2. **Create your bible** — The Project Atlas panel (left side) shows your bible, scene plans, and chapter arc. You have two options:
-   - **Bootstrap** — Paste a synopsis and let the LLM generate characters, locations, tone, and a kill list. You can pick a genre template (literary fiction, thriller, sci-fi, fantasy) to pre-fill sensible defaults.
-   - **Author** — Open the Bible Authoring modal and fill in everything manually using the guided form. Good when you already know your world.
+2. **Bootstrap** — The app starts on the Bootstrap stage. You have two options:
+   - **Start from Synopsis** — Paste a synopsis and let the LLM generate characters, locations, tone, and a kill list. Pick a genre template (literary fiction, thriller, sci-fi, fantasy) to pre-fill sensible defaults.
+   - **Build Manually** — Open the guided form and fill in everything step by step. Good when you already know your world.
 
-3. **Plan your scenes** — Click the **+** button in the Scene Sequencer (the horizontal strip below the header). The Scene Authoring modal opens with two modes:
-   - **AI Bootstrap** — Describe the chapter direction, set a scene count (1 for a single scene, 3+ for a full chapter), select which characters and locations to include, and generate. The LLM produces scene plans with continuity between them.
+3. **Plan** — Navigate to the Plan stage (unlocked after your bible has at least 1 character). Click "+ New Scene" to open the Scene Authoring modal:
+   - **AI Bootstrap** — Describe the chapter direction, set a scene count, select characters and locations, and generate. The LLM produces scene plans with continuity between them.
    - **Guided Form** — Manually fill in every field: POV, narrative goal, emotional beat, subtext, reader state, chunk descriptions, etc.
 
-4. **Generate prose** — Select a scene in the sequencer, then use the Drafting Desk (center panel):
-   - **Generate Chunk** — Produces the next chunk of prose using the compiled context (bible + scene plan + previous chunks). Review the output, edit if needed, then accept or reject.
-   - **Autopilot** — Generates all remaining chunks for the scene automatically, accepting each one. Runs the completion gate at the end.
+4. **Draft** — Navigate to the Draft stage (unlocked after at least 1 scene plan). The Drafting Desk is front and center:
+   - **Generate Chunk** — Produces the next chunk of prose using the compiled context (bible + scene plan + previous chunks). Review, edit, then accept or reject.
+   - **Autopilot** — Generates all remaining chunks automatically, accepting each one.
 
-5. **Audit and refine** — The right panel shows the Draft Engine (compiled context), along with audit results:
-   - **Run Audit** — Deterministic checks: kill list violations, sentence length variance, paragraph length, signal-to-noise ratio.
-   - **Deep Audit** — LLM-assisted subtext compliance check. Sends your prose + the scene plan's subtext rules to Claude and flags any lines where characters say the quiet part out loud.
-   - Resolve or dismiss flags in the Audit panel.
+5. **Audit** — Navigate to the Audit stage (unlocked after at least 1 chunk is generated). Run quality checks:
+   - **Run Audit** — Deterministic: kill list violations, sentence length variance, paragraph length, signal-to-noise ratio.
+   - **Deep Audit** — LLM-assisted subtext compliance check. Flags lines where characters say the quiet part out loud.
+   - Resolve or dismiss flags inline.
 
-6. **Complete the scene** — Click "Complete Scene" in the Drafting Desk. This runs the scene completion gate (checks chunk count, audit resolution, etc.). Once complete, you can extract the Scene IR (intermediate representation) for cross-scene analysis.
+6. **Complete** — Navigate to the Complete stage (unlocked when no unresolved critical audit flags remain). Mark scenes as complete, extract Scene IR for cross-scene analysis.
 
-7. **Export** — Click "Export Prose" in the header. Choose markdown or plaintext format. The export concatenates all accepted chunks across all scenes in order.
+7. **Export** — Navigate to the Export stage (unlocked after at least 1 scene is marked complete). Choose markdown or plaintext format. Copy to clipboard or download.
 
 ---
 
-## The Panels
+## The Stages
 
-### Scene Sequencer (top strip)
-The horizontal bar showing all scenes for the current chapter. Click a scene to switch to it. The **+** button opens the Scene Authoring modal. Each scene shows its status: planned, drafting, or complete.
+The app uses a 6-stage workflow. Navigate between stages via the **WorkflowRail** (the horizontal stepper below the header). Stages unlock progressively as prerequisites are met.
 
-### Project Atlas (left panel)
-Your project's reference data:
-- **Bible** — Characters, locations, tone, kill list. Click "Bootstrap" to generate from a synopsis, or "Author" to edit manually.
-- **Scene Plans** — JSON view of the active scene plan. All the metadata the compiler uses: POV, narrative goal, reader state, subtext rules, chunk descriptions.
-- **Chapter Arc** — If generated during scene bootstrap (or created manually), shows the chapter-level arc data. Click "Chapter Arc" in the header to edit.
+| Stage | Unlocked When | Purpose |
+|-------|--------------|---------|
+| Bootstrap | Always | Create and edit your story bible |
+| Plan | Bible has >= 1 character | Author scene plans, set chapter arcs |
+| Draft | >= 1 scene plan exists | Generate and review prose chunks |
+| Audit | >= 1 chunk generated | Quality checks, flag resolution |
+| Complete | No unresolved critical flags | Mark scenes done, extract IR |
+| Export | >= 1 scene marked complete | Export prose to markdown/plaintext |
 
-### Drafting Desk (center panel)
-Where prose happens:
-- Generated chunks appear in sequence, each with accept/edit/reject controls.
-- "Generate Chunk" adds the next chunk using the full compiled context.
-- "Autopilot" runs through all remaining chunks automatically.
-- "Run Audit" and "Deep Audit" buttons trigger quality checks.
-- "Complete Scene" finalizes the scene (requires passing the completion gate).
+**Keyboard shortcuts:** `Ctrl+1` through `Ctrl+6` navigate to each stage (if unlocked). `Ctrl+Enter` advances to the next unlocked stage.
 
-### Right Panel (tabbed)
-- **Draft Engine** — Shows the compiled context payload (system message + user message), the compilation log, lint results, and audit flags with the signal/noise meter.
-- **Scene Blueprint** — The extracted IR (intermediate representation) after scene completion. Shows narrative beats, character arcs, and key moments.
-- **Reader Journey** — Forward simulation of what the reader knows, suspects, and is wrong about at each scene boundary.
-- **Voice Consistency** — Style drift analysis comparing each scene's prose against a baseline.
-- **Character Voices** — Voice separability report showing how distinct each character's dialogue is.
-- **Setups** — Setup/payoff registry tracking planted setups and their resolutions across scenes.
-- **Learner** — Edit pattern analysis and auto-tuning proposals based on how you revise generated prose.
+### Bootstrap Stage
+Your project's foundation. When no bible exists, you see two entry cards: "Start from Synopsis" (AI-assisted) and "Build Manually" (guided form). Once a bible exists, you see the bible summary with "Edit Bible" and "Re-bootstrap" actions.
+
+### Plan Stage
+Two-column layout. Left: Scene Sequencer (horizontal strip of scene cards) + scene detail view (the Atlas Scene tab). Right: reference panel with character/location cards and setup/payoff coverage. Use "+ New Scene" to author scene plans.
+
+### Draft Stage
+Two-column layout. Left: Scene Sequencer + Drafting Desk (where prose happens). Right: tabbed context panel with Draft Engine (compiled payload), Voice Consistency, Character Voices, and Setups. Model selector appears in the header during Draft.
+
+### Audit Stage
+Two-column layout. Left: read-only prose view with inline audit flags. Right: tabbed analysis with Reader Journey, Voice Drift, Voices, Setups, and Learner. "Run Audit" and "Deep Audit" buttons in the toolbar.
+
+### Complete Stage
+Single-column summary. Scene cards showing status, chunk count, word count, audit flag counts, and IR extraction badge. "Mark Complete" / "Reopen to Draft" actions per scene.
+
+### Export Stage
+Format selector (Markdown/Plain Text), word count, scene completion stats. Warnings for unresolved audit flags. Copy to Clipboard or Download actions. Full prose preview.
 
 ---
 
@@ -96,26 +101,20 @@ The Deep Audit checks whether your prose violates these rules by having characte
 ## Common Tasks
 
 ### Adding a scene to an existing chapter
-Click **+** in the Scene Sequencer. Set Scene Count to **1** in the AI Bootstrap tab. Your existing scenes are untouched — the new plan is appended.
+Navigate to the Plan stage. Click "+ New Scene". Set Scene Count to **1** in the AI Bootstrap tab. Existing scenes are untouched — the new plan is appended.
 
-### Re-bootstrapping the bible
-Open the Bible Authoring modal ("Author" button in Project Atlas). Edit fields and save. The bible version increments automatically. The compiler will use the updated bible for all subsequent chunk generation.
+### Editing the bible
+Navigate to the Bootstrap stage. Click "Edit Bible" to open the authoring modal, or "Re-bootstrap" to regenerate from a new synopsis. The bible version increments on save.
 
 ### Switching between projects
-Click "Projects" in the header (visible when you have 2+ projects). This returns to the Project List. Your current project state is preserved in the database.
+Click "Projects" in the header (visible when you have 2+ projects). Your current project state is preserved in the database.
 
 ### Using genre templates
-When bootstrapping a bible, select a genre template (literary fiction, thriller, sci-fi, fantasy) before generating. The template pre-fills tone, metaphoric domains, pacing notes, and a starter kill list appropriate to the genre.
+When bootstrapping a bible via "Start from Synopsis", select a genre template before generating. The template pre-fills tone, metaphoric domains, pacing notes, and a starter kill list appropriate to the genre.
 
 ### Exporting your work
-Click "Export Prose" in the header. Choose format:
+Navigate to the Export stage. Choose format:
 - **Markdown** — Scene titles as headings, preserves formatting.
 - **Plaintext** — Clean text with scene breaks, no markup.
 
----
-
-## Tips
-
-<!-- TODO: Add your workflow tips here — e.g., when to use autopilot vs manual,
-     when deep audit is most useful, gotchas you've encountered, etc. -->
-
+Click "Copy to Clipboard" or "Download" to get your prose.
