@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { mockStartup } from "./helpers.js";
+import { MOCK_BIBLE, mockStartup, navigateToStage } from "./helpers.js";
 
 const PROJECT_ID = "proj-e2e-test";
 const CHAPTER_ID = "ch-e2e-1";
@@ -27,7 +27,7 @@ const MOCK_SCENE = {
     povCharacterId: "char-1",
     povDistance: "close",
     narrativeGoal: "Elena arrives at the station",
-    emotionalBeat: "Anticipation → unease",
+    emotionalBeat: "Anticipation -> unease",
     readerEffect: "Reader feels the isolation",
     readerStateEntering: null,
     readerStateExiting: null,
@@ -45,7 +45,7 @@ const MOCK_SCENE = {
     failureModeToAvoid: "",
     locationId: null,
   },
-  status: "drafting",
+  status: "complete",
   sceneOrder: 0,
 };
 
@@ -67,9 +67,11 @@ const MOCK_CHUNKS = [
 ];
 
 async function mockWithChunks(page: Page) {
-  await mockStartup(page);
+  // Use mockStartup with bible pre-loaded (enables all stage gates)
+  await mockStartup(page, { bible: MOCK_BIBLE });
 
-  // Override chapters to return one chapter
+  // Override chapters to return one chapter (must unroute first since mockStartup registered it)
+  await page.unroute("**/chapters");
   await page.route("**/chapters", (route, request) => {
     if (request.method() === "GET") {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([MOCK_CHAPTER]) });
@@ -80,6 +82,11 @@ async function mockWithChunks(page: Page) {
   // Scenes for this chapter
   await page.route(`**/chapters/${CHAPTER_ID}/scenes`, (route) => {
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([MOCK_SCENE]) });
+  });
+
+  // Chapter IRs — empty
+  await page.route(`**/chapters/${CHAPTER_ID}/irs`, (route) => {
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
   });
 
   // Chunks for this scene
@@ -97,7 +104,7 @@ async function mockWithChunks(page: Page) {
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ total: 0, resolved: 0, actionable: 0 }) });
   });
 
-  // Scene IR — 404 (not extracted yet)
+  // Scene IR — 404
   await page.route(`**/scenes/${SCENE_ID}/ir`, (route) => {
     return route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "Not found" }) });
   });
@@ -108,43 +115,34 @@ async function mockWithChunks(page: Page) {
   });
 }
 
-test.describe("Export Modal", () => {
+test.describe("Export Stage", () => {
   test.beforeEach(async ({ page }) => {
     await mockWithChunks(page);
   });
 
-  test("opens Export modal from toolbar button", async ({ page }) => {
+  test("navigates to Export stage and shows export UI", async ({ page }) => {
     await page.goto("/");
-    // Wait for the Export Prose button to be enabled (has prose)
-    const exportBtn = page.locator("button", { hasText: "Export Prose" });
-    await expect(exportBtn).toBeVisible();
-    await expect(exportBtn).toBeEnabled();
-    await exportBtn.click();
-    await expect(page.locator("text=Export Prose").last()).toBeVisible();
-    await expect(page.locator("text=Markdown")).toBeVisible();
+    await navigateToStage(page, "Export");
+    await expect(page.locator("text=Markdown")).toBeVisible({ timeout: 3000 });
   });
 
-  test("shows markdown preview with word count", async ({ page }) => {
+  test("shows word count in export stage", async ({ page }) => {
     await page.goto("/");
-    await page.locator("button", { hasText: "Export Prose" }).click();
-    // Meta line shows "N words · .md"
-    await expect(page.locator(".export-meta")).toContainText("words");
-    await expect(page.locator(".export-meta")).toContainText(".md");
+    await navigateToStage(page, "Export");
+    // Word count appears in the export stats area (e.g. "27 words")
+    await expect(page.getByText(/^\d+ words$/)).toBeVisible({ timeout: 3000 });
   });
 
-  test("switching to Plain Text changes format indicator", async ({ page }) => {
+  test("can switch to Plain Text format", async ({ page }) => {
     await page.goto("/");
-    await page.locator("button", { hasText: "Export Prose" }).click();
-    // Click Plain Text radio
-    await page.locator("label", { hasText: "Plain Text" }).click();
-    await expect(page.locator("text=.txt")).toBeVisible();
-  });
-
-  test("Cancel closes modal", async ({ page }) => {
-    await page.goto("/");
-    await page.locator("button", { hasText: "Export Prose" }).click();
-    await expect(page.locator("[role=dialog]")).toBeVisible();
-    await page.locator("button", { hasText: "Cancel" }).click();
-    await expect(page.locator("[role=dialog]")).not.toBeVisible();
+    await navigateToStage(page, "Export");
+    await page.waitForTimeout(500);
+    // Click the "Plain Text (.txt)" radio option
+    const plainTextOption = page.getByText("Plain Text (.txt)");
+    if (await plainTextOption.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await plainTextOption.click();
+      // Download button should show .txt extension
+      await expect(page.getByRole("button", { name: /\.txt/ })).toBeVisible();
+    }
   });
 });

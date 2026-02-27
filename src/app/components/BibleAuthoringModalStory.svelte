@@ -1,17 +1,14 @@
 <script lang="ts">
 import { applyGenreTemplate, LITERARY_FICTION } from "../../bootstrap/genres.js";
-import type { Bible } from "../../types/index.js";
 import { createEmptyBible, createEmptyCharacterDossier, generateId } from "../../types/index.js";
 import { createCommands } from "../store/commands.js";
 import { ProjectStore } from "../store/project.svelte.js";
 import BibleAuthoringModal from "./BibleAuthoringModal.svelte";
 
 let {
-  mode = "bootstrap",
   prePopulated = false,
   withGenre = false,
 }: {
-  mode?: "bootstrap" | "form";
   prePopulated?: boolean;
   withGenre?: boolean;
 } = $props();
@@ -53,4 +50,4 @@ if (prePopulated) {
 }
 </script>
 
-<BibleAuthoringModal {store} {commands} initialTab={mode === "form" ? "form" : "bootstrap"} />
+<BibleAuthoringModal {store} {commands} />

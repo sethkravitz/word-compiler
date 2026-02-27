@@ -12,7 +12,10 @@ import { getCanonicalText } from "../types/index.js";
 import {
   assembleSections,
   formatAntiAblation,
+  formatBackgroundCharacter,
   formatCharacterVoice,
+  formatForegroundCharacter,
+  formatPovInteriority,
   formatSceneContract,
   formatSensoryPalette,
 } from "./helpers.js";
@@ -88,6 +91,39 @@ function buildCrossSceneBridge(
   return sections;
 }
 
+function buildSceneCast(presentIds: string[], speakingCharIds: string[], bible: Bible): RingSection[] {
+  if (presentIds.length === 0) return [];
+
+  const sections: RingSection[] = [
+    {
+      name: "SCENE_CAST_GUARDRAIL",
+      text: "Only characters listed as present may appear. Do not introduce unnamed crowd, bystanders, or extras unless the scene plan explicitly calls for them.",
+      priority: 0,
+      immune: true,
+    },
+  ];
+
+  const coveredIds = new Set(speakingCharIds);
+  const nonSpeaking = presentIds
+    .filter((id) => !coveredIds.has(id))
+    .map((id) => bible.characters.find((c) => c.id === id))
+    .filter((c) => c != null);
+
+  if (nonSpeaking.length > 0) {
+    const lines = nonSpeaking.map((c) =>
+      nonSpeaking.length <= 3 ? formatForegroundCharacter(c) : formatBackgroundCharacter(c),
+    );
+    sections.push({
+      name: "SCENE_CAST",
+      text: `=== ALSO PRESENT ===\n${lines.join("\n")}`,
+      priority: 2,
+      immune: false,
+    });
+  }
+
+  return sections;
+}
+
 function buildMicroDirective(previousChunks: Chunk[]): RingSection | null {
   if (previousChunks.length === 0) return null;
   const lastChunk = previousChunks[previousChunks.length - 1]!;
@@ -127,6 +163,18 @@ export function buildRing3(
   }
   sections.push(...buildVoiceFingerprints(speakingCharIds, bible, plan));
 
+  // --- POV Interiority (immune for intimate/close, compressible for moderate/distant) ---
+  const povChar = bible.characters.find((c) => c.id === plan.povCharacterId);
+  if (povChar) {
+    const isDeepPov = plan.povDistance === "intimate" || plan.povDistance === "close";
+    sections.push({
+      name: "POV_INTERIORITY",
+      text: formatPovInteriority(povChar, plan.povDistance),
+      priority: isDeepPov ? 0 : 2,
+      immune: isDeepPov,
+    });
+  }
+
   // --- Sensory Palette (compressible) ---
   if (plan.locationId) {
     const location = bible.locations.find((l) => l.id === plan.locationId);
@@ -139,6 +187,9 @@ export function buildRing3(
       });
     }
   }
+
+  // --- Scene Cast (guardrail immune, character blurbs compressible) ---
+  sections.push(...buildSceneCast(plan.presentCharacterIds ?? [], speakingCharIds, bible));
 
   // --- Anchor Lines (immune) ---
   if (plan.anchorLines.length > 0) {

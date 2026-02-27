@@ -1,3 +1,4 @@
+export { default as AdvancedToggle } from "./AdvancedToggle.svelte";
 export { default as Badge } from "./Badge.svelte";
 export { default as Button } from "./Button.svelte";
 export { default as CardList } from "./CardList.svelte";

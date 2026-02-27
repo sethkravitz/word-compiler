@@ -102,6 +102,7 @@ describe("buildRing3", () => {
     expect(names).toContain("SCENE_CONTRACT");
     expect(names).toContain("VOICE_MARCUS"); // POV char
     expect(names).toContain("VOICE_ELENA"); // speaking char
+    expect(names).toContain("POV_INTERIORITY"); // POV character interiority
     expect(names).toContain("SENSORY_PALETTE");
     expect(names).toContain("ANCHOR_LINES");
     expect(names).toContain("ANTI_ABLATION");
@@ -204,6 +205,162 @@ describe("buildRing3", () => {
 
     expect(sensory!.immune).toBe(false);
     expect(sensory!.priority).toBe(4);
+  });
+
+  it("POV_INTERIORITY emitted for POV character with close distance (immune)", () => {
+    const char = makeChar("marcus", "Marcus");
+    char.backstory = "Grew up on a ranch";
+    char.behavior = {
+      emotionPhysicality: "Jaw tightens",
+      stressResponse: "Goes still",
+      socialPosture: null,
+      noticesFirst: null,
+      lyingStyle: null,
+    };
+    const bible = makeBible([char]);
+    const plan = makePlan({ dialogueConstraints: {}, povDistance: "close" as ScenePlan["povDistance"] });
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const interiority = result.sections.find((s) => s.name === "POV_INTERIORITY");
+
+    expect(interiority).toBeDefined();
+    expect(interiority!.text).toContain("POV INTERIORITY: MARCUS");
+    expect(interiority!.text).toContain("Backstory:");
+    expect(interiority!.text).toContain("ranch");
+    expect(interiority!.immune).toBe(true);
+    expect(interiority!.priority).toBe(0);
+  });
+
+  it("POV_INTERIORITY with moderate distance is compressible (priority 2)", () => {
+    const char = makeChar("marcus", "Marcus");
+    char.contradictions = ["Sees himself as calm, but panics easily"];
+    char.behavior = {
+      emotionPhysicality: "Jaw tightens",
+      stressResponse: null,
+      socialPosture: null,
+      noticesFirst: null,
+      lyingStyle: null,
+    };
+    const bible = makeBible([char]);
+    const plan = makePlan({ dialogueConstraints: {}, povDistance: "moderate" as ScenePlan["povDistance"] });
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const interiority = result.sections.find((s) => s.name === "POV_INTERIORITY");
+
+    expect(interiority).toBeDefined();
+    expect(interiority!.text).toContain("Contradictions");
+    expect(interiority!.text).not.toContain("Backstory:");
+    expect(interiority!.immune).toBe(false);
+    expect(interiority!.priority).toBe(2);
+  });
+
+  it("POV_INTERIORITY appears after voice sections and before SENSORY_PALETTE", () => {
+    const char = makeChar("marcus", "Marcus");
+    char.behavior = {
+      emotionPhysicality: "Jaw tightens",
+      stressResponse: null,
+      socialPosture: null,
+      noticesFirst: null,
+      lyingStyle: null,
+    };
+    const bible = makeBible([char]);
+    const plan = makePlan({ dialogueConstraints: {} });
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const names = result.sections.map((s) => s.name);
+
+    const voiceIdx = names.indexOf("VOICE_MARCUS");
+    const interiorIdx = names.indexOf("POV_INTERIORITY");
+    const sensoryIdx = names.indexOf("SENSORY_PALETTE");
+
+    expect(voiceIdx).toBeLessThan(interiorIdx);
+    expect(interiorIdx).toBeLessThan(sensoryIdx);
+  });
+
+  it("POV_INTERIORITY gracefully skipped when POV character not in bible", () => {
+    const bible = makeBible([]); // no characters
+    const plan = makePlan({ dialogueConstraints: {} });
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const names = result.sections.map((s) => s.name);
+    expect(names).not.toContain("POV_INTERIORITY");
+  });
+
+  // --- Scene cast tests ---
+
+  it("SCENE_CAST_GUARDRAIL emitted when presentCharacterIds is non-empty", () => {
+    const bible = makeBible([makeChar("marcus", "Marcus"), makeChar("bob", "Bob")]);
+    const plan = makePlan({
+      dialogueConstraints: {},
+      presentCharacterIds: ["marcus", "bob"],
+    });
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const guardrail = result.sections.find((s) => s.name === "SCENE_CAST_GUARDRAIL");
+
+    expect(guardrail).toBeDefined();
+    expect(guardrail!.text).toContain("Only characters listed as present");
+    expect(guardrail!.immune).toBe(true);
+    expect(guardrail!.priority).toBe(0);
+  });
+
+  it("SCENE_CAST lists non-speaking present characters", () => {
+    const bob = makeChar("bob", "Bob");
+    bob.physicalDescription = "Tall, angular face";
+    const bible = makeBible([makeChar("marcus", "Marcus"), bob]);
+    const plan = makePlan({
+      dialogueConstraints: {},
+      presentCharacterIds: ["marcus", "bob"],
+    });
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const cast = result.sections.find((s) => s.name === "SCENE_CAST");
+
+    expect(cast).toBeDefined();
+    expect(cast!.text).toContain("ALSO PRESENT");
+    expect(cast!.text).toContain("Bob");
+    expect(cast!.text).toContain("Tall, angular face");
+    expect(cast!.immune).toBe(false);
+    expect(cast!.priority).toBe(2);
+  });
+
+  it("SCENE_CAST excludes speaking characters (already have VOICE_* sections)", () => {
+    const bible = makeBible([makeChar("marcus", "Marcus"), makeChar("elena", "Elena")]);
+    const plan = makePlan({
+      dialogueConstraints: { elena: ["Guarded"] },
+      presentCharacterIds: ["marcus", "elena"],
+    });
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const cast = result.sections.find((s) => s.name === "SCENE_CAST");
+
+    // Both marcus (POV) and elena (speaking) are already covered — no SCENE_CAST needed
+    expect(cast).toBeUndefined();
+  });
+
+  it("no SCENE_CAST when presentCharacterIds is empty", () => {
+    const bible = makeBible([makeChar("marcus", "Marcus")]);
+    const plan = makePlan({ dialogueConstraints: {}, presentCharacterIds: [] });
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const names = result.sections.map((s) => s.name);
+
+    expect(names).not.toContain("SCENE_CAST_GUARDRAIL");
+    expect(names).not.toContain("SCENE_CAST");
+  });
+
+  it("SCENE_CAST handles missing presentCharacterIds gracefully (backward compat)", () => {
+    const bible = makeBible([makeChar("marcus", "Marcus")]);
+    // Simulate old data without presentCharacterIds by creating plan without it
+    const plan = makePlan({ dialogueConstraints: {} });
+    // biome-ignore lint: simulate pre-migration data missing the field
+    (plan as unknown as Record<string, unknown>).presentCharacterIds = undefined;
+
+    const result = buildRing3(plan, bible, [], 0, config);
+    const names = result.sections.map((s) => s.name);
+
+    expect(names).not.toContain("SCENE_CAST_GUARDRAIL");
+    expect(names).not.toContain("SCENE_CAST");
   });
 
   // --- Cross-scene bridge tests ---

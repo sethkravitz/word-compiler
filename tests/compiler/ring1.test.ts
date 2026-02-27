@@ -16,14 +16,24 @@ function makeConfig(overrides: Partial<CompilationConfig> = {}): CompilationConf
 }
 
 describe("buildRing1", () => {
-  it("empty bible → header + POV (default pov always present)", () => {
+  it("empty bible → header + POV + NARRATIVE_RULES (guardrail always present)", () => {
     const result = buildRing1(makeBible(), makeConfig());
     expect(result.text).toContain("=== PROJECT VOICE ===");
-    // HEADER + POV (default bible always has pov)
-    expect(result.sections).toHaveLength(2);
+    // HEADER + POV + NARRATIVE_RULES (guardrail always present even with empty bible)
+    expect(result.sections).toHaveLength(3);
     expect(result.sections[0]!.name).toBe("HEADER");
     expect(result.sections[1]!.name).toBe("POV");
+    expect(result.sections[2]!.name).toBe("NARRATIVE_RULES");
     expect(result.wasTruncated).toBe(false);
+  });
+
+  it("NARRATIVE_RULES always contains non-invention guardrail", () => {
+    const result = buildRing1(makeBible(), makeConfig());
+    const rulesSection = result.sections.find((s) => s.name === "NARRATIVE_RULES");
+    expect(rulesSection).toBeDefined();
+    expect(rulesSection!.text).toContain("Do not invent backstory");
+    expect(rulesSection!.immune).toBe(true);
+    expect(rulesSection!.priority).toBe(0);
   });
 
   it("kill-list-only bible → header + NEVER WRITE", () => {
@@ -40,7 +50,7 @@ describe("buildRing1", () => {
     expect(result.text).toContain("NEVER WRITE:");
     expect(result.text).toContain('"a sense of"');
     expect(result.text).toContain('"palpable tension"');
-    expect(result.sections).toHaveLength(3); // HEADER + NEVER_WRITE + POV (always present from defaults)
+    expect(result.sections).toHaveLength(4); // HEADER + NEVER_WRITE + POV + NARRATIVE_RULES (always present)
   });
 
   it("structural kill list entries excluded from NEVER WRITE", () => {

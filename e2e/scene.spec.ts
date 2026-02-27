@@ -1,28 +1,17 @@
 import { expect, test } from "@playwright/test";
-import path from "node:path";
-import { mockStartup, switchToJsonTab } from "./helpers.js";
-
-const BIBLE_FIXTURE = path.join(import.meta.dirname, "..", "fixtures", "bible.json");
+import { mockStartupWithBible, navigateToStage } from "./helpers.js";
 
 test.describe("Scene authoring workflow", () => {
   test.beforeEach(async ({ page }) => {
-    await mockStartup(page);
+    await mockStartupWithBible(page);
     await page.goto("/");
-    await expect(page.locator("text=Project Atlas")).toBeVisible();
-    await switchToJsonTab(page);
-
-    // Load Bible fixture first
-    const [fileChooser] = await Promise.all([
-      page.waitForEvent("filechooser"),
-      page.locator("button", { hasText: "Load Bible" }).click(),
-    ]);
-    await fileChooser.setFiles(BIBLE_FIXTURE);
-    await expect(page.locator(".bible-version")).toBeVisible({ timeout: 3000 });
+    // Navigate to Plan stage (unlocked because bible has a character)
+    await navigateToStage(page, "Plan");
   });
 
   test("opens scene authoring modal", async ({ page }) => {
-    // Look for "New Scene" button in the SceneSequencer
-    const sceneBtn = page.locator("button", { hasText: "New Scene" });
+    // Click the first "+ New Scene" button in the scene sequencer
+    const sceneBtn = page.locator("button", { hasText: "New Scene" }).first();
     await expect(sceneBtn).toBeVisible({ timeout: 2000 });
     await sceneBtn.click();
     await expect(page.locator("text=Scene Authoring")).toBeVisible({ timeout: 2000 });
@@ -30,7 +19,7 @@ test.describe("Scene authoring workflow", () => {
 
   test("guided form creates scene plan", async ({ page }) => {
     // Open scene authoring
-    await page.locator("button", { hasText: "New Scene" }).click();
+    await page.locator("button", { hasText: "New Scene" }).first().click();
     await expect(page.locator("text=Scene Authoring")).toBeVisible();
 
     // Switch to Guided Form tab

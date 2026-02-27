@@ -70,9 +70,9 @@ test.describe("Multi-project", () => {
     await page.goto("/");
     // Click on "The Letter" project
     await page.locator("text=The Letter").click();
-    // Should now show the main Word Compiler UI
+    // Should now show the main Word Compiler UI with WorkflowRail
     await expect(page.locator("text=Word Compiler").first()).toBeVisible();
-    await expect(page.locator("text=Project Atlas")).toBeVisible();
+    await expect(page.locator('[aria-label="Progress"]')).toBeVisible();
   });
 
   test("New Project button is visible in project list", async ({ page }) => {

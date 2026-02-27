@@ -9,17 +9,11 @@ const meta: Meta<BibleAuthoringModalStory> = {
     docs: {
       story: { height: "600px" },
       description: {
-        component:
-          "Bible authoring modal — create or edit the story bible via direct form entry or LLM bootstrap from a synopsis.",
+        component: "Bible authoring modal — create or edit the story bible via guided form entry.",
       },
     },
   },
   argTypes: {
-    mode: {
-      control: "select",
-      options: ["bootstrap", "form"],
-      description: "Which authoring mode to start in.",
-    },
     prePopulated: {
       control: "boolean",
       description: "Whether to pre-populate with sample Bible data.",
@@ -34,18 +28,14 @@ const meta: Meta<BibleAuthoringModalStory> = {
 export default meta;
 type Story = StoryObj<BibleAuthoringModalStory>;
 
-export const EmptyBootstrap: Story = {
-  args: { mode: "bootstrap", prePopulated: false },
+export const Empty: Story = {
+  args: { prePopulated: false },
 };
 
-export const EmptyForm: Story = {
-  args: { mode: "form", prePopulated: false },
-};
-
-export const PrePopulatedForm: Story = {
-  args: { mode: "form", prePopulated: true },
+export const PrePopulated: Story = {
+  args: { prePopulated: true },
 };
 
 export const WithGenrePresets: Story = {
-  args: { mode: "form", prePopulated: true, withGenre: true },
+  args: { prePopulated: true, withGenre: true },
 };

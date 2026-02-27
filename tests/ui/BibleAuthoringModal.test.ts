@@ -46,15 +46,8 @@ function createMockCommands() {
 }
 
 describe("BibleAuthoringModal", () => {
-  it('renders "AI Bootstrap" and "Guided Form" tabs', () => {
+  it("renders guided form directly with stepper steps", () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    expect(screen.getByText("AI Bootstrap")).toBeInTheDocument();
-    expect(screen.getByText("Guided Form")).toBeInTheDocument();
-  });
-
-  it("Guided Form tab shows stepper with 5 steps", async () => {
-    render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    await fireEvent.click(screen.getByText("Guided Form"));
     expect(screen.getByText("Foundations")).toBeInTheDocument();
     expect(screen.getByText("Characters")).toBeInTheDocument();
     expect(screen.getByText("Locations")).toBeInTheDocument();
@@ -64,7 +57,6 @@ describe("BibleAuthoringModal", () => {
 
   it('Characters step shows "Add Character" button and empty message', async () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    await fireEvent.click(screen.getByText("Guided Form"));
     await fireEvent.click(screen.getByText("Characters"));
     expect(screen.getByText("Add Character")).toBeInTheDocument();
     expect(screen.getByText("No characters yet. Add one to get started.")).toBeInTheDocument();
@@ -72,16 +64,14 @@ describe("BibleAuthoringModal", () => {
 
   it("Review step shows summary counts", async () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    await fireEvent.click(screen.getByText("Guided Form"));
     await fireEvent.click(screen.getByText("Review"));
     expect(screen.getByText("Characters: 0")).toBeInTheDocument();
     expect(screen.getByText("Locations: 0")).toBeInTheDocument();
     expect(screen.getByText("Avoid List: 0 entries")).toBeInTheDocument();
   });
 
-  it("Footer shows Cancel and Next buttons on first step", async () => {
+  it("Footer shows Cancel and Next buttons on first step", () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    await fireEvent.click(screen.getByText("Guided Form"));
     expect(screen.getByText("Cancel")).toBeInTheDocument();
     expect(screen.getByText("Next")).toBeInTheDocument();
     expect(screen.queryByText("Back")).not.toBeInTheDocument();
@@ -89,7 +79,6 @@ describe("BibleAuthoringModal", () => {
 
   it("Footer shows Back button on non-first steps", async () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    await fireEvent.click(screen.getByText("Guided Form"));
     await fireEvent.click(screen.getByText("Next"));
     expect(screen.getByText("Back")).toBeInTheDocument();
     expect(screen.getByText("Cancel")).toBeInTheDocument();
@@ -97,33 +86,22 @@ describe("BibleAuthoringModal", () => {
 
   // ─── Genre Selector ──────────────────────────────
 
-  it("renders genre selector dropdown on Guided Form tab", async () => {
+  it("renders genre selector dropdown", () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    await fireEvent.click(screen.getByText("Guided Form"));
     expect(screen.getByText("Genre Template")).toBeInTheDocument();
     expect(screen.getByText(/select a genre to pre-fill/i)).toBeInTheDocument();
   });
 
-  it("genre options include all 4 templates", async () => {
+  it("genre options include all 4 templates", () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    await fireEvent.click(screen.getByText("Guided Form"));
     expect(screen.getByText(/Literary Fiction/)).toBeInTheDocument();
     expect(screen.getByText(/Thriller/)).toBeInTheDocument();
     expect(screen.getByText(/Romance/)).toBeInTheDocument();
     expect(screen.getByText(/Science Fiction/)).toBeInTheDocument();
   });
 
-  it("genre selector is not visible on AI Bootstrap tab", () => {
+  it("genre select has correct option values for all 4 templates", () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    // Default tab is AI Bootstrap — form tab is rendered but hidden
-    expect(screen.queryByText("Genre Template")).not.toBeVisible();
-  });
-
-  it("genre select has correct option values for all 4 templates", async () => {
-    render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    await fireEvent.click(screen.getByText("Guided Form"));
-
-    // Verify the select element contains all 4 genre option values
     const select = screen.getByRole("combobox") as HTMLSelectElement;
     const options = Array.from(select.options).map((o) => o.value);
     expect(options).toContain("literary-fiction");

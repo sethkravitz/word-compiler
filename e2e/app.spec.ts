@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockStartup, switchToJsonTab } from "./helpers.js";
+import { mockStartup, navigateToStage } from "./helpers.js";
 
 test.describe("Word Compiler App", () => {
   test.beforeEach(async ({ page }) => {
@@ -11,68 +11,28 @@ test.describe("Word Compiler App", () => {
     await expect(page.locator("text=Word Compiler").first()).toBeVisible();
   });
 
-  test("shows Project Atlas pane", async ({ page }) => {
+  test("shows WorkflowRail with all stages", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("text=Project Atlas")).toBeVisible();
+    const rail = page.locator('[aria-label="Progress"]');
+    await expect(rail).toBeVisible();
+    await expect(rail.locator("button", { hasText: "Bootstrap" })).toBeVisible();
+    await expect(rail.locator("button", { hasText: "Plan" })).toBeVisible();
+    await expect(rail.locator("button", { hasText: "Draft" })).toBeVisible();
+    await expect(rail.locator("button", { hasText: "Audit" })).toBeVisible();
+    await expect(rail.locator("button", { hasText: "Complete" })).toBeVisible();
+    await expect(rail.locator("button", { hasText: "Export" })).toBeVisible();
   });
 
-  test("shows Draft Engine tab active by default", async ({ page }) => {
+  test("starts on Bootstrap stage", async ({ page }) => {
     await page.goto("/");
-    const compilerBtn = page.locator("button", { hasText: "Draft Engine" }).first();
-    await expect(compilerBtn).toBeVisible();
+    // Bootstrap stage shows "Create Your Story Bible" when no bible exists
+    await expect(page.locator("text=Create Your Story Bible")).toBeVisible();
   });
 
-  test("can switch to Scene Blueprint tab", async ({ page }) => {
+  test("shows two entry cards on Bootstrap stage", async ({ page }) => {
     await page.goto("/");
-    await page.locator("button", { hasText: "Scene Blueprint" }).click();
-    await expect(page.locator("text=Scene Blueprint — No scene")).toBeVisible();
-  });
-
-  test("can switch to Reader Journey tab", async ({ page }) => {
-    await page.goto("/");
-    await page.locator("button", { hasText: "Reader Journey" }).click();
-    await expect(page.locator("text=No scenes")).toBeVisible();
-  });
-
-  test("can switch to Voice Consistency tab", async ({ page }) => {
-    await page.goto("/");
-    await page.locator("button", { hasText: "Voice Consistency" }).click();
-    await expect(page.locator("text=Complete at least 2 scenes")).toBeVisible();
-  });
-
-  test("can switch to Character Voices tab", async ({ page }) => {
-    await page.goto("/");
-    await page.locator("button", { hasText: "Character Voices" }).click();
-    await expect(page.locator("text=No voice separability data")).toBeVisible();
-  });
-
-  test("New Bible button is visible", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.locator("button", { hasText: "New Bible" })).toBeVisible();
-  });
-
-  test("shows Compiler empty state", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.locator("text=Load a Bible and Scene Plan")).toBeVisible();
-  });
-
-  test("Load Bible button is present in JSON tab", async ({ page }) => {
-    await page.goto("/");
-    await switchToJsonTab(page);
-    await expect(page.locator("button", { hasText: "Load Bible" })).toBeVisible();
-  });
-
-  test("model selector shows Claude models", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.locator("select")).toBeVisible();
-    const options = await page.locator("select option").count();
-    expect(options).toBeGreaterThan(0);
-  });
-
-  test("Learner tab shows empty state", async ({ page }) => {
-    await page.goto("/");
-    await page.locator("button", { hasText: "Learner" }).click();
-    await expect(page.locator("text=No edit patterns yet")).toBeVisible();
+    await expect(page.locator("text=Start from Synopsis")).toBeVisible();
+    await expect(page.locator("text=Build Manually")).toBeVisible();
   });
 
   test("no JavaScript errors on load", async ({ page }) => {
@@ -80,6 +40,22 @@ test.describe("Word Compiler App", () => {
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto("/");
     await page.waitForTimeout(1000);
+    expect(errors).toHaveLength(0);
+  });
+
+  test("no JavaScript errors during stage navigation", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto("/");
+    await page.waitForTimeout(500);
+
+    // Try clicking each stage button (some may be locked but shouldn't cause errors)
+    const stageLabels = ["Bootstrap", "Plan", "Draft", "Audit", "Complete", "Export"];
+    for (const label of stageLabels) {
+      await page.locator('[aria-label="Progress"] button', { hasText: label }).click();
+      await page.waitForTimeout(200);
+    }
+
     expect(errors).toHaveLength(0);
   });
 });
