@@ -1,0 +1,98 @@
+import type { KillListEntry, StyleGuide, VocabPreference } from "../types/bible.js";
+
+// ─── Category Separation ────────────────────────
+// Deterministic (existing auditor): kill_list, rhythm_monotony, paragraph_length
+// LLM-only (judgment-based):
+
+export type LLMReviewCategory =
+  | "tone"
+  | "grammar"
+  | "voice"
+  | "punctuation"
+  | "show_dont_tell"
+  | "pov"
+  | "dialogue"
+  | "metaphor"
+  | "vocabulary"
+  | "continuity";
+
+export type LocalReviewCategory = "kill_list" | "rhythm_monotony" | "paragraph_length";
+
+export type ReviewCategory = LLMReviewCategory | LocalReviewCategory;
+
+export type Severity = "critical" | "warning" | "info";
+
+export type AnnotationScope = "dialogue" | "narration" | "both";
+
+// ─── Core Annotation ───────────────────────────
+
+export interface EditorialAnnotation {
+  id: string;
+  category: ReviewCategory;
+  severity: Severity;
+  scope: AnnotationScope;
+  message: string;
+  suggestion: string | null;
+  anchor: { prefix: string; focus: string; suffix: string };
+  charRange: { start: number; end: number };
+  spans?: Array<{ start: number; end: number }>;
+  fingerprint: string;
+}
+
+// ─── Anchor Resolution ─────────────────────────
+
+export interface AnchorMatch {
+  start: number;
+  end: number;
+  confidence: "exact" | "fuzzy" | "failed";
+}
+
+// ─── Review Context (pre-filtered bible) ────────
+
+export interface ReviewContext {
+  styleRules: {
+    killList: KillListEntry[];
+    metaphoricRegister: StyleGuide["metaphoricRegister"];
+    vocabularyPreferences: VocabPreference[];
+    sentenceArchitecture: StyleGuide["sentenceArchitecture"];
+    paragraphPolicy: StyleGuide["paragraphPolicy"];
+    structuralBans: string[];
+  };
+  activeVoices: Array<{ name: string; fingerprint: string }>;
+  povRules: { distance: string; interiority: string; reliability: string } | null;
+  toneIntent: string;
+}
+
+// ─── Review Result ──────────────────────────────
+
+export interface ReviewResult {
+  chunkIndex: number;
+  annotations: EditorialAnnotation[];
+  modelUsed: string;
+  reviewedAt: string;
+}
+
+// ─── Chunk View (visible chunk for review) ──────
+
+export interface ChunkView {
+  index: number;
+  text: string;
+  sceneId: string;
+}
+
+// ─── Suppression ────────────────────────────────
+
+export interface DismissedAnnotation {
+  fingerprint: string;
+  dismissedAt: string;
+  reason?: string;
+}
+
+// ─── Orchestrator Interface ─────────────────────
+
+export interface ReviewOrchestrator {
+  requestReview(chunks: ChunkView[]): void;
+  cancelAll(): void;
+  annotations: Map<number, EditorialAnnotation[]>;
+  reviewing: Set<number>;
+}
