@@ -7,17 +7,20 @@ import type { EditorialAnnotation, LocalReviewCategory, Severity } from "./types
 export function runLocalChecks(text: string, bible: Bible, sceneId: string): EditorialAnnotation[] {
   const annotations: EditorialAnnotation[] = [];
 
-  // Kill list — exact match positions from regex
+  // Kill list — find ALL occurrences of each pattern
   const killFlags = checkKillList(text, bible.styleGuide.killList, sceneId);
   for (const flag of killFlags) {
-    const match = findPatternInText(text, flag.message);
-    annotations.push(flagToAnnotation(flag.severity, "kill_list", flag.message, text, match.start, match.end));
+    const matches = findAllPatternOccurrences(text, flag.message);
+    for (const match of matches) {
+      annotations.push(flagToAnnotation(flag.severity, "kill_list", flag.message, text, match.start, match.end));
+    }
   }
 
-  // Sentence variance — no specific character range, applies to whole chunk
+  // Sentence variance — underline first sentence to make squiggle visible
   const varianceFlags = checkSentenceVariance(text, sceneId);
   for (const flag of varianceFlags) {
-    annotations.push(flagToAnnotation(flag.severity, "rhythm_monotony", flag.message, text, 0, 0));
+    const firstSentenceEnd = text.indexOf(".") !== -1 ? text.indexOf(".") + 1 : Math.min(text.length, 80);
+    annotations.push(flagToAnnotation(flag.severity, "rhythm_monotony", flag.message, text, 0, firstSentenceEnd));
   }
 
   // Paragraph length
@@ -61,13 +64,20 @@ function flagToAnnotation(
   };
 }
 
-function findPatternInText(text: string, flagMessage: string): { start: number; end: number } {
-  // Extract the pattern from "Avoid list violation: "pattern" found."
+function findAllPatternOccurrences(text: string, flagMessage: string): Array<{ start: number; end: number }> {
   const match = flagMessage.match(/"(.+?)"/);
-  if (!match?.[1]) return { start: 0, end: 0 };
-  const idx = text.toLowerCase().indexOf(match[1].toLowerCase());
-  if (idx === -1) return { start: 0, end: 0 };
-  return { start: idx, end: idx + match[1].length };
+  if (!match?.[1]) return [{ start: 0, end: 0 }];
+  const pattern = match[1].toLowerCase();
+  const lowerText = text.toLowerCase();
+  const results: Array<{ start: number; end: number }> = [];
+  let searchFrom = 0;
+  while (searchFrom < lowerText.length) {
+    const idx = lowerText.indexOf(pattern, searchFrom);
+    if (idx === -1) break;
+    results.push({ start: idx, end: idx + pattern.length });
+    searchFrom = idx + 1;
+  }
+  return results.length > 0 ? results : [{ start: 0, end: 0 }];
 }
 
 function extractQuotedSnippet(message: string): string | null {

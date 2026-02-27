@@ -73,6 +73,7 @@ function handleReject() {
         text={chunk.editedText ?? chunk.generatedText}
         {annotations}
         readonly={true}
+        onTextChange={(newText) => onUpdate(index, { editedText: newText, status: "edited" })}
         onAcceptSuggestion={onAcceptSuggestion}
         onDismissAnnotation={onDismissAnnotation}
       />

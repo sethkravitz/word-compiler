@@ -51,16 +51,20 @@ describe("createReviewOrchestrator", () => {
     vi.restoreAllMocks();
   });
 
-  it("produces local annotations for kill list violations", async () => {
+  it("produces local annotations for kill list violations instantly", async () => {
     const client = createMockClient();
-    const orch = createReviewOrchestrator(makeBible(), makeScene(), new Set(), client, onChange);
+    const orch = createReviewOrchestrator(makeBible(), makeScene(), () => new Set(), client, onChange);
 
     orch.requestReview([makeChunk("She was very happy and very excited.")]);
-    await vi.waitFor(() => expect(onChange).toHaveBeenCalled());
 
-    const anns = getAnns(onChange);
+    // Local annotations are published synchronously (first call)
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const anns = getAnns(onChange, 0);
     const killAnns = anns.filter((a) => a.category === "kill_list");
     expect(killAnns.length).toBeGreaterThanOrEqual(2);
+
+    // LLM merge happens async (second call)
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(2));
   });
 
   it("merges local and LLM annotations", async () => {
@@ -75,12 +79,13 @@ describe("createReviewOrchestrator", () => {
       },
     ]);
     const client = createMockClient(llmResponse);
-    const orch = createReviewOrchestrator(makeBible(), makeScene(), new Set(), client, onChange);
+    const orch = createReviewOrchestrator(makeBible(), makeScene(), () => new Set(), client, onChange);
 
     orch.requestReview([makeChunk("She was very happy and very excited.")]);
-    await vi.waitFor(() => expect(onChange).toHaveBeenCalled());
+    // Wait for LLM merge (second call)
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(2));
 
-    const anns = getAnns(onChange);
+    const anns = getAnns(onChange, 1);
     const categories = anns.map((a) => a.category);
     expect(categories).toContain("kill_list");
     expect(categories).toContain("tone");
@@ -93,34 +98,41 @@ describe("createReviewOrchestrator", () => {
 
     // First run to get fingerprints
     const firstOnChange = vi.fn();
-    const orch1 = createReviewOrchestrator(bible, makeScene(), new Set(), client, firstOnChange);
+    const orch1 = createReviewOrchestrator(bible, makeScene(), () => new Set(), client, firstOnChange);
     orch1.requestReview([chunk]);
-    await vi.waitFor(() => expect(firstOnChange).toHaveBeenCalled());
-    const firstAnns = getAnns(firstOnChange);
+    // Local annotations published instantly
+    expect(firstOnChange).toHaveBeenCalledTimes(1);
+    const firstAnns = getAnns(firstOnChange, 0);
     const killFingerprint = firstAnns.find((a) => a.category === "kill_list")?.fingerprint;
     expect(killFingerprint).toBeDefined();
 
     // Second run with that fingerprint dismissed
     const dismissed = new Set([killFingerprint!]);
-    const orch2 = createReviewOrchestrator(bible, makeScene(), dismissed, client, onChange);
+    const orch2 = createReviewOrchestrator(bible, makeScene(), () => dismissed, client, onChange);
     orch2.requestReview([chunk]);
-    await vi.waitFor(() => expect(onChange).toHaveBeenCalled());
-
-    const anns = getAnns(onChange);
+    // Local annotations instant — dismissed fingerprint excluded
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const anns = getAnns(onChange, 0);
     const killAnns = anns.filter((a) => a.category === "kill_list");
     expect(killAnns).toHaveLength(0);
   });
 
-  it("falls back to local-only on LLM failure", async () => {
+  it("shows local annotations immediately even when LLM fails", async () => {
     const client = createMockClient(new Error("API error"));
-    const orch = createReviewOrchestrator(makeBible(), makeScene(), new Set(), client, onChange);
+    const orch = createReviewOrchestrator(makeBible(), makeScene(), () => new Set(), client, onChange);
 
     orch.requestReview([makeChunk("She was very happy.")]);
-    await vi.waitFor(() => expect(onChange).toHaveBeenCalled());
 
-    const anns = getAnns(onChange);
+    // Local annotations shown instantly (first call)
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const anns = getAnns(onChange, 0);
     expect(anns.length).toBeGreaterThan(0);
     expect(anns.every((a) => a.category === "kill_list")).toBe(true);
+
+    // LLM fails but no second call since local-only already showing
+    await vi.waitFor(() => expect(orch.reviewing.size).toBe(0));
+    // Still only the one call — LLM error doesn't overwrite
+    expect(onChange).toHaveBeenCalledTimes(1);
   });
 
   it("aborts previous request when new one starts", async () => {
@@ -135,7 +147,7 @@ describe("createReviewOrchestrator", () => {
       }),
     };
 
-    const orch = createReviewOrchestrator(makeBible(), makeScene(), new Set(), client, onChange);
+    const orch = createReviewOrchestrator(makeBible(), makeScene(), () => new Set(), client, onChange);
 
     orch.requestReview([makeChunk("She was very happy.")]);
     // Second request should abort the first
@@ -152,7 +164,7 @@ describe("createReviewOrchestrator", () => {
     const neverResolves: LLMReviewClient = {
       review: vi.fn().mockReturnValue(new Promise(() => {})),
     };
-    const orch = createReviewOrchestrator(makeBible(), makeScene(), new Set(), neverResolves, onChange);
+    const orch = createReviewOrchestrator(makeBible(), makeScene(), () => new Set(), neverResolves, onChange);
 
     orch.requestReview([makeChunk("text", 0), makeChunk("more", 1)]);
     expect(orch.reviewing.size).toBe(2);
@@ -163,37 +175,45 @@ describe("createReviewOrchestrator", () => {
 
   it("handles malformed LLM JSON gracefully", async () => {
     const client = createMockClient("not valid json {{{");
-    const orch = createReviewOrchestrator(makeBible(), makeScene(), new Set(), client, onChange);
+    const orch = createReviewOrchestrator(makeBible(), makeScene(), () => new Set(), client, onChange);
 
     orch.requestReview([makeChunk("She was very happy.")]);
-    await vi.waitFor(() => expect(onChange).toHaveBeenCalled());
-
-    const anns = getAnns(onChange);
+    // Local annotations are instant (first call)
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const anns = getAnns(onChange, 0);
     expect(anns.length).toBeGreaterThan(0);
+
+    // LLM merge with malformed JSON still produces result (second call)
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(2));
   });
 
   it("handles empty LLM annotations array", async () => {
     const client = createMockClient(makeLLMResponse([]));
-    const orch = createReviewOrchestrator(makeBible(), makeScene(), new Set(), client, onChange);
+    const orch = createReviewOrchestrator(makeBible(), makeScene(), () => new Set(), client, onChange);
 
     orch.requestReview([makeChunk("She was very happy.")]);
-    await vi.waitFor(() => expect(onChange).toHaveBeenCalled());
+    // Wait for LLM merge (second call)
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(2));
 
-    const anns = getAnns(onChange);
+    const anns = getAnns(onChange, 1);
     expect(anns.every((a) => a.category === "kill_list")).toBe(true);
   });
 
   it("reviews multiple chunks independently", async () => {
     const client = createMockClient();
-    const orch = createReviewOrchestrator(makeBible(), makeScene(), new Set(), client, onChange);
+    const orch = createReviewOrchestrator(makeBible(), makeScene(), () => new Set(), client, onChange);
 
     orch.requestReview([makeChunk("She was very happy.", 0), makeChunk("Clean prose here.", 1)]);
 
-    await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(2));
+    // 2 instant local + 2 LLM merge = 4 calls
+    await vi.waitFor(() => expect(onChange).toHaveBeenCalledTimes(4));
 
+    // Check the final (LLM-merged) calls for each chunk
     const calls = onChange.mock.calls as Array<[number, EditorialAnnotation[]]>;
-    const chunk0Anns = calls.find((c) => c[0] === 0)![1];
-    const chunk1Anns = calls.find((c) => c[0] === 1)![1];
+    const chunk0Calls = calls.filter((c) => c[0] === 0);
+    const chunk1Calls = calls.filter((c) => c[0] === 1);
+    const chunk0Anns = chunk0Calls[chunk0Calls.length - 1]![1];
+    const chunk1Anns = chunk1Calls[chunk1Calls.length - 1]![1];
 
     expect(chunk0Anns.some((a) => a.category === "kill_list")).toBe(true);
     expect(chunk1Anns.every((a) => a.category !== "kill_list")).toBe(true);
@@ -201,11 +221,10 @@ describe("createReviewOrchestrator", () => {
 
   it("stores annotations in the map", async () => {
     const client = createMockClient();
-    const orch = createReviewOrchestrator(makeBible(), makeScene(), new Set(), client, onChange);
+    const orch = createReviewOrchestrator(makeBible(), makeScene(), () => new Set(), client, onChange);
 
     orch.requestReview([makeChunk("She was very happy.", 0)]);
-    await vi.waitFor(() => expect(onChange).toHaveBeenCalled());
-
+    // Annotations stored immediately from local checks
     expect(orch.annotations.has(0)).toBe(true);
     expect(orch.annotations.get(0)!.length).toBeGreaterThan(0);
   });

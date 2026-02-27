@@ -32,6 +32,21 @@ let tooltipPosition = $state({ top: 0, left: 0 });
 
 const editorialKey = new PluginKey("editorial-annotations");
 
+// ─── Plain Text ↔ ProseMirror Doc ───────────────
+// TipTap treats string content as HTML by default, which can drop
+// paragraph boundaries and interpret <...> sequences. We convert
+// plain text to a proper ProseMirror JSON doc structure instead.
+function textToDoc(plainText: string): Record<string, unknown> {
+  const paragraphs = plainText.split("\n\n");
+  return {
+    type: "doc",
+    content: paragraphs.map((p) => ({
+      type: "paragraph",
+      content: p ? [{ type: "text", text: p }] : [],
+    })),
+  };
+}
+
 // ─── Position Mapping ───────────────────────────
 // ProseMirror uses node-based positions where paragraph boundaries add gaps.
 // We convert character offsets (from resolveAnchor) to PM positions.
@@ -111,7 +126,7 @@ $effect(() => {
   editor = new Editor({
     element: editorElement,
     extensions: [Document, Paragraph, Text],
-    content: text,
+    content: textToDoc(text),
     editable: !readonly,
     editorProps: {
       attributes: {
@@ -140,7 +155,7 @@ $effect(() => {
   const currentText = editor.getText({ blockSeparator: "\n\n" });
   if (text !== currentText) {
     applyingExternal = true;
-    editor.commands.setContent(text);
+    editor.commands.setContent(textToDoc(text));
     applyingExternal = false;
   }
 });
@@ -194,7 +209,12 @@ function handleAccept(id: string) {
 
   const from = offsetToPos(editor, ann.charRange.start);
   const to = offsetToPos(editor, ann.charRange.end);
-  editor.chain().focus().deleteRange({ from, to }).insertContentAt(from, ann.suggestion).run();
+  // Insert suggestion as plain text node, not HTML
+  const tr = editor.state.tr.replaceWith(from, to, editor.state.schema.text(ann.suggestion));
+  editor.view.dispatch(tr);
+  // Propagate the updated text to the parent
+  const newText = editor.getText({ blockSeparator: "\n\n" });
+  onTextChange?.(newText);
   activeAnnotation = null;
   onAcceptSuggestion?.(id);
 }

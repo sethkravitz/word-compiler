@@ -97,7 +97,7 @@ $effect(() => {
   orchestrator = createReviewOrchestrator(
     store.bible,
     store.activeScenePlan,
-    dismissed,
+    () => dismissed,
     llmReviewClient,
     (chunkIndex, anns) => {
       chunkAnnotations = new Map(chunkAnnotations).set(chunkIndex, anns);
@@ -110,9 +110,8 @@ let reviewDebounce: ReturnType<typeof setTimeout> | undefined;
 $effect(() => {
   const chunks = store.activeSceneChunks;
   const sceneId = store.activeScenePlan?.id;
-  if (!orchestrator || !sceneId || chunks.length === 0) return;
-
   clearTimeout(reviewDebounce);
+  if (!orchestrator || !sceneId || chunks.length === 0) return;
   reviewDebounce = setTimeout(() => {
     const views: ChunkView[] = chunks.map((c, i) => ({
       index: i,
