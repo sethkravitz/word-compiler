@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiActions } from "../../src/app/store/api-actions.js";
-import { type CommandResult, createCommands } from "../../src/app/store/commands.js";
+import { createCommands } from "../../src/app/store/commands.js";
 import { ProjectStore } from "../../src/app/store/project.svelte.js";
 import {
   makeAuditFlag,
@@ -203,7 +203,7 @@ describe("createCommands", () => {
       const result = await cmds.updateChunk("s1", 0, { status: "accepted" });
 
       expect(result.ok).toBe(true);
-      expect(store.sceneChunks["s1"]![0]!.status).toBe("accepted");
+      expect(store.sceneChunks.s1![0]!.status).toBe("accepted");
       expect(actions.updateChunk).toHaveBeenCalled();
     });
   });
@@ -248,7 +248,7 @@ describe("createCommands", () => {
       expect(actions.deleteChunk).toHaveBeenCalledWith("c1");
 
       // Remaining chunks renumbered
-      const remaining = store.sceneChunks["s1"]!;
+      const remaining = store.sceneChunks.s1!;
       expect(remaining).toHaveLength(2);
       expect(remaining[0]!.id).toBe("c0");
       expect(remaining[0]!.sequenceNumber).toBe(0);
@@ -268,8 +268,8 @@ describe("createCommands", () => {
       const result = await cmds.removeChunk("s1", 0);
 
       expect(result.ok).toBe(true);
-      expect(store.sceneChunks["s1"]!).toHaveLength(1);
-      expect(store.sceneChunks["s1"]![0]!.sequenceNumber).toBe(0);
+      expect(store.sceneChunks.s1!).toHaveLength(1);
+      expect(store.sceneChunks.s1![0]!.sequenceNumber).toBe(0);
     });
   });
 
@@ -426,7 +426,7 @@ describe("createCommands", () => {
 
       await cmds.saveSceneIR("s1", ir);
 
-      expect(store.sceneIRs["s1"]).toEqual(ir);
+      expect(store.sceneIRs.s1).toEqual(ir);
     });
   });
 
@@ -448,7 +448,7 @@ describe("createCommands", () => {
 
       await cmds.verifySceneIR("s1");
 
-      expect(store.sceneIRs["s1"]!.verified).toBe(true);
+      expect(store.sceneIRs.s1!.verified).toBe(true);
     });
   });
 

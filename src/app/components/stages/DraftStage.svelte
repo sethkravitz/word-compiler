@@ -6,8 +6,8 @@ import { generateTuningProposals, type TuningProposal } from "../../../learner/t
 import { callLLM } from "../../../llm/client.js";
 import { computeStyleDriftFromProse } from "../../../metrics/styleDrift.js";
 import { measureVoiceSeparability } from "../../../metrics/voiceSeparability.js";
-import { createReviewOrchestrator, REVIEW_OUTPUT_SCHEMA } from "../../../review/index.js";
 import type { ChunkView, EditorialAnnotation, LLMReviewClient, ReviewOrchestrator } from "../../../review/index.js";
+import { createReviewOrchestrator, REVIEW_OUTPUT_SCHEMA } from "../../../review/index.js";
 import type { Chunk, NarrativeIR, StyleDriftReport, VoiceSeparabilityReport } from "../../../types/index.js";
 import { getCanonicalText } from "../../../types/index.js";
 import { Tabs } from "../../primitives/index.js";
@@ -46,7 +46,13 @@ const REVIEW_MAX_TOKENS = 2048;
 
 const llmReviewClient: LLMReviewClient = {
   review(systemPrompt: string, userPrompt: string, signal: AbortSignal): Promise<string> {
-    const promise = callLLM(systemPrompt, userPrompt, REVIEW_MODEL, REVIEW_MAX_TOKENS, REVIEW_OUTPUT_SCHEMA as Record<string, unknown>);
+    const promise = callLLM(
+      systemPrompt,
+      userPrompt,
+      REVIEW_MODEL,
+      REVIEW_MAX_TOKENS,
+      REVIEW_OUTPUT_SCHEMA as Record<string, unknown>,
+    );
     return new Promise((resolve, reject) => {
       if (signal.aborted) {
         reject(new DOMException("Aborted", "AbortError"));
@@ -117,7 +123,7 @@ $effect(() => {
   }, 1000);
 });
 
-function handleAcceptSuggestion(annotationId: string) {
+function handleAcceptSuggestion(_annotationId: string) {
   // The AnnotatedEditor handles text replacement; we just need to trigger re-review
   // which will happen automatically through chunk text change → $effect above
 }
@@ -132,7 +138,10 @@ function handleDismissAnnotation(annotationId: string) {
       // Remove from current annotations immediately
       const updated = new Map(chunkAnnotations);
       for (const [idx, chunkAnns] of updated) {
-        updated.set(idx, chunkAnns.filter((a) => a.fingerprint !== ann.fingerprint));
+        updated.set(
+          idx,
+          chunkAnns.filter((a) => a.fingerprint !== ann.fingerprint),
+        );
       }
       chunkAnnotations = updated;
       break;

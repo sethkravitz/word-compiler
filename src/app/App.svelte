@@ -50,7 +50,7 @@ function handleKeydown(e: KeyboardEvent) {
   if (!isCtrl) return;
 
   // Ctrl+1-6: stage navigation
-  const digit = Number.parseInt(e.key);
+  const digit = Number.parseInt(e.key, 10);
   if (digit >= 1 && digit <= 6) {
     const stage = STAGES[digit - 1];
     if (stage && workflow.getStageStatus(stage.id) !== "locked") {

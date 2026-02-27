@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ProjectStore } from "../../src/app/store/project.svelte.js";
-import { STAGES, type WorkflowStageId, WorkflowStore } from "../../src/app/store/workflow.svelte.js";
+import { STAGES, WorkflowStore } from "../../src/app/store/workflow.svelte.js";
 import { makeChunk, makeScenePlan } from "../../src/app/stories/factories.js";
-import { createEmptyBible, createEmptyCharacterDossier, createEmptyScenePlan } from "../../src/types/index.js";
+import { createEmptyBible, createEmptyCharacterDossier } from "../../src/types/index.js";
 
 describe("WorkflowStore", () => {
   let project: ProjectStore;

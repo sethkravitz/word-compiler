@@ -119,7 +119,7 @@ describe("resolveAnchor", () => {
   // ─── Document Drift ───────────────────────────
 
   it("resolves correctly after text inserted before anchor", () => {
-    const modified = "INSERTED TEXT " + DOC;
+    const modified = `INSERTED TEXT ${DOC}`;
     const result = resolveAnchor(
       modified,
       { prefix: "on the", focus: "old stone bridge", suffix: ". She" },

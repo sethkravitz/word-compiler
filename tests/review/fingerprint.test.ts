@@ -23,7 +23,7 @@ describe("hashFingerprint", () => {
   it("truncates focus to 50 chars for stability", () => {
     const longFocus = "a".repeat(100);
     const a = hashFingerprint("tone", longFocus);
-    const b = hashFingerprint("tone", longFocus.slice(0, 50) + "DIFFERENT");
+    const b = hashFingerprint("tone", `${longFocus.slice(0, 50)}DIFFERENT`);
     expect(a).toBe(b);
   });
 
