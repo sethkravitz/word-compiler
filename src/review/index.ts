@@ -6,6 +6,25 @@ export { runLocalChecks } from "./localChecks.js";
 export type { LLMReviewClient } from "./orchestrator.js";
 export { createReviewOrchestrator, REVIEW_OUTPUT_SCHEMA } from "./orchestrator.js";
 export { buildReviewSystemPrompt, buildReviewUserPrompt } from "./prompt.js";
+export type { ParseRefinementResult } from "./refine.js";
+export {
+  buildContinuousText,
+  buildRefinementSystemPrompt,
+  buildRefinementUserPrompt,
+  findChunksForRange,
+  parseRefinementResponse,
+  REFINEMENT_OUTPUT_SCHEMA,
+} from "./refine.js";
+export type {
+  ChunkBoundary,
+  ContinuousText,
+  RefinementChip,
+  RefinementRequest,
+  RefinementResult,
+  RefinementState,
+  RefinementVariant,
+} from "./refineTypes.js";
+export { createRefinementRequest, REFINEMENT_CHIP_LABELS, REFINEMENT_CHIPS } from "./refineTypes.js";
 export type {
   AnchorMatch,
   AnnotationScope,
