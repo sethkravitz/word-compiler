@@ -106,7 +106,7 @@ export function checkBibleVersioningGate(bible: Bible, latestVersion: number): G
 
 // ─── Workflow Stage Gates ──────────────────────────
 
-function hasUnresolvedCriticalFlags(flags: AuditFlag[]): AuditFlag[] {
+function getUnresolvedCriticalFlags(flags: AuditFlag[]): AuditFlag[] {
   return flags.filter((f) => f.severity === "critical" && !f.resolved);
 }
 
@@ -149,7 +149,7 @@ export function checkDraftToAuditGate(sceneChunks: Record<string, Chunk[]>): Gat
  * Stage gate: Audit → Edit. No unresolved critical audit flags.
  */
 export function checkAuditToEditGate(flags: AuditFlag[]): GateResult {
-  const unresolved = hasUnresolvedCriticalFlags(flags);
+  const unresolved = getUnresolvedCriticalFlags(flags);
   if (unresolved.length > 0) {
     return {
       passed: false,
@@ -170,7 +170,7 @@ export function checkEditToCompleteGate(): GateResult {
  * Stage gate: Audit → Complete. No unresolved critical audit flags.
  */
 export function checkAuditToCompleteGate(flags: AuditFlag[]): GateResult {
-  const unresolved = hasUnresolvedCriticalFlags(flags);
+  const unresolved = getUnresolvedCriticalFlags(flags);
   if (unresolved.length > 0) {
     return {
       passed: false,
