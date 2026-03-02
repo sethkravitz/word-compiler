@@ -7,6 +7,7 @@ import { generateTuningProposals, type TuningProposal } from "../../../learner/t
 import { callLLM } from "../../../llm/client.js";
 import { computeStyleDriftFromProse } from "../../../metrics/styleDrift.js";
 import { measureVoiceSeparability } from "../../../metrics/voiceSeparability.js";
+import { buildReviewContext } from "../../../review/contextBuilder.js";
 import type { ChunkView, EditorialAnnotation, LLMReviewClient, ReviewOrchestrator } from "../../../review/index.js";
 import {
   buildSuggestionRequestPrompt,
@@ -14,7 +15,6 @@ import {
   REVIEW_OUTPUT_SCHEMA,
   SUGGESTION_REQUEST_SCHEMA,
 } from "../../../review/index.js";
-import { buildReviewContext } from "../../../review/contextBuilder.js";
 import type { Chunk, NarrativeIR, StyleDriftReport, VoiceSeparabilityReport } from "../../../types/index.js";
 import { getCanonicalText } from "../../../types/index.js";
 import { Tabs } from "../../primitives/index.js";
@@ -269,12 +269,7 @@ async function handleRequestSuggestion(annotationId: string, feedback: string): 
   const context = buildReviewContext(store.bible, store.activeScenePlan);
 
   // 3. Build prompt and call LLM
-  const { systemPrompt, userPrompt } = buildSuggestionRequestPrompt(
-    context,
-    targetAnnotation,
-    chunkText,
-    feedback,
-  );
+  const { systemPrompt, userPrompt } = buildSuggestionRequestPrompt(context, targetAnnotation, chunkText, feedback);
 
   try {
     const rawJson = await callLLM(
