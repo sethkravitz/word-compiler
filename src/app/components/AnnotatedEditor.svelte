@@ -35,6 +35,7 @@ let editor: Editor | null = null;
 let applyingExternal = false;
 let activeAnnotation = $state<EditorialAnnotation | null>(null);
 let tooltipPosition = $state({ top: 0, left: 0, anchorBottom: 0 });
+let tooltipPinned = $state(false);
 
 const editorialKey = new PluginKey("editorial-annotations");
 
@@ -205,6 +206,8 @@ function handleMouseOver(e: MouseEvent) {
 
   const squiggle = target.closest?.("[data-annotation-id]");
   if (!squiggle) {
+    // Don't dismiss a pinned tooltip (user is actively interacting with it)
+    if (tooltipPinned) return;
     // Not on a squiggle and not on the tooltip — schedule hide with grace period
     clearTimeout(leaveTimeout);
     leaveTimeout = setTimeout(() => {
@@ -220,6 +223,11 @@ function handleMouseOver(e: MouseEvent) {
   const ann = annotations.find((a) => a.id === annId);
   if (!ann) return;
 
+  // Hovering a different squiggle unpins the previous tooltip
+  if (tooltipPinned && activeAnnotation && activeAnnotation.id !== annId) {
+    tooltipPinned = false;
+  }
+
   const rect = (squiggle as HTMLElement).getBoundingClientRect();
   tooltipPosition = {
     top: rect.bottom + 4,
@@ -230,11 +238,30 @@ function handleMouseOver(e: MouseEvent) {
 }
 
 function handleMouseLeave() {
+  if (tooltipPinned) return;
   // Delay to allow crossing the gap between squiggle and tooltip
   clearTimeout(leaveTimeout);
   leaveTimeout = setTimeout(() => {
     activeAnnotation = null;
   }, 200);
+}
+
+function handleFocusIn(e: FocusEvent) {
+  const target = e.target as HTMLElement;
+  if (target.closest?.(".annotation-tooltip")) {
+    tooltipPinned = true;
+    clearTimeout(leaveTimeout);
+  }
+}
+
+function handleEditorClick(e: MouseEvent) {
+  if (!tooltipPinned) return;
+  const target = e.target as HTMLElement;
+  // Click outside the tooltip unpins and dismisses
+  if (!target.closest?.(".annotation-tooltip")) {
+    tooltipPinned = false;
+    activeAnnotation = null;
+  }
 }
 
 const ADVISORY_PREFIXES = [
@@ -259,6 +286,7 @@ function looksLikeAdvice(text: string): boolean {
 }
 
 function handleAccept(id: string) {
+  tooltipPinned = false;
   const ann = annotations.find((a) => a.id === id);
   if (!ann?.suggestion || !editor) return;
 
@@ -304,6 +332,7 @@ function handleAccept(id: string) {
 }
 
 function handleDismiss(id: string) {
+  tooltipPinned = false;
   activeAnnotation = null;
   // Remove the decoration via PM transaction to avoid triggering
   // Sync Annotations with stale charRanges (same fix as handleAccept).
@@ -316,10 +345,13 @@ function handleDismiss(id: string) {
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
   class="annotated-editor-wrapper"
   onmouseover={handleMouseOver}
   onmouseleave={handleMouseLeave}
+  onfocusin={handleFocusIn}
+  onclick={handleEditorClick}
 >
   <div bind:this={editorElement} class="annotated-editor"></div>
   {#if activeAnnotation}
