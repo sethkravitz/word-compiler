@@ -14,6 +14,7 @@ import {
   createReviewOrchestrator,
   REVIEW_OUTPUT_SCHEMA,
   SUGGESTION_REQUEST_SCHEMA,
+  trimSuggestionOverlap,
 } from "../../../review/index.js";
 import type { Chunk, NarrativeIR, StyleDriftReport, VoiceSeparabilityReport } from "../../../types/index.js";
 import { getCanonicalText } from "../../../types/index.js";
@@ -278,6 +279,11 @@ async function handleRequestSuggestion(annotationId: string, feedback: string): 
     if (!parsed.suggestion || typeof parsed.suggestion !== "string" || parsed.suggestion.trim().length === 0) {
       return null;
     }
+
+    // 4b. Trim suggestion overlap — catch cases where the LLM rewrites beyond the focus span
+    const prefixText = chunkText.slice(0, targetAnnotation.charRange.start);
+    const suffixText = chunkText.slice(targetAnnotation.charRange.end);
+    parsed.suggestion = trimSuggestionOverlap(parsed.suggestion, prefixText, suffixText);
 
     // 5. Update annotation in chunkAnnotations
     const updatedAnns = (chunkAnnotations.get(targetChunkIndex) ?? []).map((a) =>

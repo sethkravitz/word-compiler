@@ -30,6 +30,7 @@ export type {
   RefinementVariant,
 } from "./refineTypes.js";
 export { createRefinementRequest, REFINEMENT_CHIP_LABELS, REFINEMENT_CHIPS } from "./refineTypes.js";
+export { trimSuggestionOverlap } from "./suggestionValidator.js";
 export type {
   AnchorMatch,
   AnnotationScope,

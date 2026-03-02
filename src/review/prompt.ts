@@ -72,7 +72,15 @@ When you provide a suggestion, anchor.focus MUST span the COMPLETE text that the
 The reader will see a squiggle under anchor.focus. Clicking "Apply" substitutes anchor.focus with suggestion.
 If the issue is a duplicated phrase like "word word rest of sentence", anchor.focus must include BOTH copies plus any connecting text — not just one copy.
 If the issue is a metaphor or phrasing problem, anchor.focus must cover the entire problematic phrase, not a subset of it.
-Test: mentally deleting anchor.focus and inserting suggestion should produce correct prose with no leftover fragments.`;
+Test: mentally deleting anchor.focus and inserting suggestion should produce correct prose with no leftover fragments.
+
+SCOPE RULE — suggestion replaces ONLY anchor.focus:
+The suggestion is mechanically spliced into the text at the exact position of anchor.focus. Text before and after anchor.focus is UNTOUCHED.
+WRONG: focus="a file that opened" suggestion="It was more like static that resolved" — repeats "It was more like" from before the focus → "It was more like It was more like…"
+WRONG: focus="cold wind" suggestion="A cold wind blew through the valley" — includes surrounding text → duplication
+RIGHT: focus="a file that opened" suggestion="static that resolved"
+RIGHT: focus="cold wind" suggestion="bitter draft"
+If your rewrite needs to alter words outside anchor.focus, you MUST expand anchor.focus to include those words.`;
 
 const EXCLUSION_INSTRUCTIONS =
   "Do NOT flag: kill list violations, sentence rhythm/monotony, or paragraph length issues — these are handled by separate deterministic checkers.";
@@ -216,8 +224,11 @@ export function buildSuggestionRequestPrompt(
     "",
     `AUTHOR DIRECTION: ${authorFeedback}`,
     "",
-    "Generate a replacement for the text between <<FOCUS_START>> and <<FOCUS_END>>.",
-    "The replacement must fit seamlessly when substituted for the focus span.",
+    "SCOPE CONSTRAINT: Generate a replacement ONLY for the text between <<FOCUS_START>> and <<FOCUS_END>>.",
+    "Everything outside the markers stays in the manuscript verbatim. Your replacement is mechanically spliced in at that exact position.",
+    "Do NOT repeat or rephrase any words that appear before <<FOCUS_START>> or after <<FOCUS_END>> — they are already there.",
+    "WRONG: if text reads '…It was more like <<FOCUS_START>>a file that opened<<FOCUS_END>>…' do NOT return 'It was more like static that resolved' (duplicates prefix).",
+    "RIGHT: return only 'static that resolved' — the part that goes between the markers.",
   ].join("\n");
 
   return { systemPrompt, userPrompt };

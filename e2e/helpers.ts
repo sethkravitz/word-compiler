@@ -141,25 +141,38 @@ export async function mockStartupWithBible(page: Page) {
   await mockStartup(page, { bible: MOCK_BIBLE });
 }
 
-/**
- * Mocks startup with a bible (including kill list), a chapter, a "drafting" scene,
- * and a chunk whose text contains kill list violations. Blocks the LLM route
- * so only deterministic local checks produce annotations.
- * Call BEFORE page.goto("/").
- */
-export async function mockStartupAtDraft(page: Page) {
-  const CHAPTER_ID = "ch-e2e-test";
-  const SCENE_ID = "scene-e2e-draft";
-  const CHUNK_ID = "chunk-e2e-test";
+// ─── Shared Scene Setup ───────────────────────────
 
-  const bibleWithKillList = {
+interface SceneSetupOptions {
+  /** Kill list entries for the bible. */
+  killList?: Array<{ pattern: string; type: string }>;
+  /** Scene title. */
+  sceneTitle?: string;
+  /** Chunk text content. */
+  chunkText: string;
+  /** Chunk status (e.g. "pending", "accepted"). */
+  chunkStatus?: string;
+  /** Scene status (e.g. "drafting", "complete"). */
+  sceneStatus?: string;
+  /** Whether to add audit-flag/stats/edit-patterns routes (needed for Edit stage). */
+  includeAuditRoutes?: boolean;
+}
+
+/**
+ * Shared helper: sets up a project with a bible, one chapter, one scene, and
+ * one chunk. Blocks the LLM proxy. Builds on mockStartup to avoid duplicating
+ * base route setup. Call BEFORE page.goto("/").
+ */
+async function mockStartupWithScene(page: Page, options: SceneSetupOptions) {
+  const CHAPTER_ID = "ch-e2e-scene";
+  const SCENE_ID = "scene-e2e-scene";
+  const CHUNK_ID = "chunk-e2e-scene";
+
+  const bible = {
     ...MOCK_BIBLE,
     styleGuide: {
       ...MOCK_BIBLE.styleGuide,
-      killList: [
-        { pattern: "very", type: "exact" },
-        { pattern: "suddenly", type: "exact" },
-      ],
+      killList: options.killList ?? [],
     },
   };
 
@@ -181,10 +194,10 @@ export async function mockStartupAtDraft(page: Page) {
     id: SCENE_ID,
     projectId: PROJECT_ID,
     chapterId: CHAPTER_ID,
-    title: "Draft Test Scene",
+    title: options.sceneTitle ?? "Test Scene",
     povCharacterId: "marcus",
     povDistance: "close",
-    narrativeGoal: "Test editorial review",
+    narrativeGoal: "Test",
     emotionalBeat: "",
     readerEffect: "",
     readerStateEntering: null,
@@ -209,11 +222,10 @@ export async function mockStartupAtDraft(page: Page) {
     id: CHUNK_ID,
     sceneId: SCENE_ID,
     sequenceNumber: 0,
-    generatedText:
-      "Marcus was very tired after the long day. He suddenly realized the door was open. The night was very quiet and very still.",
+    generatedText: options.chunkText,
     editedText: null,
     humanNotes: null,
-    status: "pending",
+    status: options.chunkStatus ?? "pending",
     model: "claude-sonnet-4-6",
     temperature: 0.85,
     topP: 1,
@@ -221,20 +233,15 @@ export async function mockStartupAtDraft(page: Page) {
     generatedAt: "2025-01-01T00:00:00Z",
   };
 
-  // Playwright routes use LIFO: last registered = first checked.
-  // Register catch-all/fallback routes FIRST, specific routes LAST.
-
-  // Catch-all fallbacks (checked last by Playwright)
+  // Catch-all fallbacks (LIFO — registered first, checked last)
   await page.route("**/api/data/chunks/**", (route) => {
     return route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
   });
-
   await page.route("**/api/data/scenes/**", (route) => {
     return route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
   });
 
-  // Block LLM proxy — /api/generate returns { text, usage, stopReason }
-  // where text is the JSON string the LLM would produce
+  // Block LLM proxy
   await page.route("**/api/generate**", (route) => {
     return route.fulfill({
       status: 200,
@@ -247,41 +254,11 @@ export async function mockStartupAtDraft(page: Page) {
     });
   });
 
-  // Standard startup routes
-  await page.route("**/api/data/projects", (route, request) => {
-    if (request.method() === "GET") {
-      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([MOCK_PROJECT]) });
-    }
-    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(MOCK_PROJECT) });
-  });
+  // Base startup with bible
+  await mockStartup(page, { bible });
 
-  await page.route(/\/api\/data\/projects\/[^/]+$/, (route, request) => {
-    if (request.method() === "GET") {
-      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(MOCK_PROJECT) });
-    }
-    return route.continue();
-  });
-
-  await page.route(/\/api\/data\/projects\/[^/]+\/bibles$/, (route, request) => {
-    if (request.method() === "POST") {
-      return route.fulfill({ status: 200, contentType: "application/json", body: request.postData() ?? "{}" });
-    }
-    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
-  });
-
-  await page.route("**/bibles/latest", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(bibleWithKillList),
-    });
-  });
-
-  await page.route("**/bibles/versions", (route) => {
-    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
-  });
-
-  // Chapter arcs → 1 chapter
+  // Override chapters to return one chapter
+  await page.unroute("**/chapters");
   await page.route("**/projects/*/chapters", (route, request) => {
     if (request.method() === "GET") {
       return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([chapter]) });
@@ -294,7 +271,7 @@ export async function mockStartupAtDraft(page: Page) {
     return route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify([{ plan: scenePlan, status: "drafting", sceneOrder: 0 }]),
+      body: JSON.stringify([{ plan: scenePlan, status: options.sceneStatus ?? "drafting", sceneOrder: 0 }]),
     });
   });
 
@@ -304,6 +281,55 @@ export async function mockStartupAtDraft(page: Page) {
 
   await page.route(`**/scenes/${SCENE_ID}/chunks`, (route) => {
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([chunk]) });
+  });
+
+  // Audit/edit routes (needed for stages beyond Draft)
+  if (options.includeAuditRoutes) {
+    await page.route(`**/scenes/${SCENE_ID}/audit-flags`, (route) => {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
+    });
+    await page.route(`**/scenes/${SCENE_ID}/audit-stats`, (route) => {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ total: 0, resolved: 0, actionable: 0 }),
+      });
+    });
+    await page.route(`**/scenes/${SCENE_ID}/edit-patterns`, (route) => {
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([]) });
+    });
+  }
+}
+
+/**
+ * Mocks startup at the Draft stage with kill list violations in the chunk text.
+ * Only deterministic local checks produce annotations (LLM is blocked).
+ * Call BEFORE page.goto("/").
+ */
+export async function mockStartupAtDraft(page: Page) {
+  await mockStartupWithScene(page, {
+    killList: [
+      { pattern: "very", type: "exact" },
+      { pattern: "suddenly", type: "exact" },
+    ],
+    sceneTitle: "Draft Test Scene",
+    chunkText:
+      "Marcus was very tired after the long day. He suddenly realized the door was open. The night was very quiet and very still.",
+    chunkStatus: "pending",
+  });
+}
+
+/**
+ * Mocks startup at the Edit stage with an accepted chunk and empty audit flags
+ * (Audit→Edit gate passes). Call BEFORE page.goto("/").
+ */
+export async function mockStartupAtEdit(page: Page) {
+  await mockStartupWithScene(page, {
+    killList: [{ pattern: "very", type: "exact" }],
+    sceneTitle: "The Quiet Bar",
+    chunkText: "Marcus sat at the bar and stared at his hands. The ice shifted in his glass. Nobody spoke.",
+    chunkStatus: "accepted",
+    includeAuditRoutes: true,
   });
 }
 

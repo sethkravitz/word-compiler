@@ -494,7 +494,7 @@ Return JSON:
       "failureModeToAvoid": "What would make this scene fail?",
       "density": "sparse|moderate|dense",
       "pacing": "Pacing notes",
-      "sensoryNotes": "Key sensory details to anchor the scene",
+      "sensoryNotes": "1-3 sensory details that serve THIS scene's dramatic purpose (build tension, reveal character state, ground unfamiliar setting). Each must have a narrative job — do not list ambient flavor.",
       "locationId": "",
       "locationName": "exact location name from the list above, or empty string if none (ID will be resolved automatically)",
       "estimatedWordCount": [min, max],
