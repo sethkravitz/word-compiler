@@ -16,7 +16,7 @@ const meta: Meta<AnnotationTooltip> = {
     },
   },
   args: {
-    position: { top: 40, left: 20 },
+    position: { top: 40, left: 20, anchorBottom: 36 },
     onAccept: fn(),
     onDismiss: fn(),
   },

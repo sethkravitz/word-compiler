@@ -136,13 +136,13 @@ async function handleAcceptProposal(proposal: BibleProposal) {
     <Button size="sm" onclick={onRunDeepAudit} disabled={isAuditing}>
       {#if isAuditing}<Spinner size="sm" /> Auditing...{:else}Deep Audit{/if}
     </Button>
-    <span class="info-tip">
-      <svg class="info-svg" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <button type="button" class="info-tip" aria-describedby="audit-deep-tip">
+      <svg class="info-svg" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
         <path d="M8 7v4M8 5.5v-.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
-      <span class="info-tip-text">Sends prose to Claude to check whether characters explicitly state what should remain subtext. Requires a scene plan with subtext defined.</span>
-    </span>
+      <span id="audit-deep-tip" class="info-tip-text" role="tooltip">Sends prose to Claude to check whether characters explicitly state what should remain subtext. Requires a scene plan with subtext defined.</span>
+    </button>
     {#if unresolvedFlags.length > 0}
       <Badge variant="warning">{unresolvedFlags.length} unresolved flag{unresolvedFlags.length !== 1 ? "s" : ""}</Badge>
     {:else}
@@ -250,6 +250,9 @@ async function handleAcceptProposal(proposal: BibleProposal) {
     align-items: center;
     cursor: help;
     flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 0;
   }
   .info-svg {
     width: 14px;
@@ -278,7 +281,8 @@ async function handleAcceptProposal(proposal: BibleProposal) {
     pointer-events: none;
     white-space: normal;
   }
-  .info-tip:hover .info-tip-text {
+  .info-tip:hover .info-tip-text,
+  .info-tip:focus-visible .info-tip-text {
     display: block;
   }
 

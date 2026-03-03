@@ -1,4 +1,4 @@
-import { checkKillList, checkParagraphLength, checkSentenceVariance } from "../auditor/index.js";
+import { checkParagraphLength, checkSentenceVariance } from "../auditor/index.js";
 import type { Bible } from "../types/bible.js";
 import { generateId } from "../types/utils.js";
 import { hashFingerprint } from "./fingerprint.js";
@@ -12,20 +12,21 @@ export function runLocalChecks(text: string, bible: Bible, sceneId: string): Edi
   ];
 }
 
-// Deduplicate by pattern to avoid N*N annotations. checkKillList returns
-// one flag per occurrence, so we group by pattern and scan once per unique pattern.
-function buildKillListAnnotations(text: string, bible: Bible, sceneId: string): EditorialAnnotation[] {
-  const killFlags = checkKillList(text, bible.styleGuide.killList, sceneId);
-  const seenPatterns = new Set<string>();
+// Scan the kill list directly — one pass per unique pattern.
+// Avoids calling checkKillList (which scans once per pattern) then re-scanning
+// via findAllPatternOccurrences, which doubled the work.
+function buildKillListAnnotations(text: string, bible: Bible, _sceneId: string): EditorialAnnotation[] {
+  const lowerText = text.toLowerCase();
   const result: EditorialAnnotation[] = [];
-  for (const flag of killFlags) {
-    const patternMatch = flag.message.match(/"(.+?)"/);
-    const pattern = patternMatch?.[1]?.toLowerCase();
-    if (!pattern || seenPatterns.has(pattern)) continue;
-    seenPatterns.add(pattern);
-    const matches = findAllPatternOccurrences(text, flag.message);
-    for (const match of matches) {
-      result.push(flagToAnnotation(flag.severity, "kill_list", flag.message, text, match.start, match.end));
+  for (const entry of bible.styleGuide.killList) {
+    const pattern = entry.pattern.toLowerCase();
+    let searchFrom = 0;
+    while (searchFrom < lowerText.length) {
+      const idx = lowerText.indexOf(pattern, searchFrom);
+      if (idx === -1) break;
+      const message = `"${entry.pattern}" — kill list violation`;
+      result.push(flagToAnnotation("warning", "kill_list", message, text, idx, idx + pattern.length));
+      searchFrom = idx + 1;
     }
   }
   return result;
@@ -92,22 +93,6 @@ function flagToAnnotation(
     charRange: { start, end },
     fingerprint: hashFingerprint(category, anchor.focus),
   };
-}
-
-function findAllPatternOccurrences(text: string, flagMessage: string): Array<{ start: number; end: number }> {
-  const match = flagMessage.match(/"(.+?)"/);
-  if (!match?.[1]) return [{ start: 0, end: 0 }];
-  const pattern = match[1].toLowerCase();
-  const lowerText = text.toLowerCase();
-  const results: Array<{ start: number; end: number }> = [];
-  let searchFrom = 0;
-  while (searchFrom < lowerText.length) {
-    const idx = lowerText.indexOf(pattern, searchFrom);
-    if (idx === -1) break;
-    results.push({ start: idx, end: idx + pattern.length });
-    searchFrom = idx + 1;
-  }
-  return results.length > 0 ? results : [{ start: 0, end: 0 }];
 }
 
 function extractQuotedSnippet(message: string): string | null {
