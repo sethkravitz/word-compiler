@@ -104,7 +104,7 @@ function resolveAnnotations(anns: EditorialAnnotation[], text: string): Editoria
       const match = resolveAnchor(text, a.anchor, a.charRange);
       return { ...a, charRange: { start: match.start, end: match.end } };
     })
-    .filter((a) => a.charRange.start !== a.charRange.end || a.anchor.focus === "");
+    .filter((a) => a.charRange.start < a.charRange.end);
 }
 
 // ─── Extracted Helpers ───────────────────────────
@@ -177,7 +177,12 @@ function parseLLMResponse(raw: string, chunkText: string): EditorialAnnotation[]
     const parsed = JSON.parse(raw);
     if (!parsed.annotations || !Array.isArray(parsed.annotations)) return [];
     return (parsed.annotations as unknown[]).filter(isValidRawAnnotation).map((a) => rawToAnnotation(a, chunkText));
-  } catch {
+  } catch (err) {
+    console.warn(
+      "[editorial-review] Failed to parse LLM JSON:",
+      err instanceof Error ? err.message : err,
+      raw.slice(0, 200),
+    );
     return [];
   }
 }

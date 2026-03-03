@@ -142,8 +142,15 @@ $effect(() => {
     return;
   }
 
-  // Load persisted annotations for this scene (survives page refresh)
-  chunkAnnotations = loadAnnotations(scenePlan.id);
+  // Load persisted annotations for this scene (survives page refresh).
+  // Filter through dismissed set so dismissed annotations don't reappear.
+  const loaded = loadAnnotations(scenePlan.id);
+  for (const [idx, anns] of loaded) {
+    const filtered = anns.filter((a) => !dismissed.has(a.fingerprint));
+    if (filtered.length > 0) loaded.set(idx, filtered);
+    else loaded.delete(idx);
+  }
+  chunkAnnotations = loaded;
 
   orchestrator = createReviewOrchestrator(
     bible,

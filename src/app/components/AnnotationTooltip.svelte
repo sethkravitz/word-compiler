@@ -95,8 +95,8 @@ $effect(() => {
 <div
   bind:this={tooltipEl}
   class="annotation-tooltip"
-  style:top="{finalTop}px"
-  style:left="{finalLeft}px"
+  style:top={finalTop + "px"}
+  style:left={finalLeft + "px"}
   onclick={(e) => e.stopPropagation()}
 >
   <div class="tooltip-header">

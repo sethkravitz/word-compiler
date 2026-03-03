@@ -111,7 +111,8 @@ function findAllPatternOccurrences(text: string, flagMessage: string): Array<{ s
 }
 
 function extractQuotedSnippet(message: string): string | null {
-  const match = message.match(/"(.+?)\.\.\."/);
+  // Match quoted text with or without trailing ellipsis: "text..." or "text"
+  const match = message.match(/"(.+?)(?:\.\.\.)?"/);
   return match?.[1] ?? null;
 }
 

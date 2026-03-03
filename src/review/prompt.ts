@@ -211,10 +211,10 @@ export function buildSuggestionRequestPrompt(
 
   const systemPrompt = systemSections.join("\n\n");
 
-  const markedText = chunkText.replace(
-    annotation.anchor.focus,
-    `<<FOCUS_START>>${annotation.anchor.focus}<<FOCUS_END>>`,
-  );
+  // Use resolved charRange positions to insert markers at the correct occurrence,
+  // not string replace which always hits the first occurrence.
+  const { start, end } = annotation.charRange;
+  const markedText = `${chunkText.slice(0, start)}<<FOCUS_START>>${chunkText.slice(start, end)}<<FOCUS_END>>${chunkText.slice(end)}`;
 
   const userPrompt = [
     "FULL CHUNK TEXT (with focus markers):",

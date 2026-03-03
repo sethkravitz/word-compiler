@@ -202,8 +202,8 @@ function handleCancel() {
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div
       class="cut-preview-popover"
-      style:top="{popoverPosition.top}px"
-      style:left="{popoverPosition.left}px"
+      style:top={popoverPosition.top + "px"}
+      style:left={popoverPosition.left + "px"}
       onclick={(e) => e.stopPropagation()}
     >
       <div class="cut-preview-label">Preview after removing selection:</div>

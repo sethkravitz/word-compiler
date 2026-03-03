@@ -86,8 +86,8 @@ let hasResults = $derived(variants.length > 0);
 <div
   bind:this={popoverEl}
   class="refinement-popover"
-  style:top="{flippedTop ?? position.top}px"
-  style:left="{position.left}px"
+  style:top={(flippedTop ?? position.top) + "px"}
+  style:left={position.left + "px"}
   onclick={(e) => e.stopPropagation()}
   onkeydown={handleKeydown}
 >
