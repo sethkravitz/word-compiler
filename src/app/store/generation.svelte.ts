@@ -195,10 +195,12 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
       };
       const ir = await extractIR(prose, scenePlan, store.bible!, llmClient);
       await commands.saveSceneIR(sceneId, ir);
-      // Reconcile Bible setup statuses against IR evidence — isolated, non-blocking
-      reconcileSetupsAfterIR(sceneId, ir).catch((err) =>
-        console.warn("[reconcile] setup status reconciliation failed:", err),
-      );
+      // Reconcile Bible setup statuses against IR evidence — awaited to avoid clobbering concurrent Bible edits
+      try {
+        await reconcileSetupsAfterIR(sceneId, ir);
+      } catch (err) {
+        console.warn("[reconcile] setup status reconciliation failed:", err);
+      }
       store.setIRInspectorOpen(true);
     } catch (err) {
       store.setError(err instanceof Error ? err.message : "IR extraction failed");

@@ -73,7 +73,9 @@ export function reconcileSetupStatuses(
   const updatedSetups = afterPlanting.map((setup) => {
     if (setup.status !== "planted") return setup;
 
-    const plantedOrder = sceneOrders[setup.plantedInScene ?? ""] ?? -1;
+    // Skip payoff check when planting scene is unknown — avoids false paid-off transitions
+    if (!setup.plantedInScene || !(setup.plantedInScene in sceneOrders)) return setup;
+    const plantedOrder = sceneOrders[setup.plantedInScene]!;
 
     for (const [sceneId, ir] of trustedIRs) {
       const payoffOrder = sceneOrders[sceneId] ?? 0;

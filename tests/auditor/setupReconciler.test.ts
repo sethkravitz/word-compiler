@@ -197,6 +197,34 @@ describe("reconcileSetupStatuses", () => {
     expect(changes).toHaveLength(0);
   });
 
+  it("skips payoff check when plantedInScene is null (avoids false paid-off)", () => {
+    const bible = makeBible([{ id: "s1", description: "The hidden key", status: "planted", plantedInScene: null }]);
+    const irs: Record<string, NarrativeIR> = {
+      "scene-1": makeVerifiedIR("scene-1", { payoffsExecuted: ["The hidden key was used"] }),
+    };
+    const orders = { "scene-1": 0 };
+
+    const { updatedBible, changes } = reconcileSetupStatuses(bible, irs, orders);
+
+    expect(updatedBible.narrativeRules.setups[0]!.status).toBe("planted");
+    expect(changes).toHaveLength(0);
+  });
+
+  it("skips payoff check when plantedInScene is not in sceneOrders", () => {
+    const bible = makeBible([
+      { id: "s1", description: "The hidden key", status: "planted", plantedInScene: "unknown-scene" },
+    ]);
+    const irs: Record<string, NarrativeIR> = {
+      "scene-1": makeVerifiedIR("scene-1", { payoffsExecuted: ["The hidden key was used"] }),
+    };
+    const orders = { "scene-1": 0 };
+
+    const { updatedBible, changes } = reconcileSetupStatuses(bible, irs, orders);
+
+    expect(updatedBible.narrativeRules.setups[0]!.status).toBe("planted");
+    expect(changes).toHaveLength(0);
+  });
+
   it("payoff at same scene order as planting is rejected", () => {
     const bible = makeBible([
       { id: "s1", description: "The hidden key", status: "planted", plantedInScene: "scene-1" },
