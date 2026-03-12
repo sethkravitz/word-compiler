@@ -88,4 +88,9 @@ let {
   .btn-ghost:hover:not(:disabled) {
     color: var(--text-primary);
   }
+
+  /* Touch targets: minimum 44x44px on touch devices */
+  @media (pointer: coarse) {
+    .btn { min-height: 44px; min-width: 44px; }
+  }
 </style>

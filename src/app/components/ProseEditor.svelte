@@ -243,6 +243,7 @@ function handleCancel() {
   .prose-editor {
     height: 100%;
     overflow-y: auto;
+    touch-action: pan-y;
   }
 
   .prose-editor :global(.prose-editor-content) {

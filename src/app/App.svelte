@@ -293,6 +293,7 @@ function exportState() {
       <p>Welcome to Word Compiler. Create your first project to get started.</p>
       <div class="new-project-form">
         <Input
+          autofocus
           placeholder="Project title"
           value={newProjectTitle}
           oninput={(e) => { newProjectTitle = (e.target as HTMLInputElement).value; }}
@@ -318,6 +319,7 @@ function exportState() {
     <span class="app-title">Word Compiler</span>
     {#if editingTitle}
       <Input
+        autofocus
         value={editTitleValue}
         oninput={(e) => { editTitleValue = (e.target as HTMLInputElement).value; }}
         onkeydown={(e) => { if (e.key === "Enter") handleRenameProject(); if (e.key === "Escape") editingTitle = false; }}
@@ -421,7 +423,7 @@ function exportState() {
 {/if}
 
 <style>
-  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .model-selector {
     display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary);
   }
@@ -432,6 +434,10 @@ function exportState() {
   .project-title {
     font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer;
     padding: 2px 6px; border-radius: var(--radius-sm); border: 1px solid transparent;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;
   }
-  .project-title:hover { border-color: var(--border); color: var(--text-primary); }
+  @media (hover: hover) {
+    .project-title:hover { border-color: var(--border); color: var(--text-primary); }
+  }
+  .project-title:active { border-color: var(--border); color: var(--text-primary); }
 </style>

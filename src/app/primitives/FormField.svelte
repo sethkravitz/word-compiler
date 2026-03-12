@@ -1,6 +1,7 @@
 <script lang="ts">
 import type { Snippet } from "svelte";
 import { FIELD_GLOSSARY } from "../components/field-glossary.js";
+import { hasHoverCapability, onHoverChange } from "./actions.js";
 
 let {
   label,
@@ -25,6 +26,14 @@ let tooltip = $derived(glossary?.tooltip);
 
 let showTooltip = $state(false);
 let tooltipId = $derived(fieldId ? `tooltip-${fieldId}` : undefined);
+
+let hasHover = $state(hasHoverCapability());
+
+$effect(() => {
+  return onHoverChange(() => {
+    hasHover = hasHoverCapability();
+  });
+});
 </script>
 
 <div class="form-field" class:form-field-error={!!error}>
@@ -39,9 +48,10 @@ let tooltipId = $derived(fieldId ? `tooltip-${fieldId}` : undefined);
         class="form-field-tooltip-trigger"
         aria-label="More information about {displayLabel}"
         aria-describedby={showTooltip && tooltipId ? tooltipId : undefined}
-        onmouseenter={() => { showTooltip = true; }}
-        onmouseleave={() => { showTooltip = false; }}
-        onfocus={() => { showTooltip = true; }}
+        onmouseenter={() => { if (hasHover) showTooltip = true; }}
+        onmouseleave={() => { if (hasHover) showTooltip = false; }}
+        onclick={() => { if (!hasHover) showTooltip = !showTooltip; }}
+        onfocus={() => { if (hasHover) showTooltip = true; }}
         onblur={() => { showTooltip = false; }}
       >?</button>
       {#if showTooltip}

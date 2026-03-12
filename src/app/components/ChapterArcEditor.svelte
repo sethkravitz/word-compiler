@@ -42,7 +42,7 @@ function parseCSV(value: string): string[] {
   <div class="arc-editor">
     <label>
       Working Title
-      <Input value={arc.workingTitle} oninput={(e) => update({ workingTitle: (e.target as HTMLInputElement).value })} />
+      <Input autofocus value={arc.workingTitle} oninput={(e) => update({ workingTitle: (e.target as HTMLInputElement).value })} />
     </label>
     <label>
       Narrative Function

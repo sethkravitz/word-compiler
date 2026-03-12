@@ -7,6 +7,7 @@ import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { untrack } from "svelte";
 import type { EditorialAnnotation } from "../../review/types.js";
+import { hasHoverCapability, onHoverChange } from "../primitives/actions.js";
 import AnnotationTooltip from "./AnnotationTooltip.svelte";
 import { offsetToPos, textToDoc } from "./prosemirror-utils.js";
 
@@ -192,10 +193,40 @@ $effect(() => {
   ed.setEditable(!isReadonly);
 });
 
+// ─── Touch/Hover Detection ──────────────────────
+// Reactive: updates when iPad keyboard/trackpad is attached or detached.
+let supportsHover = $state(hasHoverCapability());
+
+$effect(() => {
+  return onHoverChange(() => {
+    supportsHover = hasHoverCapability();
+  });
+});
+
 // ─── Hover Handling ─────────────────────────────
 let leaveTimeout: ReturnType<typeof setTimeout> | undefined;
 
+function showAnnotationAt(squiggle: Element) {
+  const annId = (squiggle as HTMLElement).dataset.annotationId;
+  const ann = annotations.find((a) => a.id === annId);
+  if (!ann) return;
+
+  // Hovering/tapping a different squiggle unpins the previous tooltip
+  if (tooltipPinned && activeAnnotation && activeAnnotation.id !== annId) {
+    tooltipPinned = false;
+  }
+
+  const rect = (squiggle as HTMLElement).getBoundingClientRect();
+  tooltipPosition = {
+    top: rect.bottom + 4,
+    left: rect.left,
+    anchorBottom: rect.top,
+  };
+  activeAnnotation = ann;
+}
+
 function handleMouseOver(e: MouseEvent) {
+  if (!supportsHover) return;
   const target = e.target as HTMLElement;
 
   // Ignore events from inside the tooltip — let the tooltip stay visible
@@ -218,26 +249,11 @@ function handleMouseOver(e: MouseEvent) {
 
   // Cancel any pending leave timeout — user re-entered a squiggle
   clearTimeout(leaveTimeout);
-
-  const annId = (squiggle as HTMLElement).dataset.annotationId;
-  const ann = annotations.find((a) => a.id === annId);
-  if (!ann) return;
-
-  // Hovering a different squiggle unpins the previous tooltip
-  if (tooltipPinned && activeAnnotation && activeAnnotation.id !== annId) {
-    tooltipPinned = false;
-  }
-
-  const rect = (squiggle as HTMLElement).getBoundingClientRect();
-  tooltipPosition = {
-    top: rect.bottom + 4,
-    left: rect.left,
-    anchorBottom: rect.top,
-  };
-  activeAnnotation = ann;
+  showAnnotationAt(squiggle);
 }
 
 function handleMouseLeave() {
+  if (!supportsHover) return;
   if (tooltipPinned) return;
   // Delay to allow crossing the gap between squiggle and tooltip
   clearTimeout(leaveTimeout);
@@ -254,10 +270,33 @@ function handleFocusIn(e: FocusEvent) {
   }
 }
 
+// Track the most recent pointer type so click handler can distinguish
+// touch taps from mouse clicks. PointerEvent.pointerType is "mouse",
+// "touch", or "pen" — set on pointerdown, consumed on click.
+let lastPointerType: string | undefined;
+
+function handlePointerDown(e: PointerEvent) {
+  lastPointerType = e.pointerType;
+}
+
 function handleEditorClick(e: MouseEvent) {
-  if (!tooltipPinned) return;
   const target = e.target as HTMLElement;
-  // Click outside the tooltip unpins and dismisses
+  const isTouchClick = lastPointerType === "touch" || lastPointerType === "pen";
+  lastPointerType = undefined;
+
+  const squiggle = target.closest?.("[data-annotation-id]");
+  if (squiggle) {
+    // Touch/pen taps pin the tooltip; mouse clicks on hover devices don't
+    // (hover-to-preview is the primary UX, pinning would be unexpected).
+    if (isTouchClick || !supportsHover) {
+      tooltipPinned = true;
+    }
+    showAnnotationAt(squiggle);
+    return;
+  }
+
+  if (!tooltipPinned) return;
+  // Click/tap outside the tooltip unpins and dismisses
   if (!target.closest?.(".annotation-tooltip")) {
     tooltipPinned = false;
     activeAnnotation = null;
@@ -351,6 +390,7 @@ function handleDismiss(id: string) {
   onmouseover={handleMouseOver}
   onmouseleave={handleMouseLeave}
   onfocusin={handleFocusIn}
+  onpointerdown={handlePointerDown}
   onclick={handleEditorClick}
 >
   <div bind:this={editorElement} class="annotated-editor"></div>
@@ -374,6 +414,7 @@ function handleDismiss(id: string) {
   .annotated-editor {
     height: 100%;
     overflow-y: auto;
+    touch-action: pan-y;
   }
   .annotated-editor :global(.annotated-editor-content) {
     outline: none;
@@ -403,8 +444,10 @@ function handleDismiss(id: string) {
   .annotated-editor :global(.editorial-info) {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='3'%3E%3Cpath d='M0 3 L1 0 L2 3 L3 0 L4 3' fill='none' stroke='%233b82f6' stroke-width='0.7'/%3E%3C/svg%3E");
   }
-  .annotated-editor :global(.editorial-squiggle:hover) {
-    cursor: pointer;
-    opacity: 0.9;
+  @media (hover: hover) {
+    .annotated-editor :global(.editorial-squiggle:hover) {
+      cursor: pointer;
+      opacity: 0.9;
+    }
   }
 </style>

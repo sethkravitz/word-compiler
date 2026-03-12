@@ -10,6 +10,7 @@ html,
 body,
 #root {
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -26,7 +27,8 @@ body {
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .app-header {
@@ -206,4 +208,42 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent-dim);
+}
+
+/* ─── Touch Device Adaptations ──────────────── */
+
+/* Suppress iOS default tap highlight — custom :active styles replace it */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent 300ms click delay and double-tap zoom on tap-only controls.
+   Excluded: input/textarea/select — touch-action can interfere with
+   text selection handles and double-tap-to-select in ProseMirror/TipTap. */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* Active press states for touch feedback */
+button:active:not(:disabled),
+[role="button"]:active {
+  opacity: 0.7;
+}
+
+/* Prevent iOS Safari auto-zoom on input focus (triggers below 16px) */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* Hide custom scrollbars on touch devices (native momentum scroll is better) */
+@media (pointer: coarse) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
 }

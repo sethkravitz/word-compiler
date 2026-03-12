@@ -4,7 +4,6 @@ import { FIELD_GLOSSARY } from "./field-glossary.js";
 
 let open = $state(false);
 let query = $state("");
-let searchEl: HTMLDivElement | undefined = $state();
 
 const allEntries = Object.entries(FIELD_GLOSSARY).sort(([, a], [, b]) => a.technical.localeCompare(b.technical));
 
@@ -30,10 +29,6 @@ $effect(() => {
   window.addEventListener("keydown", handler);
   return () => window.removeEventListener("keydown", handler);
 });
-
-$effect(() => {
-  if (open) setTimeout(() => searchEl?.querySelector("input")?.focus(), 0);
-});
 </script>
 
 <Modal {open} onClose={() => { open = false; }}>
@@ -44,8 +39,8 @@ $effect(() => {
     </div>
   {/snippet}
 
-  <div class="glossary-search" bind:this={searchEl}>
-    <Input bind:value={query} placeholder="Search terms..." />
+  <div class="glossary-search">
+    <Input bind:value={query} autofocus placeholder="Search terms..." />
   </div>
 
   <div class="glossary-results">

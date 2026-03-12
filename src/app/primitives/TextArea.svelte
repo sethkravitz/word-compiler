@@ -1,4 +1,6 @@
 <script lang="ts">
+import { focusOnMount } from "./actions.js";
+
 let {
   value = $bindable(""),
   placeholder,
@@ -6,6 +8,8 @@ let {
   variant = "default",
   resize = "vertical",
   autosize = false,
+  autofocus = false,
+  onkeydown,
   oninput,
 }: {
   value?: string;
@@ -14,6 +18,8 @@ let {
   variant?: "default" | "compact";
   resize?: "vertical" | "none" | "both";
   autosize?: boolean;
+  autofocus?: boolean;
+  onkeydown?: (e: KeyboardEvent) => void;
   oninput?: (e: Event) => void;
 } = $props();
 
@@ -50,6 +56,8 @@ function handleInput(e: Event) {
   {rows}
   style:resize={autosize ? "none" : resize}
   oninput={handleInput}
+  {onkeydown}
+  use:focusOnMount={autofocus}
 ></textarea>
 
 <style>

@@ -1,6 +1,7 @@
 <script lang="ts">
 import type { RefinementChip, RefinementVariant } from "../../review/refineTypes.js";
 import { REFINEMENT_CHIP_LABELS, REFINEMENT_CHIPS } from "../../review/refineTypes.js";
+import { focusOnMount } from "../primitives/actions.js";
 import { Badge, Button, Spinner } from "../primitives/index.js";
 
 let {
@@ -30,18 +31,25 @@ let activeChips = $state<Set<RefinementChip>>(new Set());
 let showAllVariants = $state(false);
 let popoverEl: HTMLDivElement;
 let flippedTop = $state<number | null>(null);
+let clampedLeft = $state<number | null>(null);
 
-// Viewport flip: reposition above selection if popover overflows bottom
+// Viewport clamp: reposition if popover overflows bottom or right edge
 $effect(() => {
   const _trigger = position;
   flippedTop = null;
+  clampedLeft = null;
 
   requestAnimationFrame(() => {
     if (!popoverEl) return;
     const rect = popoverEl.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    if (rect.bottom > viewportHeight - 8 && position.anchorBottom != null) {
+    const vh = window.visualViewport?.height ?? document.documentElement.clientHeight;
+    const vw = window.visualViewport?.width ?? document.documentElement.clientWidth;
+
+    if (rect.bottom > vh - 8 && position.anchorBottom != null) {
       flippedTop = position.anchorBottom - rect.height - 4;
+    }
+    if (rect.right > vw - 8) {
+      clampedLeft = Math.max(8, vw - rect.width - 8);
     }
   });
 });
@@ -87,7 +95,7 @@ let hasResults = $derived(variants.length > 0);
   bind:this={popoverEl}
   class="refinement-popover"
   style:top={(flippedTop ?? position.top) + "px"}
-  style:left={position.left + "px"}
+  style:left={(clampedLeft ?? position.left) + "px"}
   onclick={(e) => e.stopPropagation()}
   onkeydown={handleKeydown}
 >
@@ -148,6 +156,7 @@ let hasResults = $derived(variants.length > 0);
         placeholder="What's wrong? (optional)"
         bind:value={instruction}
         onkeydown={handleKeydown}
+        use:focusOnMount
       />
 
       <div class="popover-actions">
@@ -168,7 +177,7 @@ let hasResults = $derived(variants.length > 0);
     padding: 10px;
     max-width: 420px;
     min-width: 280px;
-    max-height: 60vh;
+    max-height: 60dvh;
     overflow-y: auto;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     font-size: 12px;
@@ -212,9 +221,11 @@ let hasResults = $derived(variants.length > 0);
     font-family: var(--font-mono);
   }
 
-  .chip:hover {
-    border-color: var(--accent-dim);
-    color: var(--text-primary);
+  @media (hover: hover) {
+    .chip:hover {
+      border-color: var(--accent-dim);
+      color: var(--text-primary);
+    }
   }
 
   .chip-active {
@@ -228,8 +239,10 @@ let hasResults = $derived(variants.length > 0);
     color: var(--error, #ef4444);
   }
 
-  .chip-cut:hover {
-    background: color-mix(in srgb, var(--error, #ef4444) 15%, var(--bg-secondary));
+  @media (hover: hover) {
+    .chip-cut:hover {
+      background: color-mix(in srgb, var(--error, #ef4444) 15%, var(--bg-secondary));
+    }
   }
 
   .instruction-input {
@@ -260,7 +273,7 @@ let hasResults = $derived(variants.length > 0);
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 50vh;
+    max-height: 50dvh;
     overflow-y: auto;
   }
 

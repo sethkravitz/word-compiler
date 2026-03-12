@@ -104,6 +104,13 @@ async function handleBootstrap() {
   {#if !loading}
     <TextArea
       bind:value={synopsis}
+      autofocus
+      onkeydown={(e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          if (!loading && synopsis.trim()) handleBootstrap();
+        }
+      }}
       placeholder={`Example synopsis — replace with your own:\n\nMarcus Cole, a retired homicide detective turned bar owner, runs a dimly lit jazz bar called "The Velvet" in a decaying waterfront district...`}
     />
   {:else}

@@ -499,7 +499,7 @@ export function reset() {
   <!-- ─── Form phase ────────────────────────── -->
   <div class="bootstrap-form">
     <FormField label="Chapter Direction" required hint="Describe the chapter you want to write">
-      <TextArea bind:value={direction} placeholder="A tense confrontation between Marcus and Elena at The Velvet, escalating from veiled threats to an open power play..." />
+      <TextArea bind:value={direction} autofocus placeholder="A tense confrontation between Marcus and Elena at The Velvet, escalating from veiled threats to an open power play..." />
     </FormField>
 
     <FormField label="Scene Count">

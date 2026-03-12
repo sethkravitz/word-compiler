@@ -60,7 +60,8 @@ function handleOverlayClick(e: MouseEvent) {
     background: var(--bg-primary);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    max-height: 80vh;
+    max-height: 80dvh;
+    max-width: calc(100vw - 32px);
     display: flex;
     flex-direction: column;
   }
@@ -79,6 +80,7 @@ function handleOverlayClick(e: MouseEvent) {
   }
   .modal-footer {
     padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--border);
     display: flex;
     justify-content: flex-end;

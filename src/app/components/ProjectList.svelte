@@ -24,6 +24,7 @@ let {
     {#snippet headerRight()}
       <div class="new-project-row">
         <Input
+          autofocus
           placeholder="Project title"
           value={newTitle}
           oninput={(e) => onTitleChange?.((e.target as HTMLInputElement).value)}
@@ -95,4 +96,7 @@ let {
     border-radius: var(--radius-sm); font-family: inherit;
   }
   .project-card-delete:hover { color: var(--error, #e85050); background: var(--bg-secondary); }
+  @media (hover: none) {
+    .project-card-delete { color: var(--text-secondary); }
+  }
 </style>

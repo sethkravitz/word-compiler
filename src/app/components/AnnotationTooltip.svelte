@@ -1,6 +1,7 @@
 <script lang="ts">
 import { SEVERITY_CSS_COLORS } from "../../review/constants.js";
 import type { EditorialAnnotation } from "../../review/types.js";
+import { focusOnMount } from "../primitives/actions.js";
 import { Button, Spinner } from "../primitives/index.js";
 
 let {
@@ -64,8 +65,8 @@ $effect(() => {
   requestAnimationFrame(() => {
     if (!tooltipEl) return;
     const rect = tooltipEl.getBoundingClientRect();
-    const vh = window.innerHeight;
-    const vw = window.innerWidth;
+    const vh = window.visualViewport?.height ?? document.documentElement.clientHeight;
+    const vw = window.visualViewport?.width ?? document.documentElement.clientWidth;
 
     let top = pos.top;
     let left = pos.left;
@@ -124,13 +125,12 @@ $effect(() => {
     </div>
   {:else if onRequestSuggestion}
     <div class="tooltip-feedback">
-      <!-- svelte-ignore a11y_autofocus -->
       <textarea
         class="feedback-textarea"
         bind:value={feedback}
         placeholder="Describe your creative direction (e.g. 'more subtle, use body language')..."
         onkeydown={handleKeydown}
-        autofocus
+        use:focusOnMount
       ></textarea>
     </div>
     <div class="tooltip-actions">
@@ -154,7 +154,7 @@ $effect(() => {
     padding: 10px 12px;
     width: 400px;
     max-width: calc(100vw - 16px);
-    max-height: 50vh;
+    max-height: 50dvh;
     overflow-y: auto;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     font-size: 12px;

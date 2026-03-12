@@ -202,8 +202,15 @@ function handleReject() {
     width: 10px;
     height: 10px;
   }
-  .chunk-card:hover .destroy-btn {
-    opacity: 1;
+  @media (hover: hover) {
+    .chunk-card:hover .destroy-btn {
+      opacity: 1;
+    }
+  }
+  @media (hover: none) {
+    .destroy-btn {
+      opacity: 1;
+    }
   }
   .destroy-btn:hover {
     opacity: 1;

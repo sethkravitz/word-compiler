@@ -108,7 +108,7 @@ export function save() {
   {#if formStep === "core"}
     <div class="form-step">
       <FormField label="Title" required>
-        <Input bind:value={formPlan.title} placeholder="Scene title" />
+        <Input bind:value={formPlan.title} autofocus placeholder="Scene title" />
       </FormField>
       <FormField label="POV Character">
         {#if characters.length > 0}
