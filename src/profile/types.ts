@@ -150,6 +150,7 @@ export interface VoiceGuide {
   generationInstructions: string;
   editingInstructions: string;
   confidenceNotes: string;
+  ring1Injection: string;
   updatedAt: string;
 }
 
@@ -222,6 +223,7 @@ export function createEmptyVoiceGuide(): VoiceGuide {
     generationInstructions: "",
     editingInstructions: "",
     confidenceNotes: "",
+    ring1Injection: "",
     updatedAt: new Date().toISOString(),
   };
 }

@@ -7,6 +7,7 @@ import type {
   PipelineConfig,
   VoiceGuide,
 } from "../../src/profile/types.js";
+import { countTokens } from "../../src/tokens/index.js";
 import { textCall } from "./llm.js";
 
 /**
@@ -98,6 +99,29 @@ export async function generateVoiceGuide(
   const guideText = await textCall(client, config.stage5GuideModel, STAGE5_SYSTEM, prompt);
   const { generation, editing, confidence } = extractSections(guideText);
 
+  const ring1Prompt = `You have a detailed voice guide for an author. Distill it into a compact writing instruction (200-300 tokens max) that will be injected into an LLM system message to make generated prose match this author's voice.
+
+The instruction should:
+- Be written as direct commands ("Write with measured warmth...", "Avoid melodrama...", "When describing emotion, ground it in physical detail...")
+- Capture the 3-4 most distinctive positive patterns from the guide
+- Capture the 2-3 strongest avoidance patterns
+- Be specific to THIS author, not generic writing advice
+- Be concise — every token counts in a system message
+
+VOICE GUIDE:
+${guideText}
+
+Write ONLY the compact instruction. No preamble, no headers, no explanation.`;
+
+  const ring1Injection = await textCall(
+    client,
+    config.stage5GuideModel,
+    "You are a prompt engineer specializing in voice-matched prose generation. Produce the most compact, effective system message instruction possible.",
+    ring1Prompt,
+  );
+
+  console.log(`[stage5] ring1Injection: ${countTokens(ring1Injection)} tokens`);
+
   const domains = new Set<string>();
   if (config.sourceDomain) domains.add(config.sourceDomain);
   if (config.targetDomain) domains.add(config.targetDomain);
@@ -132,6 +156,7 @@ export async function generateVoiceGuide(
     generationInstructions: generation,
     editingInstructions: editing,
     confidenceNotes: confidence,
+    ring1Injection,
     updatedAt: now,
   };
 }

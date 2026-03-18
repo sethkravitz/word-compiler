@@ -33,6 +33,11 @@ describe("createEmptyVoiceGuide", () => {
     expect(guide.confidenceNotes).toBe("");
   });
 
+  it("returns empty ring1Injection", () => {
+    const guide = createEmptyVoiceGuide();
+    expect(guide.ring1Injection).toBe("");
+  });
+
   it("sets updatedAt to a valid ISO string", () => {
     const guide = createEmptyVoiceGuide();
     expect(new Date(guide.updatedAt).toISOString()).toBe(guide.updatedAt);
