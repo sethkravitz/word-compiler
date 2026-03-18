@@ -179,5 +179,38 @@ export function createSchema(db: Database.Database): void {
       data TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    -- Significant edits (raw edit pairs awaiting batch CIPHER)
+    CREATE TABLE IF NOT EXISTS significant_edits (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id),
+      chunk_id TEXT NOT NULL,
+      original_text TEXT NOT NULL,
+      edited_text TEXT NOT NULL,
+      processed INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_significant_edits_project ON significant_edits(project_id, processed);
+
+    -- CIPHER preference statements (batch-inferred from significant edits)
+    CREATE TABLE IF NOT EXISTS preference_statements (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id),
+      statement TEXT NOT NULL,
+      edit_count INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_preference_statements_project ON preference_statements(project_id);
+
+    -- Project Voice Guide (per-project, built from edits + manuscript analysis)
+    CREATE TABLE IF NOT EXISTS project_voice_guide (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL REFERENCES projects(id),
+      version TEXT NOT NULL,
+      data TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(project_id)
+    );
   `);
 }

@@ -181,6 +181,26 @@ export interface DeltaResponse {
   evolutionSignals: string | null;
 }
 
+// ─── CIPHER Edit Learning ────────────────────────────
+
+export interface SignificantEdit {
+  id: string;
+  projectId: string;
+  chunkId: string;
+  originalText: string;
+  editedText: string;
+  processed: boolean;
+  createdAt: string;
+}
+
+export interface PreferenceStatement {
+  id: string;
+  projectId: string;
+  statement: string;
+  editCount: number;
+  createdAt: string;
+}
+
 // ─── Config ───────────────────────────────────────────
 
 export interface PipelineConfig {
