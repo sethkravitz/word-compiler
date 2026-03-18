@@ -6,6 +6,7 @@ import { countTokens } from "../tokens/index.js";
 import { generateId, getCanonicalText } from "../types/index.js";
 import GlossaryPanel from "./components/GlossaryPanel.svelte";
 import ProjectList from "./components/ProjectList.svelte";
+import VoiceProfilePanel from "./components/VoiceProfilePanel.svelte";
 import StageCTA from "./components/StageCTA.svelte";
 import AuditStage from "./components/stages/AuditStage.svelte";
 import BootstrapStage from "./components/stages/BootstrapStage.svelte";
@@ -311,6 +312,9 @@ function exportState() {
         onCreateProject={handleCreateProjectFromList}
         onTitleChange={(t) => { newProjectTitle = t; }}
       />
+    {/if}
+    {#if startupStatus === "no-projects" || startupStatus === "multiple-projects"}
+      <VoiceProfilePanel />
     {/if}
   </div>
 {:else}
