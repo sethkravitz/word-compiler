@@ -5,7 +5,10 @@ import type { FilteredFeature, VoiceGuide } from "./types.js";
  * Falls back to the first paragraph if the section header is not found.
  */
 export function extractCoreSensibility(narrative: string): string {
-  const match = narrative.match(/\d+\.\s*THE CORE SENSIBILITY\s*\n([\s\S]*?)(?=\n\d+\.\s)/i);
+  // Match numbered "1. THE CORE SENSIBILITY" or markdown "## Core Sensibility" / "## 1. Core Sensibility"
+  const match = narrative.match(
+    /(?:\d+\.\s*(?:\*{2})?(?:THE )?CORE SENSIBILITY(?:\*{2})?|#{1,4}\s*(?:\d+\.\s*)?(?:\*{2})?Core Sensibility(?:\*{2})?)[^\n]*\n([\s\S]*?)(?=\n(?:\d+\.\s|#{1,3}\s+\d+\.|#{1,3}\s+(?:\*{2})?What They))/i,
+  );
   if (match?.[1]) {
     return match[1].trim();
   }

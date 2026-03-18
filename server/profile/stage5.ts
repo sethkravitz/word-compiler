@@ -15,9 +15,14 @@ import { textCall } from "./llm.js";
  * are not found.
  */
 export function extractSections(guideText: string): { generation: string; editing: string; confidence: string } {
-  const generationMatch = guideText.match(/FOR GENERATION:\s*([\s\S]*?)(?=FOR EDITING)/i);
-  const editingMatch = guideText.match(/FOR EDITING:\s*([\s\S]*?)(?=\d+\.\s|CONFIDENCE NOTES)/i);
-  const confidenceMatch = guideText.match(/CONFIDENCE NOTES\s*([\s\S]*?)$/i);
+  // Match both original "FOR GENERATION:" format and markdown "Generation Instructions" headers
+  const generationMatch = guideText.match(
+    /(?:FOR GENERATION:|#{1,4}\s*Generation Instructions[^\n]*)\s*([\s\S]*?)(?=FOR EDITING:|#{1,4}\s*Editing Instructions)/i,
+  );
+  const editingMatch = guideText.match(
+    /(?:FOR EDITING:|#{1,4}\s*Editing Instructions[^\n]*)\s*([\s\S]*?)(?=\d+\.\s|\bConfidence Notes\b|#{1,3}\s+\d+\.|#{1,3}\s+Confidence)/i,
+  );
+  const confidenceMatch = guideText.match(/(?:CONFIDENCE NOTES|#{1,4}\s*Confidence Notes)\s*([\s\S]*?)$/i);
 
   return {
     generation: generationMatch?.[1]?.trim() ?? "Follow the voice guide features when generating new text.",
