@@ -150,5 +150,34 @@ export function createSchema(db: Database.Database): void {
       updated_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_learned_patterns_project ON learned_patterns(project_id, status);
+
+    -- Voice Guide (singleton, version-controlled)
+    CREATE TABLE IF NOT EXISTS voice_guide (
+      id TEXT PRIMARY KEY,
+      version TEXT NOT NULL,
+      data TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    -- Voice Guide Version History
+    CREATE TABLE IF NOT EXISTS voice_guide_versions (
+      id TEXT PRIMARY KEY,
+      version TEXT NOT NULL,
+      data TEXT NOT NULL,
+      change_reason TEXT NOT NULL,
+      change_summary TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    -- Writing Samples
+    CREATE TABLE IF NOT EXISTS writing_samples (
+      id TEXT PRIMARY KEY,
+      filename TEXT,
+      domain TEXT,
+      word_count INTEGER NOT NULL,
+      data TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 }
