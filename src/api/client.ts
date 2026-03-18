@@ -1,3 +1,4 @@
+import type { VoiceGuide, VoiceGuideVersion, WritingSample, PipelineConfig } from "@/profile/types.js";
 import type {
   AuditFlag,
   Bible,
@@ -259,4 +260,45 @@ export function apiUpdateProfileAdjustmentStatus(id: string, status: "accepted" 
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
+}
+
+// ─── Voice Guide ─────────────────────────────────────
+
+export async function apiGetVoiceGuide(): Promise<VoiceGuide | null> {
+  const data = await fetchJson<{ guide: VoiceGuide | null }>(`${BASE}/voice-guide`);
+  return data.guide;
+}
+
+export async function apiGenerateVoiceGuide(
+  sampleIds: string[],
+  config?: Partial<PipelineConfig>,
+): Promise<VoiceGuide> {
+  return fetchJson<VoiceGuide>(`${BASE}/voice-guide/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sampleIds, config }),
+    signal: AbortSignal.timeout(600_000),
+  });
+}
+
+export async function apiListVoiceGuideVersions(): Promise<VoiceGuideVersion[]> {
+  return fetchJson<VoiceGuideVersion[]>(`${BASE}/voice-guide/versions`);
+}
+
+// ─── Writing Samples ─────────────────────────────────
+
+export function apiListWritingSamples(): Promise<WritingSample[]> {
+  return fetchJson<WritingSample[]>(`${BASE}/writing-samples`);
+}
+
+export function apiCreateWritingSample(filename: string | null, domain: string, text: string): Promise<WritingSample> {
+  return fetchJson<WritingSample>(`${BASE}/writing-samples`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filename, domain, text }),
+  });
+}
+
+export async function apiDeleteWritingSample(id: string): Promise<void> {
+  await fetch(`${BASE}/writing-samples/${id}`, { method: "DELETE" });
 }

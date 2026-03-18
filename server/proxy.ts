@@ -10,11 +10,11 @@ app.use(cors());
 app.use(express.json());
 app.use(requestLogger);
 
+const client = new Anthropic();
+
 // Initialize database and mount REST API
 const db = getDatabase();
-app.use("/api/data", createApiRouter(db));
-
-const client = new Anthropic();
+app.use("/api/data", createApiRouter(db, client));
 
 // Cache models list — it doesn't change during a session
 let modelsCache: Array<{ id: string; displayName: string; contextWindow: number; maxOutput: number }> | null = null;

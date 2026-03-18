@@ -1,5 +1,8 @@
+import type Anthropic from "@anthropic-ai/sdk";
 import type Database from "better-sqlite3";
 import { Router } from "express";
+import type { PipelineConfig } from "../../src/profile/types.js";
+import { createWritingSample as createSample } from "../../src/profile/types.js";
 import * as auditFlags from "../db/repositories/audit-flags.js";
 import * as bibles from "../db/repositories/bibles.js";
 import * as chapterArcs from "../db/repositories/chapter-arcs.js";
@@ -11,8 +14,11 @@ import * as narrativeIRs from "../db/repositories/narrative-irs.js";
 import * as profileAdjustments from "../db/repositories/profile-adjustments.js";
 import * as projects from "../db/repositories/projects.js";
 import * as scenePlans from "../db/repositories/scene-plans.js";
+import * as voiceGuideRepo from "../db/repositories/voice-guide.js";
+import * as writingSampleRepo from "../db/repositories/writing-samples.js";
+import { runPipeline } from "../profile/pipeline.js";
 
-export function createApiRouter(db: Database.Database): Router {
+export function createApiRouter(db: Database.Database, anthropicClient?: Anthropic): Router {
   const router = Router();
 
   /** Ensure a project row exists (no-op if it already does). */
@@ -355,6 +361,72 @@ export function createApiRouter(db: Database.Database): Router {
     }
     console.log(`[data] Profile adjustment ${req.params.id} status → ${req.body.status}`);
     res.json({ ok: true });
+  });
+
+  // ─── Voice Guide ───────────────────────────────────
+
+  router.get("/voice-guide", (_req, res) => {
+    const guide = voiceGuideRepo.getVoiceGuide(db);
+    if (!guide) {
+      return res.json({ guide: null });
+    }
+    res.json({ guide });
+  });
+
+  router.post("/voice-guide/generate", async (req, res) => {
+    const { sampleIds, config } = req.body as { sampleIds: string[]; config?: Partial<PipelineConfig> };
+    const samples = writingSampleRepo.getWritingSamplesByIds(db, sampleIds);
+    if (samples.length === 0) {
+      console.warn("[data] No writing samples found for provided IDs");
+      return res.status(404).json({ error: "No writing samples found" });
+    }
+    if (!anthropicClient) {
+      console.warn("[data] Anthropic client not available for voice guide generation");
+      return res.status(500).json({ error: "Anthropic client not configured" });
+    }
+    req.setTimeout(600_000);
+    try {
+      const { createDefaultPipelineConfig } = await import("../../src/profile/types.js");
+      const mergedConfig: PipelineConfig = { ...createDefaultPipelineConfig(), ...config };
+      console.log(`[data] Generating voice guide from ${samples.length} samples`);
+      const guide = await runPipeline(samples, mergedConfig, anthropicClient);
+      voiceGuideRepo.saveVoiceGuide(db, guide);
+      voiceGuideRepo.saveVoiceGuideVersion(db, guide);
+      console.log(`[data] Voice guide generated: version=${guide.version}`);
+      res.status(201).json(guide);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error(`[data] Voice guide generation failed: ${message}`);
+      res.status(500).json({ error: message });
+    }
+  });
+
+  router.get("/voice-guide/versions", (_req, res) => {
+    res.json(voiceGuideRepo.listVoiceGuideVersions(db));
+  });
+
+  // ─── Writing Samples ───────────────────────────────
+
+  router.get("/writing-samples", (_req, res) => {
+    res.json(writingSampleRepo.listWritingSamples(db));
+  });
+
+  router.post("/writing-samples", (req, res) => {
+    const { filename, domain, text } = req.body as { filename?: string; domain: string; text: string };
+    const sample = createSample(filename ?? null, domain, text);
+    const created = writingSampleRepo.createWritingSampleRecord(db, sample);
+    console.log(`[data] Created writing sample: ${created.id} domain=${domain} words=${created.wordCount}`);
+    res.status(201).json(created);
+  });
+
+  router.delete("/writing-samples/:id", (req, res) => {
+    const deleted = writingSampleRepo.deleteWritingSample(db, req.params.id);
+    if (!deleted) {
+      console.warn(`[data] Writing sample not found for delete: ${req.params.id}`);
+      return res.status(404).json({ error: "Writing sample not found" });
+    }
+    console.log(`[data] Deleted writing sample: ${req.params.id}`);
+    res.status(204).send();
   });
 
   return router;
