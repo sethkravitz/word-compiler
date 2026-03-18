@@ -1,4 +1,4 @@
-import type { VoiceGuide, VoiceGuideVersion, WritingSample, PipelineConfig } from "@/profile/types.js";
+import type { VoiceGuide, VoiceGuideVersion, WritingSample, PipelineConfig, PreferenceStatement } from "@/profile/types.js";
 import type {
   AuditFlag,
   Bible,
@@ -301,4 +301,45 @@ export function apiCreateWritingSample(filename: string | null, domain: string, 
 
 export async function apiDeleteWritingSample(id: string): Promise<void> {
   await fetch(`${BASE}/writing-samples/${id}`, { method: "DELETE" });
+}
+
+// ─── Project Voice Learning ─────────────────────────
+
+export async function apiStoreSignificantEdit(
+  projectId: string,
+  chunkId: string,
+  originalText: string,
+  editedText: string,
+): Promise<number> {
+  const data = await fetchJson<{ count: number }>(`${BASE}/projects/${projectId}/significant-edits`, {
+    method: "POST",
+    body: JSON.stringify({ chunkId, originalText, editedText }),
+  });
+  return data.count;
+}
+
+export async function apiFireBatchCipher(projectId: string): Promise<PreferenceStatement | null> {
+  const data = await fetchJson<PreferenceStatement | { statement: null }>(
+    `${BASE}/projects/${projectId}/cipher/batch`,
+    { method: "POST" },
+  );
+  if ("statement" in data && data.statement === null) return null;
+  return data as PreferenceStatement;
+}
+
+export async function apiGetProjectVoiceGuide(projectId: string): Promise<VoiceGuide | null> {
+  const data = await fetchJson<{ guide: VoiceGuide | null }>(`${BASE}/projects/${projectId}/project-voice-guide`);
+  return data.guide;
+}
+
+export async function apiUpdateProjectVoiceGuide(
+  projectId: string,
+  sceneId: string,
+  sceneText: string,
+): Promise<VoiceGuide> {
+  return fetchJson<VoiceGuide>(`${BASE}/projects/${projectId}/project-voice-guide/update`, {
+    method: "POST",
+    body: JSON.stringify({ sceneId, sceneText }),
+    signal: AbortSignal.timeout(600_000),
+  });
 }

@@ -3,6 +3,7 @@ import type Database from "better-sqlite3";
 import { Router } from "express";
 import type { PipelineConfig } from "../../src/profile/types.js";
 import { createWritingSample as createSample } from "../../src/profile/types.js";
+import { generateId } from "../../src/types/utils.js";
 import * as auditFlags from "../db/repositories/audit-flags.js";
 import * as bibles from "../db/repositories/bibles.js";
 import * as chapterArcs from "../db/repositories/chapter-arcs.js";
@@ -11,12 +12,17 @@ import * as compilationLogs from "../db/repositories/compilation-logs.js";
 import * as editPatterns from "../db/repositories/edit-patterns.js";
 import * as learnedPatterns from "../db/repositories/learned-patterns.js";
 import * as narrativeIRs from "../db/repositories/narrative-irs.js";
+import * as preferenceStatementsRepo from "../db/repositories/preference-statements.js";
 import * as profileAdjustments from "../db/repositories/profile-adjustments.js";
+import * as projectVoiceGuideRepo from "../db/repositories/project-voice-guide.js";
 import * as projects from "../db/repositories/projects.js";
 import * as scenePlans from "../db/repositories/scene-plans.js";
+import * as significantEditsRepo from "../db/repositories/significant-edits.js";
 import * as voiceGuideRepo from "../db/repositories/voice-guide.js";
 import * as writingSampleRepo from "../db/repositories/writing-samples.js";
+import { inferBatchPreferences } from "../profile/cipher.js";
 import { runPipeline } from "../profile/pipeline.js";
+import { updateProjectGuide } from "../profile/projectGuide.js";
 
 export function createApiRouter(db: Database.Database, anthropicClient?: Anthropic): Router {
   const router = Router();
@@ -427,6 +433,84 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
     }
     console.log(`[data] Deleted writing sample: ${req.params.id}`);
     res.status(204).send();
+  });
+
+  // ─── Project Voice Learning ───────────────────────
+
+  router.post("/projects/:projectId/significant-edits", (req, res) => {
+    const { projectId } = req.params;
+    const { chunkId, originalText, editedText } = req.body as {
+      chunkId: string;
+      originalText: string;
+      editedText: string;
+    };
+    ensureProject(projectId);
+    const edit = {
+      id: generateId(),
+      projectId,
+      chunkId,
+      originalText,
+      editedText,
+      processed: false,
+      createdAt: new Date().toISOString(),
+    };
+    significantEditsRepo.createSignificantEdit(db, edit);
+    const count = significantEditsRepo.countUnprocessedEdits(db, projectId);
+    console.log(`[data] Created significant edit for chunk=${chunkId} project=${projectId} unprocessed=${count}`);
+    res.status(201).json({ count });
+  });
+
+  router.post("/projects/:projectId/cipher/batch", async (req, res) => {
+    const { projectId } = req.params;
+    const edits = significantEditsRepo.listUnprocessedEdits(db, projectId);
+    if (edits.length === 0) {
+      return res.json({ statement: null });
+    }
+    if (!anthropicClient) {
+      return res.status(500).json({ error: "Anthropic client not configured" });
+    }
+    try {
+      const mapped = edits.map((e) => ({ original: e.originalText, edited: e.editedText }));
+      const statement = await inferBatchPreferences(anthropicClient, projectId, mapped);
+      preferenceStatementsRepo.createPreferenceStatement(db, statement);
+      significantEditsRepo.markEditsProcessed(
+        db,
+        edits.map((e) => e.id),
+      );
+      console.log(`[data] CIPHER batch: ${edits.length} edits → statement ${statement.id}`);
+      res.status(201).json(statement);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error(`[data] CIPHER batch failed: ${message}`);
+      res.status(500).json({ error: message });
+    }
+  });
+
+  router.get("/projects/:projectId/project-voice-guide", (req, res) => {
+    const guide = projectVoiceGuideRepo.getProjectVoiceGuide(db, req.params.projectId);
+    res.json({ guide: guide ?? null });
+  });
+
+  router.post("/projects/:projectId/project-voice-guide/update", async (req, res) => {
+    const { projectId } = req.params;
+    const { sceneId, sceneText } = req.body as { sceneId: string; sceneText: string };
+    if (!anthropicClient) {
+      return res.status(500).json({ error: "Anthropic client not configured" });
+    }
+    req.setTimeout(600_000);
+    try {
+      const existingGuide = projectVoiceGuideRepo.getProjectVoiceGuide(db, projectId);
+      const statements = preferenceStatementsRepo.listPreferenceStatements(db, projectId);
+      const statementTexts = statements.map((s) => s.statement);
+      const guide = await updateProjectGuide(existingGuide, sceneText, sceneId, projectId, statementTexts, anthropicClient);
+      projectVoiceGuideRepo.saveProjectVoiceGuide(db, projectId, guide);
+      console.log(`[data] Project voice guide updated: project=${projectId} scene=${sceneId}`);
+      res.status(201).json(guide);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error(`[data] Project voice guide update failed: ${message}`);
+      res.status(500).json({ error: message });
+    }
   });
 
   return router;
