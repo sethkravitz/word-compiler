@@ -130,6 +130,7 @@ describe("buildRefinementSystemPrompt", () => {
     activeVoices: [],
     povRules: null,
     subtextPolicy: "",
+    editingInstructions: "",
   };
 
   it("includes core principles", () => {
