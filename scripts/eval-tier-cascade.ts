@@ -91,19 +91,19 @@ async function main() {
   console.log("[eval] Distilling tier injections...");
 
   // Tier 1: Author voice only
-  const tier1Injection = await distillVoice(authorGuide, [], null, client);
+  const tier1Injection = await distillVoice(authorGuide, [], null, null, client);
   console.log(`[eval] Tier 1 (author only): ${countTokens(tier1Injection)} tokens`);
 
   // Tier 2: Author + project voice
-  const tier2Injection = await distillVoice(authorGuide, [], projectGuide, client);
+  const tier2Injection = await distillVoice(authorGuide, [], projectGuide, null, client);
   console.log(`[eval] Tier 2 (author + project): ${countTokens(tier2Injection)} tokens`);
 
   // Tier 3: Author + project + CIPHER (full stack)
-  const tier3Injection = await distillVoice(authorGuide, SYNTHETIC_CIPHER_PREFS, projectGuide, client);
+  const tier3Injection = await distillVoice(authorGuide, SYNTHETIC_CIPHER_PREFS, projectGuide, null, client);
   console.log(`[eval] Tier 3 (full stack): ${countTokens(tier3Injection)} tokens`);
 
   // Tier 4: CIPHER only
-  const tier4Injection = await distillVoice(null, SYNTHETIC_CIPHER_PREFS, null, client);
+  const tier4Injection = await distillVoice(null, SYNTHETIC_CIPHER_PREFS, null, null, client);
   console.log(`[eval] Tier 4 (CIPHER only): ${countTokens(tier4Injection)} tokens`);
 
   // ─── Generate passages under each tier ──────────────────────

@@ -380,7 +380,10 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
   });
 
   router.post("/voice-guide/generate", async (req, res) => {
-    const { sampleIds, config } = req.body as { sampleIds: string[]; config?: Partial<PipelineConfig> };
+    const { sampleIds, config } = req.body as { sampleIds?: string[]; config?: Partial<PipelineConfig> };
+    if (!Array.isArray(sampleIds) || sampleIds.length === 0) {
+      return res.status(400).json({ error: "sampleIds must be a non-empty array" });
+    }
     const samples = writingSampleRepo.getWritingSamplesByIds(db, sampleIds);
     if (samples.length === 0) {
       console.warn("[data] No writing samples found for provided IDs");
