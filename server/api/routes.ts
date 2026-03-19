@@ -22,7 +22,7 @@ import * as voiceGuideRepo from "../db/repositories/voice-guide.js";
 import * as writingSampleRepo from "../db/repositories/writing-samples.js";
 import { inferBatchPreferences } from "../profile/cipher.js";
 import { runPipeline } from "../profile/pipeline.js";
-import { updateProjectGuide } from "../profile/projectGuide.js";
+import { distillVoice, updateProjectVoice } from "../profile/projectGuide.js";
 
 export function createApiRouter(db: Database.Database, anthropicClient?: Anthropic): Router {
   const router = Router();
@@ -491,6 +491,40 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
     res.json({ guide: guide ?? null });
   });
 
+  // Re-distill ring1Injection from all 3 sources. Called on startup to ensure
+  // any CIPHER preferences accumulated since last scene completion are reflected.
+  router.post("/projects/:projectId/voice/redistill", async (req, res) => {
+    const { projectId } = req.params;
+    if (!anthropicClient) {
+      return res.status(500).json({ error: "Anthropic client not configured" });
+    }
+    try {
+      const authorGuide = voiceGuideRepo.getVoiceGuide(db);
+      const projectGuide = projectVoiceGuideRepo.getProjectVoiceGuide(db, projectId);
+      const statements = preferenceStatementsRepo.listPreferenceStatements(db, projectId);
+      const cipherPrefs = statements.map((s) => s.statement);
+
+      // Skip if no sources at all
+      if (!authorGuide && cipherPrefs.length === 0 && !projectGuide) {
+        return res.json({ ring1Injection: "", skipped: true });
+      }
+
+      const ring1Injection = await distillVoice(authorGuide, cipherPrefs, projectGuide, anthropicClient);
+
+      if (authorGuide) {
+        authorGuide.ring1Injection = ring1Injection;
+        voiceGuideRepo.saveVoiceGuide(db, authorGuide);
+      }
+
+      console.log(`[data] Voice re-distilled for project=${projectId}`);
+      res.json({ ring1Injection });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error(`[data] Voice re-distill failed: ${message}`);
+      res.status(500).json({ error: message });
+    }
+  });
+
   router.post("/projects/:projectId/project-voice-guide/update", async (req, res) => {
     const { projectId } = req.params;
     const { sceneId, sceneText } = req.body as { sceneId: string; sceneText: string };
@@ -499,16 +533,28 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
     }
     req.setTimeout(600_000);
     try {
-      const existingGuide = projectVoiceGuideRepo.getProjectVoiceGuide(db, projectId);
+      // 1. Update project voice from the new scene
+      const existingProjectGuide = projectVoiceGuideRepo.getProjectVoiceGuide(db, projectId);
+      const projectGuide = await updateProjectVoice(existingProjectGuide, sceneText, sceneId, anthropicClient);
+      projectVoiceGuideRepo.saveProjectVoiceGuide(db, projectId, projectGuide);
+
+      // 2. Re-distill ring1Injection from all 3 sources
+      const authorGuide = voiceGuideRepo.getVoiceGuide(db);
       const statements = preferenceStatementsRepo.listPreferenceStatements(db, projectId);
-      const statementTexts = statements.map((s) => s.statement);
-      const guide = await updateProjectGuide(existingGuide, sceneText, sceneId, projectId, statementTexts, anthropicClient);
-      projectVoiceGuideRepo.saveProjectVoiceGuide(db, projectId, guide);
-      console.log(`[data] Project voice guide updated: project=${projectId} scene=${sceneId}`);
-      res.status(201).json(guide);
+      const cipherPrefs = statements.map((s) => s.statement);
+      const ring1Injection = await distillVoice(authorGuide, cipherPrefs, projectGuide, anthropicClient);
+
+      // 3. Store the distilled injection on the author guide (if it exists)
+      if (authorGuide) {
+        authorGuide.ring1Injection = ring1Injection;
+        voiceGuideRepo.saveVoiceGuide(db, authorGuide);
+      }
+
+      console.log(`[data] Voice updated: project=${projectId} scene=${sceneId}`);
+      res.status(201).json({ projectGuide, ring1Injection });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      console.error(`[data] Project voice guide update failed: ${message}`);
+      console.error(`[data] Voice update failed: ${message}`);
       res.status(500).json({ error: message });
     }
   });

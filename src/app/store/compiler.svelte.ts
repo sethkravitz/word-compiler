@@ -23,22 +23,9 @@ export function setupCompilerEffect(store: ProjectStore): void {
     try {
       const nextChunkNumber = store.activeSceneChunks.length;
 
-      // Combine author-level and project-level voice guides
-      let effectiveGuide: VoiceGuide | undefined = store.voiceGuide ?? undefined;
-      if (effectiveGuide && store.projectVoiceGuide?.ring1Injection) {
-        effectiveGuide = {
-          ...effectiveGuide,
-          ring1Injection:
-            effectiveGuide.ring1Injection +
-            "\n\n=== PROJECT-SPECIFIC VOICE ===\n" +
-            store.projectVoiceGuide.ring1Injection,
-        };
-      }
-      if (!effectiveGuide && store.projectVoiceGuide?.ring1Injection) {
-        effectiveGuide = {
-          ...store.projectVoiceGuide,
-        };
-      }
+      // Voice guide ring1Injection is pre-distilled from all sources
+      // (author voice + CIPHER preferences + project voice)
+      const effectiveGuide: VoiceGuide | undefined = store.voiceGuide ?? undefined;
 
       const result = compilePayload(
         bible,

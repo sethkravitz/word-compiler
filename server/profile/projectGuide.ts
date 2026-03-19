@@ -5,89 +5,184 @@ import { chunkDocument } from "../../src/profile/chunker.js";
 import { countTokens } from "../../src/tokens/index.js";
 import { analyzeChunks } from "./stage1.js";
 import { synthesizeDocument } from "./stage2.js";
-import { runDeltaUpdate } from "./delta.js";
 import { textCall } from "./llm.js";
 
-export async function updateProjectGuide(
+// ─── Project Voice: scene-by-scene in-domain analysis ────────────
+
+const SYNTHESIS_SYSTEM =
+  "You are a writing style analyst building an evolving understanding of a fiction project's voice from completed scenes.";
+
+/**
+ * Update the project voice summary by analyzing a completed scene
+ * and integrating it with the existing project voice (if any).
+ *
+ * This does NOT produce a ring1Injection — that happens in distillVoice(),
+ * which combines all three evidence sources.
+ */
+export async function updateProjectVoice(
   existingGuide: VoiceGuide | null,
   sceneText: string,
   sceneId: string,
-  projectId: string,
-  preferenceStatements: string[],
   client: Anthropic,
 ): Promise<VoiceGuide> {
   const config = createDefaultPipelineConfig();
   config.sourceDomain = "in_project";
   config.targetDomain = "in_project";
 
-  // Create a writing sample from the scene text
   const sample = createWritingSample(sceneId, "fiction", sceneText);
 
-  // Run Stages 1-2
-  console.log(`[projectGuide] Analyzing scene ${sceneId} (${sample.wordCount} words)`);
+  // Run Stages 1-2 on the new scene
+  console.log(`[projectVoice] Analyzing scene ${sceneId} (${sample.wordCount} words)`);
   const chunks = chunkDocument(sample, config);
   const chunkAnalyses = await analyzeChunks(sceneId, chunks, config, client);
   const docAnalysis = await synthesizeDocument(sample, chunkAnalyses, config, client);
 
-  let guide: VoiceGuide;
+  const sceneNumber = existingGuide ? existingGuide.corpusSize + 1 : 1;
+  console.log(`[projectVoice] Synthesizing project voice (scene ${sceneNumber})`);
 
-  if (existingGuide) {
-    // Delta-update existing guide
-    console.log(`[projectGuide] Delta-updating project guide from scene ${sceneId}`);
-    guide = await runDeltaUpdate(existingGuide, [docAnalysis], "in_project", config, client);
-  } else {
-    // First scene — create minimal guide from Stage 2 output
-    console.log(`[projectGuide] Creating initial project guide from scene ${sceneId}`);
-    guide = createEmptyVoiceGuide();
-    guide.version = "0.1.0";
-    guide.corpusSize = 1;
-    guide.domainsRepresented = ["in_project"];
-    guide.narrativeSummary = docAnalysis.rawSummary;
-    guide.updatedAt = new Date().toISOString();
-    guide.versionHistory = [
-      {
-        version: "0.1.0",
-        updatedAt: guide.updatedAt,
-        changeReason: `Initial project guide from scene ${sceneId}`,
-        changeSummary: `Created from ${docAnalysis.consistentFeatures?.length ?? 0} features.`,
-        confirmedFeatures: [],
-        contradictedFeatures: [],
-        newFeatures: (docAnalysis.consistentFeatures ?? []).map((f) => f.name),
-      },
-    ];
-  }
+  const narrativeSummary = await synthesizeProjectVoice(
+    existingGuide,
+    docAnalysis.rawSummary,
+    sceneNumber,
+    client,
+    config,
+  );
 
-  // Distill project-specific ring1Injection
-  guide.ring1Injection = await distillProjectInjection(guide, preferenceStatements, client, config);
+  const guide = existingGuide ? structuredClone(existingGuide) : createEmptyVoiceGuide();
+  const version = existingGuide ? bumpPatch(existingGuide.version) : "0.1.0";
+
+  guide.version = version;
+  guide.corpusSize = sceneNumber;
+  guide.domainsRepresented = ["in_project"];
+  guide.narrativeSummary = narrativeSummary;
+  guide.updatedAt = new Date().toISOString();
+  guide.versionHistory.push({
+    version,
+    updatedAt: guide.updatedAt,
+    changeReason: existingGuide ? `Updated from scene ${sceneId}` : `Initial project voice from scene ${sceneId}`,
+    changeSummary: `Synthesized from ${sceneNumber} scene${sceneNumber > 1 ? "s" : ""}.`,
+    confirmedFeatures: [],
+    contradictedFeatures: [],
+    newFeatures: [],
+  });
+
+  // No ring1Injection here — that's distillVoice()'s job
+  guide.ring1Injection = "";
+
+  console.log(`[projectVoice] v${version}: ${sceneNumber} scenes, ${countTokens(narrativeSummary)} tokens`);
   return guide;
 }
 
-async function distillProjectInjection(
-  guide: VoiceGuide,
-  preferenceStatements: string[],
+function bumpPatch(version: string): string {
+  const [major, minor, patch] = version.split(".").map(Number) as [number, number, number];
+  return `${major}.${minor}.${patch + 1}`;
+}
+
+async function synthesizeProjectVoice(
+  existingGuide: VoiceGuide | null,
+  newSceneAnalysis: string,
+  sceneNumber: number,
   client: Anthropic,
   config: PipelineConfig,
 ): Promise<string> {
-  const prefsBlock =
-    preferenceStatements.length > 0
-      ? `\n\nACCUMULATED EDIT PREFERENCES (from author's corrections):\n${preferenceStatements.map((s, i) => `${i + 1}. ${s}`).join("\n")}`
-      : "";
+  let prompt: string;
 
-  const prompt = `You have a project-level style analysis and accumulated author edit preferences. Distill into a compact writing instruction (150-200 tokens) for this specific project.
+  if (existingGuide) {
+    prompt = `You are maintaining a project voice summary that evolves as more scenes are completed.
 
-PROJECT ANALYSIS:
-${guide.narrativeSummary.slice(0, 2000)}
-${prefsBlock}
+EXISTING PROJECT VOICE (based on ${existingGuide.corpusSize} scene${existingGuide.corpusSize > 1 ? "s" : ""}):
+${existingGuide.narrativeSummary}
 
-Write direct commands for how to write THIS project. Focus on patterns specific to this work, not general writing advice. No preamble.`;
+NEW SCENE ANALYSIS (scene ${sceneNumber}):
+${newSceneAnalysis}
+
+Update the project voice summary by integrating what we learned from this new scene. Rules:
+- PRESERVE patterns from the existing summary that the new scene confirms or doesn't contradict
+- ADD new patterns the new scene reveals
+- If the new scene shows something different, note the variation — don't delete unless clearly wrong
+- Weight the existing summary more heavily — it represents ${existingGuide.corpusSize} scene${existingGuide.corpusSize > 1 ? "s" : ""} of evidence
+- Write as a cohesive voice summary, not a changelog
+
+3-5 paragraphs covering: core voice patterns, emotional handling, structural habits. No headers or metadata.`;
+  } else {
+    prompt = `Write an initial project voice summary based on the first completed scene.
+
+SCENE ANALYSIS:
+${newSceneAnalysis}
+
+Capture what we know so far about this project's voice. Be appropriately tentative — this is one scene. Note which patterns seem deliberate vs. scene-specific.
+
+3-5 paragraphs covering: emerging voice patterns, emotional handling, structural habits. No headers or metadata.`;
+  }
+
+  return textCall(client, config.stage5GuideModel, SYNTHESIS_SYSTEM, prompt);
+}
+
+// ─── Unified Distillation: combine all 3 evidence sources ────────
+
+const DISTILL_SYSTEM =
+  "You are a prompt engineer specializing in voice-matched prose generation. Produce the most compact, effective system message instruction possible.";
+
+/**
+ * Distill a single ring1Injection from all available evidence:
+ * 1. Author voice guide (out-of-domain baseline from writing samples)
+ * 2. CIPHER preferences (explicit author corrections, highest signal)
+ * 3. Project voice (in-domain scene analyses)
+ *
+ * Any source may be absent. The distillation adapts to what's available.
+ */
+export async function distillVoice(
+  authorGuide: VoiceGuide | null,
+  cipherPreferences: string[],
+  projectGuide: VoiceGuide | null,
+  client: Anthropic,
+): Promise<string> {
+  const sections: string[] = [];
+
+  if (authorGuide?.narrativeSummary) {
+    sections.push(`AUTHOR VOICE (from ${authorGuide.corpusSize} writing sample${authorGuide.corpusSize !== 1 ? "s" : ""}, out-of-domain):
+${authorGuide.narrativeSummary}`);
+  }
+
+  if (cipherPreferences.length > 0) {
+    sections.push(`AUTHOR EDIT PREFERENCES (explicit corrections to LLM prose — highest signal):
+${cipherPreferences.map((s, i) => `${i + 1}. ${s}`).join("\n")}`);
+  }
+
+  if (projectGuide?.narrativeSummary) {
+    sections.push(`PROJECT VOICE (from ${projectGuide.corpusSize} completed scene${projectGuide.corpusSize !== 1 ? "s" : ""}, in-domain):
+${projectGuide.narrativeSummary}`);
+  }
+
+  if (sections.length === 0) {
+    return "";
+  }
+
+  const prompt = `You have up to three sources of evidence about an author's writing voice. Distill them into a compact writing instruction (200-300 tokens) for an LLM system message.
+
+${sections.join("\n\n")}
+
+Priority order for conflicts:
+1. AUTHOR EDIT PREFERENCES (explicit corrections — the author literally changed this)
+2. PROJECT VOICE (in-domain evidence from their fiction)
+3. AUTHOR VOICE (out-of-domain baseline — valuable but may not fully transfer)
+
+The instruction should:
+- Be written as direct commands ("Write with...", "Avoid...", "When X, do Y...")
+- Capture the most distinctive patterns across all sources
+- Calibrate register explicitly
+- Be specific to THIS author, not generic writing advice
+- Be concise — every token counts in a system message
+
+Write ONLY the compact instruction. No preamble, no headers.`;
 
   const injection = await textCall(
     client,
-    config.stage5GuideModel,
-    "You are a prompt engineer. Produce a compact project-specific writing instruction.",
+    "claude-sonnet-4-5-20250929",
+    DISTILL_SYSTEM,
     prompt,
   );
 
-  console.log(`[projectGuide] Project ring1Injection: ${countTokens(injection)} tokens`);
+  console.log(`[distillVoice] ring1Injection: ${countTokens(injection)} tokens from ${sections.length} source${sections.length !== 1 ? "s" : ""}`);
   return injection;
 }

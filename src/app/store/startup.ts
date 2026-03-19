@@ -92,6 +92,20 @@ export async function loadProject(store: ProjectStore, projectId: string): Promi
       projectVoiceGuide,
     });
 
+    // Re-distill ring1Injection in background to pick up any CIPHER
+    // preferences that accumulated since the last scene completion.
+    if (voiceGuide) {
+      api
+        .apiRedistillVoice(projectId)
+        .then(({ ring1Injection, skipped }) => {
+          if (!skipped && ring1Injection && store.voiceGuide) {
+            store.setVoiceGuide({ ...store.voiceGuide, ring1Injection });
+            console.log("[startup] Voice re-distilled with latest CIPHER preferences");
+          }
+        })
+        .catch((err) => console.warn("[startup] Voice re-distill failed:", err));
+    }
+
     return "loaded";
   } catch (err) {
     store.setError(err instanceof Error ? err.message : String(err));

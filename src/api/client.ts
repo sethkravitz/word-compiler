@@ -332,14 +332,26 @@ export async function apiGetProjectVoiceGuide(projectId: string): Promise<VoiceG
   return data.guide;
 }
 
+export interface VoiceUpdateResult {
+  projectGuide: VoiceGuide;
+  ring1Injection: string;
+}
+
 export async function apiUpdateProjectVoiceGuide(
   projectId: string,
   sceneId: string,
   sceneText: string,
-): Promise<VoiceGuide> {
-  return fetchJson<VoiceGuide>(`${BASE}/projects/${projectId}/project-voice-guide/update`, {
+): Promise<VoiceUpdateResult> {
+  return fetchJson<VoiceUpdateResult>(`${BASE}/projects/${projectId}/project-voice-guide/update`, {
     method: "POST",
     body: JSON.stringify({ sceneId, sceneText }),
     signal: AbortSignal.timeout(600_000),
   });
+}
+
+export async function apiRedistillVoice(projectId: string): Promise<{ ring1Injection: string; skipped?: boolean }> {
+  return fetchJson<{ ring1Injection: string; skipped?: boolean }>(
+    `${BASE}/projects/${projectId}/voice/redistill`,
+    { method: "POST" },
+  );
 }
