@@ -318,13 +318,18 @@ export async function apiStoreSignificantEdit(
   return data.count;
 }
 
-export async function apiFireBatchCipher(projectId: string): Promise<PreferenceStatement | null> {
-  const data = await fetchJson<PreferenceStatement | { statement: null }>(
+export interface CipherBatchResult {
+  statement: PreferenceStatement | null;
+  ring1Injection?: string;
+}
+
+export async function apiFireBatchCipher(projectId: string): Promise<CipherBatchResult> {
+  const data = await fetchJson<CipherBatchResult | { statement: null }>(
     `${BASE}/projects/${projectId}/cipher/batch`,
     { method: "POST" },
   );
-  if ("statement" in data && data.statement === null) return null;
-  return data as PreferenceStatement;
+  if ("statement" in data && data.statement === null) return { statement: null };
+  return data as CipherBatchResult;
 }
 
 export async function apiGetProjectVoiceGuide(projectId: string): Promise<VoiceGuide | null> {

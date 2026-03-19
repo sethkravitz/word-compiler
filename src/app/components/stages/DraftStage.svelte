@@ -411,9 +411,14 @@ function handleUpdateChunk(index: number, changes: Partial<Chunk>) {
               .then((count) => {
                 if (count >= 10) {
                   console.log(`[cipher] ${count} significant edits — triggering batch CIPHER`);
-                  apiFireBatchCipher(store.project!.id).catch((err) =>
-                    console.warn("[cipher] Batch inference failed:", err),
-                  );
+                  apiFireBatchCipher(store.project!.id)
+                    .then(({ ring1Injection }) => {
+                      if (ring1Injection && store.voiceGuide) {
+                        store.setVoiceGuide({ ...store.voiceGuide, ring1Injection });
+                        console.log("[cipher] Voice re-distilled with new CIPHER preferences");
+                      }
+                    })
+                    .catch((err) => console.warn("[cipher] Batch inference failed:", err));
                 }
               })
               .catch((err) => console.warn("[cipher] Edit tracking failed:", err));

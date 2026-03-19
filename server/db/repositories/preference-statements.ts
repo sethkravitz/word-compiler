@@ -33,3 +33,11 @@ export function listPreferenceStatements(db: Database.Database, projectId: strin
     .all(projectId) as PreferenceStatementRow[];
   return rows.map(rowToStatement);
 }
+
+/** Read all CIPHER preferences across all projects — author-scoped for distillation. */
+export function listAllPreferenceStatements(db: Database.Database): PreferenceStatement[] {
+  const rows = db
+    .prepare("SELECT * FROM preference_statements ORDER BY created_at")
+    .all() as PreferenceStatementRow[];
+  return rows.map(rowToStatement);
+}

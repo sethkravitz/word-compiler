@@ -135,9 +135,15 @@ export async function distillVoice(
   authorGuide: VoiceGuide | null,
   cipherPreferences: string[],
   projectGuide: VoiceGuide | null,
+  currentInjection: string | null,
   client: Anthropic,
 ): Promise<string> {
   const sections: string[] = [];
+
+  if (currentInjection) {
+    sections.push(`CURRENT VOICE INSTRUCTION (the baseline — evolve this, don't replace it):
+${currentInjection}`);
+  }
 
   if (authorGuide?.narrativeSummary) {
     sections.push(`AUTHOR VOICE (from ${authorGuide.corpusSize} writing sample${authorGuide.corpusSize !== 1 ? "s" : ""}, out-of-domain):
@@ -158,9 +164,16 @@ ${projectGuide.narrativeSummary}`);
     return "";
   }
 
-  const prompt = `You have up to three sources of evidence about an author's writing voice. Distill them into a compact writing instruction (200-300 tokens) for an LLM system message.
+  const prompt = `You have an existing voice instruction and new evidence about the author's writing. Update the instruction incrementally — preserve what's working and integrate new signals.
 
 ${sections.join("\n\n")}
+
+Rules:
+- Start from the CURRENT VOICE INSTRUCTION as your baseline
+- Integrate new evidence gradually — small refinements, not wholesale rewrites
+- A single scene or CIPHER batch should shift the instruction slightly, not transform it
+- Only drop an existing directive if new evidence clearly contradicts it across multiple sources
+- The instruction should feel stable over time, evolving slowly as evidence accumulates
 
 Priority order for conflicts:
 1. AUTHOR EDIT PREFERENCES (explicit corrections — the author literally changed this)

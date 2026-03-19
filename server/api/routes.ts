@@ -478,7 +478,20 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
         edits.map((e) => e.id),
       );
       console.log(`[data] CIPHER batch: ${edits.length} edits → statement ${statement.id}`);
-      res.status(201).json(statement);
+
+      // Re-distill ring1Injection now that we have new CIPHER preferences
+      const authorGuide = voiceGuideRepo.getVoiceGuide(db);
+      const projectGuide = projectVoiceGuideRepo.getProjectVoiceGuide(db, projectId);
+      const allStatements = preferenceStatementsRepo.listAllPreferenceStatements(db);
+      const cipherPrefs = allStatements.map((s) => s.statement);
+      const ring1Injection = await distillVoice(authorGuide, cipherPrefs, projectGuide, authorGuide?.ring1Injection ?? null, anthropicClient);
+      if (authorGuide) {
+        authorGuide.ring1Injection = ring1Injection;
+        voiceGuideRepo.saveVoiceGuide(db, authorGuide);
+      }
+      console.log(`[data] Voice re-distilled after CIPHER batch`);
+
+      res.status(201).json({ statement, ring1Injection });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
       console.error(`[data] CIPHER batch failed: ${message}`);
@@ -501,7 +514,7 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
     try {
       const authorGuide = voiceGuideRepo.getVoiceGuide(db);
       const projectGuide = projectVoiceGuideRepo.getProjectVoiceGuide(db, projectId);
-      const statements = preferenceStatementsRepo.listPreferenceStatements(db, projectId);
+      const statements = preferenceStatementsRepo.listAllPreferenceStatements(db);
       const cipherPrefs = statements.map((s) => s.statement);
 
       // Skip if no sources at all
@@ -509,7 +522,7 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
         return res.json({ ring1Injection: "", skipped: true });
       }
 
-      const ring1Injection = await distillVoice(authorGuide, cipherPrefs, projectGuide, anthropicClient);
+      const ring1Injection = await distillVoice(authorGuide, cipherPrefs, projectGuide, authorGuide?.ring1Injection ?? null, anthropicClient);
 
       if (authorGuide) {
         authorGuide.ring1Injection = ring1Injection;
@@ -540,9 +553,9 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
 
       // 2. Re-distill ring1Injection from all 3 sources
       const authorGuide = voiceGuideRepo.getVoiceGuide(db);
-      const statements = preferenceStatementsRepo.listPreferenceStatements(db, projectId);
+      const statements = preferenceStatementsRepo.listAllPreferenceStatements(db);
       const cipherPrefs = statements.map((s) => s.statement);
-      const ring1Injection = await distillVoice(authorGuide, cipherPrefs, projectGuide, anthropicClient);
+      const ring1Injection = await distillVoice(authorGuide, cipherPrefs, projectGuide, authorGuide?.ring1Injection ?? null, anthropicClient);
 
       // 3. Store the distilled injection on the author guide (if it exists)
       if (authorGuide) {
