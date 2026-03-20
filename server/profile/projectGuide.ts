@@ -164,7 +164,10 @@ ${projectGuide.narrativeSummary}`);
     return "";
   }
 
-  const prompt = `You have an existing voice instruction and new evidence about the author's writing. Update the instruction incrementally — preserve what's working and integrate new signals.
+  const isIncremental = !!currentInjection;
+
+  const prompt = isIncremental
+    ? `You have an existing voice instruction and new evidence about the author's writing. Update the instruction incrementally — preserve what's working and integrate new signals.
 
 ${sections.join("\n\n")}
 
@@ -173,8 +176,12 @@ Rules:
 - Integrate new evidence gradually — small refinements, not wholesale rewrites
 - A single scene or CIPHER batch should shift the instruction slightly, not transform it
 - Only drop an existing directive if new evidence clearly contradicts it across multiple sources
-- The instruction should feel stable over time, evolving slowly as evidence accumulates
+- The instruction should feel stable over time, evolving slowly as evidence accumulates`
+    : `Distill the following evidence about an author's writing voice into a compact writing instruction (200-300 tokens) for an LLM system message.
 
+${sections.join("\n\n")}`;
+
+  const sharedRules = `
 Priority order for conflicts:
 1. AUTHOR EDIT PREFERENCES (explicit corrections — the author literally changed this)
 2. PROJECT VOICE (in-domain evidence from their fiction)
@@ -189,7 +196,7 @@ The instruction should:
 
 Write ONLY the compact instruction. No preamble, no headers.`;
 
-  const injection = await textCall(client, "claude-sonnet-4-5-20250929", DISTILL_SYSTEM, prompt);
+  const injection = await textCall(client, "claude-sonnet-4-5-20250929", DISTILL_SYSTEM, prompt + sharedRules);
 
   console.log(
     `[distillVoice] ring1Injection: ${countTokens(injection)} tokens from ${sections.length} source${sections.length !== 1 ? "s" : ""}`,
