@@ -1,5 +1,13 @@
 import type {
+  PipelineConfig,
+  PreferenceStatement,
+  VoiceGuide,
+  VoiceGuideVersion,
+  WritingSample,
+} from "@/profile/types.js";
+import type {
   AuditFlag,
+  AuditStats,
   Bible,
   ChapterArc,
   Chunk,
@@ -171,14 +179,7 @@ export function apiResolveAuditFlag(id: string, action: string, wasActionable: b
   });
 }
 
-export interface AuditStats {
-  total: number;
-  resolved: number;
-  actionable: number;
-  dismissed: number;
-  signalToNoise: number;
-  byCategory: Record<string, { total: number; actionable: number }>;
-}
+export type { AuditStats };
 
 export function apiGetAuditStats(sceneId: string): Promise<AuditStats> {
   return fetchJson(`${BASE}/scenes/${sceneId}/audit-stats`);
@@ -258,5 +259,102 @@ export function apiUpdateProfileAdjustmentStatus(id: string, status: "accepted" 
   return fetchJson(`${BASE}/profile-adjustments/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
+  });
+}
+
+// ─── Voice Guide ─────────────────────────────────────
+
+export async function apiGetVoiceGuide(): Promise<VoiceGuide | null> {
+  const data = await fetchJson<{ guide: VoiceGuide | null }>(`${BASE}/voice-guide`);
+  return data.guide;
+}
+
+export async function apiGenerateVoiceGuide(
+  sampleIds: string[],
+  config?: Partial<PipelineConfig>,
+): Promise<VoiceGuide> {
+  return fetchJson<VoiceGuide>(`${BASE}/voice-guide/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sampleIds, config }),
+    signal: AbortSignal.timeout(600_000),
+  });
+}
+
+export async function apiListVoiceGuideVersions(): Promise<VoiceGuideVersion[]> {
+  return fetchJson<VoiceGuideVersion[]>(`${BASE}/voice-guide/versions`);
+}
+
+// ─── Writing Samples ─────────────────────────────────
+
+export function apiListWritingSamples(): Promise<WritingSample[]> {
+  return fetchJson<WritingSample[]>(`${BASE}/writing-samples`);
+}
+
+export function apiCreateWritingSample(filename: string | null, domain: string, text: string): Promise<WritingSample> {
+  return fetchJson<WritingSample>(`${BASE}/writing-samples`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filename, domain, text }),
+  });
+}
+
+export async function apiDeleteWritingSample(id: string): Promise<void> {
+  await fetch(`${BASE}/writing-samples/${id}`, { method: "DELETE" });
+}
+
+// ─── Project Voice Learning ─────────────────────────
+
+export async function apiStoreSignificantEdit(
+  projectId: string,
+  chunkId: string,
+  originalText: string,
+  editedText: string,
+): Promise<number> {
+  const data = await fetchJson<{ count: number }>(`${BASE}/projects/${projectId}/significant-edits`, {
+    method: "POST",
+    body: JSON.stringify({ chunkId, originalText, editedText }),
+  });
+  return data.count;
+}
+
+export interface CipherBatchResult {
+  statement: PreferenceStatement | null;
+  ring1Injection?: string;
+}
+
+export async function apiFireBatchCipher(projectId: string): Promise<CipherBatchResult> {
+  const data = await fetchJson<CipherBatchResult | { statement: null }>(`${BASE}/projects/${projectId}/cipher/batch`, {
+    method: "POST",
+  });
+  if ("statement" in data && data.statement === null) return { statement: null };
+  return data as CipherBatchResult;
+}
+
+export async function apiGetProjectVoiceGuide(projectId: string): Promise<VoiceGuide | null> {
+  const data = await fetchJson<{ guide: VoiceGuide | null }>(`${BASE}/projects/${projectId}/project-voice-guide`);
+  return data.guide;
+}
+
+export interface VoiceUpdateResult {
+  projectGuide: VoiceGuide;
+  ring1Injection: string;
+}
+
+export async function apiUpdateProjectVoiceGuide(
+  projectId: string,
+  sceneId: string,
+  sceneText: string,
+): Promise<VoiceUpdateResult> {
+  return fetchJson<VoiceUpdateResult>(`${BASE}/projects/${projectId}/project-voice-guide/update`, {
+    method: "POST",
+    body: JSON.stringify({ sceneId, sceneText }),
+    signal: AbortSignal.timeout(600_000),
+  });
+}
+
+export async function apiRedistillVoice(projectId: string): Promise<{ ring1Injection: string; skipped?: boolean }> {
+  return fetchJson<{ ring1Injection: string; skipped?: boolean }>(`${BASE}/projects/${projectId}/voice/redistill`, {
+    method: "POST",
   });
 }

@@ -1,3 +1,4 @@
+import { apiUpdateProjectVoiceGuide } from "../../api/client.js";
 import { checkAuditResolutionGate, checkSceneCompletionGate } from "../../gates/index.js";
 import { buildContinuousText, findChunksForRange } from "../../review/refine.js";
 import type { ChunkBoundary } from "../../review/refineTypes.js";
@@ -205,6 +206,27 @@ export function createCommands(store: ProjectStore, actions?: ApiActions) {
       } else {
         store.completeScene(sceneId);
       }
+
+      // After successful scene completion, update project voice guide
+      const sceneChunks = store.sceneChunks[sceneId] ?? [];
+      const sceneText = sceneChunks
+        .map((c) => getCanonicalText(c))
+        .filter((t) => t.trim())
+        .join("\n\n");
+
+      if (sceneText.trim() && store.project) {
+        apiUpdateProjectVoiceGuide(store.project.id, sceneId, sceneText)
+          .then(({ projectGuide, ring1Injection }) => {
+            store.setProjectVoiceGuide(projectGuide);
+            // Update the author voice guide's ring1Injection (re-distilled from all 3 sources)
+            if (store.voiceGuide && ring1Injection) {
+              store.setVoiceGuide({ ...store.voiceGuide, ring1Injection });
+            }
+            console.log(`[profile] Voice updated: project v${projectGuide.version}`);
+          })
+          .catch((err) => console.warn("[profile] Voice update failed:", err));
+      }
+
       return success();
     } catch (err) {
       return failure(handleError(err));

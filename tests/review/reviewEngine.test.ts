@@ -15,6 +15,7 @@ function makeContext(overrides: Partial<ReviewContext> = {}): ReviewContext {
     activeVoices: [],
     povRules: null,
     subtextPolicy: "",
+    editingInstructions: "",
     ...overrides,
   };
 }

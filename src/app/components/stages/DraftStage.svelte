@@ -1,5 +1,6 @@
 <script lang="ts">
 import { untrack } from "svelte";
+import { apiFireBatchCipher, apiStoreSignificantEdit } from "../../../api/client.js";
 import { checkChunkReviewGate, checkCompileGate, checkScenePlanGate } from "../../../gates/index.js";
 import { analyzeEdits } from "../../../learner/diff.js";
 import { applyProposal, type BibleProposal } from "../../../learner/proposals.js";
@@ -7,6 +8,7 @@ import { generateTuningProposals, type TuningProposal } from "../../../learner/t
 import { callLLM } from "../../../llm/client.js";
 import { computeStyleDriftFromProse } from "../../../metrics/styleDrift.js";
 import { measureVoiceSeparability } from "../../../metrics/voiceSeparability.js";
+import { shouldTriggerCipher } from "../../../profile/editFilter.js";
 import { buildReviewContext } from "../../../review/contextBuilder.js";
 import type { ChunkView, EditorialAnnotation, LLMReviewClient, ReviewOrchestrator } from "../../../review/index.js";
 import {
@@ -121,12 +123,13 @@ $effect(() => {
   dismissed = loadDismissed();
 });
 
-// Recreate orchestrator when bible, scene, or version changes
+// Recreate orchestrator when bible, scene, voice guide, or version changes
 $effect(() => {
   // Read dependencies explicitly
   const bible = store.bible;
   const scenePlan = store.activeScenePlan;
   const _version = orchestratorVersion;
+  const _voiceGuide = store.voiceGuide;
 
   // Cleanup previous orchestrator — untrack to avoid read→write loop
   untrack(() => {
@@ -170,6 +173,7 @@ $effect(() => {
     (reviewing) => {
       reviewingChunks = reviewing;
     },
+    store.voiceGuide?.editingInstructions || undefined,
   );
 });
 
@@ -267,7 +271,11 @@ async function handleRequestSuggestion(annotationId: string, feedback: string): 
   const chunk = chunks[targetChunkIndex];
   if (!chunk || !store.bible || !store.activeScenePlan) return null;
   const chunkText = getCanonicalText(chunk);
-  const context = buildReviewContext(store.bible, store.activeScenePlan);
+  const context = buildReviewContext(
+    store.bible,
+    store.activeScenePlan,
+    store.voiceGuide?.editingInstructions || undefined,
+  );
 
   // 3. Build prompt and call LLM
   const { systemPrompt, userPrompt } = buildSuggestionRequestPrompt(context, targetAnnotation, chunkText, feedback);
@@ -393,6 +401,28 @@ function handleUpdateChunk(index: number, changes: Partial<Chunk>) {
       setTimeout(() => {
         commands.persistChunk(sceneId, index);
         editDebounceTimers.delete(key);
+
+        // After persistChunk, track significant edits for CIPHER
+        const chunk = store.activeSceneChunks[index];
+        if (chunk?.generatedText && chunk.editedText && store.project) {
+          if (shouldTriggerCipher(chunk.generatedText, chunk.editedText)) {
+            apiStoreSignificantEdit(store.project.id, chunk.id, chunk.generatedText, chunk.editedText)
+              .then((count) => {
+                if (count >= 10) {
+                  console.log(`[cipher] ${count} significant edits — triggering batch CIPHER`);
+                  apiFireBatchCipher(store.project!.id)
+                    .then(({ ring1Injection }) => {
+                      if (ring1Injection && store.voiceGuide) {
+                        store.setVoiceGuide({ ...store.voiceGuide, ring1Injection });
+                        console.log("[cipher] Voice re-distilled with new CIPHER preferences");
+                      }
+                    })
+                    .catch((err) => console.warn("[cipher] Batch inference failed:", err));
+                }
+              })
+              .catch((err) => console.warn("[cipher] Edit tracking failed:", err));
+          }
+        }
       }, 500),
     );
   } else {

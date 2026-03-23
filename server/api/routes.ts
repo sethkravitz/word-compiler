@@ -1,5 +1,9 @@
+import type Anthropic from "@anthropic-ai/sdk";
 import type Database from "better-sqlite3";
 import { Router } from "express";
+import type { PipelineConfig } from "../../src/profile/types.js";
+import { createWritingSample as createSample } from "../../src/profile/types.js";
+import { generateId } from "../../src/types/utils.js";
 import * as auditFlags from "../db/repositories/audit-flags.js";
 import * as bibles from "../db/repositories/bibles.js";
 import * as chapterArcs from "../db/repositories/chapter-arcs.js";
@@ -8,11 +12,19 @@ import * as compilationLogs from "../db/repositories/compilation-logs.js";
 import * as editPatterns from "../db/repositories/edit-patterns.js";
 import * as learnedPatterns from "../db/repositories/learned-patterns.js";
 import * as narrativeIRs from "../db/repositories/narrative-irs.js";
+import * as preferenceStatementsRepo from "../db/repositories/preference-statements.js";
 import * as profileAdjustments from "../db/repositories/profile-adjustments.js";
+import * as projectVoiceGuideRepo from "../db/repositories/project-voice-guide.js";
 import * as projects from "../db/repositories/projects.js";
 import * as scenePlans from "../db/repositories/scene-plans.js";
+import * as significantEditsRepo from "../db/repositories/significant-edits.js";
+import * as voiceGuideRepo from "../db/repositories/voice-guide.js";
+import * as writingSampleRepo from "../db/repositories/writing-samples.js";
+import { inferBatchPreferences } from "../profile/cipher.js";
+import { runPipeline } from "../profile/pipeline.js";
+import { distillVoice, updateProjectVoice } from "../profile/projectGuide.js";
 
-export function createApiRouter(db: Database.Database): Router {
+export function createApiRouter(db: Database.Database, anthropicClient?: Anthropic): Router {
   const router = Router();
 
   /** Ensure a project row exists (no-op if it already does). */
@@ -127,6 +139,9 @@ export function createApiRouter(db: Database.Database): Router {
   });
 
   router.put("/chapters/:id", (req, res) => {
+    if (req.body.id && req.body.id !== req.params.id) {
+      return res.status(400).json({ error: "URL id and body id do not match" });
+    }
     const arc = chapterArcs.updateChapterArc(db, req.body);
     console.log(`[data] Updated chapter arc: ${req.params.id}`);
     res.json(arc);
@@ -155,6 +170,9 @@ export function createApiRouter(db: Database.Database): Router {
   });
 
   router.put("/scenes/:id", (req, res) => {
+    if (req.body.id && req.body.id !== req.params.id) {
+      return res.status(400).json({ error: "URL id and body id do not match" });
+    }
     const updated = scenePlans.updateScenePlan(db, req.body);
     console.log(`[data] Updated scene plan: ${req.params.id}`);
     res.json(updated);
@@ -191,6 +209,9 @@ export function createApiRouter(db: Database.Database): Router {
   });
 
   router.put("/chunks/:id", (req, res) => {
+    if (req.body.id && req.body.id !== req.params.id) {
+      return res.status(400).json({ error: "URL id and body id do not match" });
+    }
     const chunk = chunks.updateChunk(db, req.body);
     console.log(`[data] Updated chunk: ${req.params.id} (fields: ${Object.keys(req.body).join(", ")})`);
     res.json(chunk);
@@ -255,6 +276,9 @@ export function createApiRouter(db: Database.Database): Router {
   });
 
   router.put("/scenes/:sceneId/ir", (req, res) => {
+    if (req.body.sceneId && req.body.sceneId !== req.params.sceneId) {
+      return res.status(400).json({ error: "URL sceneId and body sceneId do not match" });
+    }
     const ir = narrativeIRs.updateNarrativeIR(db, req.body);
     console.log(`[data] Updated narrative IR: scene=${req.params.sceneId}`);
     res.json(ir);
@@ -355,6 +379,230 @@ export function createApiRouter(db: Database.Database): Router {
     }
     console.log(`[data] Profile adjustment ${req.params.id} status → ${req.body.status}`);
     res.json({ ok: true });
+  });
+
+  // ─── Voice Guide ───────────────────────────────────
+
+  router.get("/voice-guide", (_req, res) => {
+    const guide = voiceGuideRepo.getVoiceGuide(db);
+    if (!guide) {
+      return res.json({ guide: null });
+    }
+    res.json({ guide });
+  });
+
+  router.post("/voice-guide/generate", async (req, res) => {
+    const { sampleIds, config } = req.body as { sampleIds?: string[]; config?: Partial<PipelineConfig> };
+    if (!Array.isArray(sampleIds) || sampleIds.length === 0) {
+      return res.status(400).json({ error: "sampleIds must be a non-empty array" });
+    }
+    const samples = writingSampleRepo.getWritingSamplesByIds(db, sampleIds);
+    if (samples.length === 0) {
+      console.warn("[data] No writing samples found for provided IDs");
+      return res.status(404).json({ error: "No writing samples found" });
+    }
+    if (!anthropicClient) {
+      console.warn("[data] Anthropic client not available for voice guide generation");
+      return res.status(500).json({ error: "Anthropic client not configured" });
+    }
+    req.setTimeout(600_000);
+    try {
+      const { createDefaultPipelineConfig } = await import("../../src/profile/types.js");
+      const mergedConfig: PipelineConfig = { ...createDefaultPipelineConfig(), ...config };
+      console.log(`[data] Generating voice guide from ${samples.length} samples`);
+      const guide = await runPipeline(samples, mergedConfig, anthropicClient);
+      voiceGuideRepo.saveVoiceGuide(db, guide);
+      voiceGuideRepo.saveVoiceGuideVersion(db, guide);
+      console.log(`[data] Voice guide generated: version=${guide.version}`);
+      res.status(201).json(guide);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error(`[data] Voice guide generation failed: ${message}`);
+      res.status(500).json({ error: message });
+    }
+  });
+
+  router.get("/voice-guide/versions", (_req, res) => {
+    res.json(voiceGuideRepo.listVoiceGuideVersions(db));
+  });
+
+  // ─── Writing Samples ───────────────────────────────
+
+  router.get("/writing-samples", (_req, res) => {
+    res.json(writingSampleRepo.listWritingSamples(db));
+  });
+
+  router.post("/writing-samples", (req, res) => {
+    const { filename, domain, text } = req.body as { filename?: string; domain: string; text: string };
+    const sample = createSample(filename ?? null, domain, text);
+    const created = writingSampleRepo.createWritingSampleRecord(db, sample);
+    console.log(`[data] Created writing sample: ${created.id} domain=${domain} words=${created.wordCount}`);
+    res.status(201).json(created);
+  });
+
+  router.delete("/writing-samples/:id", (req, res) => {
+    const deleted = writingSampleRepo.deleteWritingSample(db, req.params.id);
+    if (!deleted) {
+      console.warn(`[data] Writing sample not found for delete: ${req.params.id}`);
+      return res.status(404).json({ error: "Writing sample not found" });
+    }
+    console.log(`[data] Deleted writing sample: ${req.params.id}`);
+    res.status(204).send();
+  });
+
+  // ─── Project Voice Learning ───────────────────────
+
+  router.post("/projects/:projectId/significant-edits", (req, res) => {
+    const { projectId } = req.params;
+    const { chunkId, originalText, editedText } = req.body as {
+      chunkId: string;
+      originalText: string;
+      editedText: string;
+    };
+    ensureProject(projectId);
+    const edit = {
+      id: generateId(),
+      projectId,
+      chunkId,
+      originalText,
+      editedText,
+      processed: false,
+      createdAt: new Date().toISOString(),
+    };
+    significantEditsRepo.createSignificantEdit(db, edit);
+    const count = significantEditsRepo.countUnprocessedEdits(db, projectId);
+    console.log(`[data] Created significant edit for chunk=${chunkId} project=${projectId} unprocessed=${count}`);
+    res.status(201).json({ count });
+  });
+
+  router.post("/projects/:projectId/cipher/batch", async (req, res) => {
+    const { projectId } = req.params;
+    const edits = significantEditsRepo.listUnprocessedEdits(db, projectId);
+    if (edits.length === 0) {
+      return res.json({ statement: null });
+    }
+    if (!anthropicClient) {
+      return res.status(500).json({ error: "Anthropic client not configured" });
+    }
+    try {
+      const mapped = edits.map((e) => ({ original: e.originalText, edited: e.editedText }));
+      const statement = await inferBatchPreferences(anthropicClient, projectId, mapped);
+      preferenceStatementsRepo.createPreferenceStatement(db, statement);
+      significantEditsRepo.markEditsProcessed(
+        db,
+        edits.map((e) => e.id),
+      );
+      console.log(`[data] CIPHER batch: ${edits.length} edits → statement ${statement.id}`);
+
+      // Re-distill ring1Injection now that we have new CIPHER preferences
+      const authorGuide = voiceGuideRepo.getVoiceGuide(db);
+      const projectGuide = projectVoiceGuideRepo.getProjectVoiceGuide(db, projectId);
+      const allStatements = preferenceStatementsRepo.listAllPreferenceStatements(db);
+      const cipherPrefs = allStatements.map((s) => s.statement);
+      const ring1Injection = await distillVoice(
+        authorGuide,
+        cipherPrefs,
+        projectGuide,
+        authorGuide?.ring1Injection ?? null,
+        anthropicClient,
+      );
+      if (authorGuide) {
+        authorGuide.ring1Injection = ring1Injection;
+        voiceGuideRepo.saveVoiceGuide(db, authorGuide);
+      }
+      console.log(`[data] Voice re-distilled after CIPHER batch`);
+
+      res.status(201).json({ statement, ring1Injection });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error(`[data] CIPHER batch failed: ${message}`);
+      res.status(500).json({ error: message });
+    }
+  });
+
+  router.get("/projects/:projectId/project-voice-guide", (req, res) => {
+    const guide = projectVoiceGuideRepo.getProjectVoiceGuide(db, req.params.projectId);
+    res.json({ guide: guide ?? null });
+  });
+
+  // Re-distill ring1Injection from all 3 sources. Called on startup to ensure
+  // any CIPHER preferences accumulated since last scene completion are reflected.
+  router.post("/projects/:projectId/voice/redistill", async (req, res) => {
+    const { projectId } = req.params;
+    if (!anthropicClient) {
+      return res.status(500).json({ error: "Anthropic client not configured" });
+    }
+    try {
+      const authorGuide = voiceGuideRepo.getVoiceGuide(db);
+      const projectGuide = projectVoiceGuideRepo.getProjectVoiceGuide(db, projectId);
+      const statements = preferenceStatementsRepo.listAllPreferenceStatements(db);
+      const cipherPrefs = statements.map((s) => s.statement);
+
+      // Skip if no sources at all
+      if (!authorGuide && cipherPrefs.length === 0 && !projectGuide) {
+        return res.json({ ring1Injection: "", skipped: true });
+      }
+
+      const ring1Injection = await distillVoice(
+        authorGuide,
+        cipherPrefs,
+        projectGuide,
+        authorGuide?.ring1Injection ?? null,
+        anthropicClient,
+      );
+
+      if (authorGuide) {
+        authorGuide.ring1Injection = ring1Injection;
+        voiceGuideRepo.saveVoiceGuide(db, authorGuide);
+      }
+
+      console.log(`[data] Voice re-distilled for project=${projectId}`);
+      res.json({ ring1Injection });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error(`[data] Voice re-distill failed: ${message}`);
+      res.status(500).json({ error: message });
+    }
+  });
+
+  router.post("/projects/:projectId/project-voice-guide/update", async (req, res) => {
+    const { projectId } = req.params;
+    const { sceneId, sceneText } = req.body as { sceneId: string; sceneText: string };
+    if (!anthropicClient) {
+      return res.status(500).json({ error: "Anthropic client not configured" });
+    }
+    req.setTimeout(600_000);
+    try {
+      // 1. Update project voice from the new scene
+      const existingProjectGuide = projectVoiceGuideRepo.getProjectVoiceGuide(db, projectId);
+      const projectGuide = await updateProjectVoice(existingProjectGuide, sceneText, sceneId, anthropicClient);
+      projectVoiceGuideRepo.saveProjectVoiceGuide(db, projectId, projectGuide);
+
+      // 2. Re-distill ring1Injection from all 3 sources
+      const authorGuide = voiceGuideRepo.getVoiceGuide(db);
+      const statements = preferenceStatementsRepo.listAllPreferenceStatements(db);
+      const cipherPrefs = statements.map((s) => s.statement);
+      const ring1Injection = await distillVoice(
+        authorGuide,
+        cipherPrefs,
+        projectGuide,
+        authorGuide?.ring1Injection ?? null,
+        anthropicClient,
+      );
+
+      // 3. Store the distilled injection on the author guide (if it exists)
+      if (authorGuide) {
+        authorGuide.ring1Injection = ring1Injection;
+        voiceGuideRepo.saveVoiceGuide(db, authorGuide);
+      }
+
+      console.log(`[data] Voice updated: project=${projectId} scene=${sceneId}`);
+      res.status(201).json({ projectGuide, ring1Injection });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error(`[data] Voice update failed: ${message}`);
+      res.status(500).json({ error: message });
+    }
   });
 
   return router;

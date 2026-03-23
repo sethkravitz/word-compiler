@@ -14,6 +14,7 @@ import DraftStage from "./components/stages/DraftStage.svelte";
 import EditStage from "./components/stages/EditStage.svelte";
 import ExportStage from "./components/stages/ExportStage.svelte";
 import PlanStage from "./components/stages/PlanStage.svelte";
+import VoiceProfilePanel from "./components/VoiceProfilePanel.svelte";
 import WorkflowRail from "./components/WorkflowRail.svelte";
 import { Button, ErrorBanner, Input, Select } from "./primitives/index.js";
 import {
@@ -311,6 +312,9 @@ function exportState() {
         onCreateProject={handleCreateProjectFromList}
         onTitleChange={(t) => { newProjectTitle = t; }}
       />
+    {/if}
+    {#if startupStatus === "no-projects" || startupStatus === "multiple-projects"}
+      <VoiceProfilePanel />
     {/if}
   </div>
 {:else}
