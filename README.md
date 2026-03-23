@@ -62,7 +62,7 @@ pnpm dev:all    # Starts frontend (localhost:5173) + API server (localhost:3001)
 5. **Complete** — Mark scenes done, extract narrative IR for cross-scene analysis
 6. **Export** — Output to markdown or plaintext
 
-See [docs/workflow.md](docs/workflow.md) for the full workflow guide.
+See the [Quickstart Guide](docs/quickstart.md) for a detailed walkthrough, or [docs/workflow.md](docs/workflow.md) for the full workflow reference.
 
 ## Development
 
