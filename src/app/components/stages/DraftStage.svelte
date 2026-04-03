@@ -531,6 +531,7 @@ async function handleUpdateIR(ir: NarrativeIR) {
         {chunkAnnotations}
         {reviewingChunks}
         onGenerate={onGenerate}
+        onCancelGeneration={() => store.cancelGeneration()}
         onUpdateChunk={handleUpdateChunk}
         onRemoveChunk={handleRemoveChunk}
         onDestroyChunk={handleDestroyChunk}

@@ -49,7 +49,7 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
     await commands.saveAuditFlags(flags);
   }
 
-  /** Stream a chunk and return the result, or null if the stream failed or was cancelled. */
+  /** Stream a chunk and return the result, or null if the stream failed. Abort throws. */
   async function streamChunk(
     sceneId: string,
     chunkIndex: number,
@@ -118,17 +118,23 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
 
     try {
       const result = await streamChunk(sceneId, chunkIndex);
-      if (result) await persistChunkAndAudit(sceneId, chunkIndex, pendingChunk, result.text);
+      if (result) {
+        await persistChunkAndAudit(sceneId, chunkIndex, pendingChunk, result.text);
+      } else {
+        // Stream failed — remove the pending chunk
+        store.removeChunkForScene(sceneId, chunkIndex);
+      }
     } catch (err) {
-      handleGenerationError(err);
+      // Remove pending chunk on abort or unexpected error
+      store.removeChunkForScene(sceneId, chunkIndex);
+      if (!isAbortError(err)) store.setError(err instanceof Error ? err.message : "Generation failed");
     } finally {
       store.setGenerating(false);
     }
   }
 
-  function handleGenerationError(err: unknown) {
-    if (err instanceof DOMException && err.name === "AbortError") return;
-    store.setError(err instanceof Error ? err.message : "Generation failed");
+  function isAbortError(err: unknown): boolean {
+    return err instanceof DOMException && err.name === "AbortError";
   }
 
   async function runAuditManual(pinnedSceneId?: string) {
