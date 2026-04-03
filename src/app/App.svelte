@@ -427,7 +427,7 @@ function exportState() {
         <div class="stage-crash">
           <h3>Something went wrong</h3>
           <p>{err instanceof Error ? err.message : "An unexpected error occurred."}</p>
-          <Button onclick={reset}>Try Again</Button>
+          <Button onclick={() => { store.setError(null); reset(); }}>Try Again</Button>
         </div>
       {/snippet}
     </svelte:boundary>
