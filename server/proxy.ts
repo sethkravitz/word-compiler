@@ -6,7 +6,12 @@ import { getDatabase } from "./db/connection.js";
 import { errorHandler, requestLogger } from "./middleware.js";
 
 const app = express();
-app.use(cors());
+const DEFAULT_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"];
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || DEFAULT_ORIGINS,
+  }),
+);
 app.use(express.json({ limit: "5mb" }));
 app.use(requestLogger);
 
@@ -192,6 +197,7 @@ app.use(errorHandler);
 export { app };
 
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || "127.0.0.1";
 if (process.env.NODE_ENV !== "test") {
   process.on("uncaughtException", (err) => {
     console.error("[fatal] Uncaught exception:", err);
@@ -202,7 +208,8 @@ if (process.env.NODE_ENV !== "test") {
     process.exit(1);
   });
 
-  app.listen(PORT, () => {
-    console.log(`Proxy listening on http://localhost:${PORT}`);
+  app.listen(Number(PORT), HOST, () => {
+    const displayHost = HOST === "0.0.0.0" || HOST === "::" ? "localhost" : HOST;
+    console.log(`Proxy listening on http://${displayHost}:${PORT}`);
   });
 }
