@@ -272,7 +272,6 @@ function exportState() {
   navigator.clipboard
     .writeText(json)
     .then(() => {
-      store.setError(null);
       store.setError("State snapshot copied to clipboard.");
     })
     .catch(() => {
