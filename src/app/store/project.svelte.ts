@@ -243,8 +243,8 @@ export class ProjectStore {
 
   cancelGeneration() {
     this.generationAbortController?.abort();
-    this.generationAbortController = null;
-    this.isGenerating = false;
+    // Don't set isGenerating = false here — let generateChunk's finally block
+    // handle it to avoid racing with a new generation starting immediately.
   }
 
   setAuditing(value: boolean) {
@@ -263,6 +263,8 @@ export class ProjectStore {
   cancelAutopilot() {
     this.autopilotCancelled = true;
     this.isAutopilot = false;
+    // Also abort the in-flight stream to stop token consumption immediately
+    this.generationAbortController?.abort();
   }
 
   setExtractingIR(sceneId: string | null) {
