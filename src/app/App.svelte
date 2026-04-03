@@ -273,7 +273,7 @@ function exportState() {
     .writeText(json)
     .then(() => {
       store.setError(null);
-      alert("State snapshot copied to clipboard. Paste it into Claude for debugging.");
+      store.setError("State snapshot copied to clipboard.");
     })
     .catch(() => {
       store.saveFile(snapshot, `wc-state-${Date.now()}.json`);
