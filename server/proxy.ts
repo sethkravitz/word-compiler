@@ -6,7 +6,11 @@ import { getDatabase } from "./db/connection.js";
 import { errorHandler, requestLogger } from "./middleware.js";
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  }),
+);
 app.use(express.json({ limit: "5mb" }));
 app.use(requestLogger);
 
@@ -192,8 +196,9 @@ app.use(errorHandler);
 export { app };
 
 const PORT = process.env.PORT || 3001;
+const HOST = process.env.HOST || "127.0.0.1";
 if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
-    console.log(`Proxy listening on http://localhost:${PORT}`);
+  app.listen(Number(PORT), HOST, () => {
+    console.log(`Proxy listening on http://${HOST}:${PORT}`);
   });
 }
