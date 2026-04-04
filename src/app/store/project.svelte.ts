@@ -54,6 +54,7 @@ export class ProjectStore {
   isGenerating = $state(false);
   isAutopilot = $state(false);
   autopilotCancelled = $state(false);
+  generationAbortController: AbortController | null = null;
   isAuditing = $state(false);
   reviewingChunks = $state<Set<number>>(new Set());
   extractingIRSceneId = $state<string | null>(null);
@@ -233,6 +234,17 @@ export class ProjectStore {
 
   setGenerating(value: boolean) {
     this.isGenerating = value;
+    if (value) {
+      this.generationAbortController = new AbortController();
+    } else {
+      this.generationAbortController = null;
+    }
+  }
+
+  cancelGeneration() {
+    this.generationAbortController?.abort();
+    // Don't set isGenerating = false here — let generateChunk's finally block
+    // handle it to avoid racing with a new generation starting immediately.
   }
 
   setAuditing(value: boolean) {
@@ -251,6 +263,8 @@ export class ProjectStore {
   cancelAutopilot() {
     this.autopilotCancelled = true;
     this.isAutopilot = false;
+    // Also abort the in-flight stream to stop token consumption immediately
+    this.generationAbortController?.abort();
   }
 
   setExtractingIR(sceneId: string | null) {

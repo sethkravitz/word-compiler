@@ -26,6 +26,7 @@ function defaultProps() {
     onCompleteScene: vi.fn(),
     onAutopilot: vi.fn(),
     onCancelAutopilot: vi.fn(),
+    onCancelGeneration: vi.fn(),
     onOpenIRInspector: vi.fn(),
     onExtractIR: vi.fn(),
     isAutopilot: false,
@@ -53,8 +54,8 @@ describe("DraftingDesk", () => {
     expect(screen.getByText("Run Audit")).toBeInTheDocument();
   });
 
-  it("shows 'Generating...' text when isGenerating", () => {
+  it("shows cancel button when isGenerating", () => {
     render(DraftingDesk, { ...defaultProps(), isGenerating: true });
-    expect(screen.getByText("Generating...")).toBeInTheDocument();
+    expect(screen.getByText("Cancel Generation")).toBeInTheDocument();
   });
 });

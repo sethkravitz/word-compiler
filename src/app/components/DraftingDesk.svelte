@@ -19,6 +19,7 @@ let {
   reviewingChunks = new Set(),
   isAuditing = false,
   onGenerate,
+  onCancelGeneration,
   onUpdateChunk,
   onRemoveChunk,
   onDestroyChunk,
@@ -49,6 +50,7 @@ let {
   reviewingChunks?: Set<number>;
   isAuditing?: boolean;
   onGenerate: () => void;
+  onCancelGeneration: () => void;
   onUpdateChunk: (index: number, changes: Partial<Chunk>) => void;
   onRemoveChunk: (index: number) => void;
   onDestroyChunk?: (index: number) => void;
@@ -124,6 +126,10 @@ $effect(() => {
           <Button variant="danger" onclick={onCancelAutopilot}>
             Cancel Autopilot ({chunks.length}/{maxChunks})
           </Button>
+        {:else if isGenerating}
+          <Button variant="danger" onclick={onCancelGeneration}>
+            Cancel Generation
+          </Button>
         {:else}
           <Button
             variant="primary"
@@ -131,7 +137,7 @@ $effect(() => {
             disabled={!canGenerateNext}
             title={gateMessages.length > 0 ? gateMessages.join("\n") : undefined}
           >
-            {#if isGenerating}Generating...{:else if atChunkLimit}All chunks generated{:else}Generate Chunk {chunks.length + 1}{/if}
+            {#if atChunkLimit}All chunks generated{:else}Generate Chunk {chunks.length + 1}{/if}
           </Button>
           {#if canGenerateNext && chunks.length === 0}
             <Button onclick={onAutopilot} title="Generate all chunks, auto-accept, and complete scene">
