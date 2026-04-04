@@ -166,6 +166,7 @@ function handleBackToProjects() {
 let newProjectTitle = $state("");
 let editingTitle = $state(false);
 let editTitleValue = $state("");
+let boundaryErrorMsg = "";
 
 // ─── Prose word count ───────────────────────────
 let totalWordCount = $derived(
@@ -383,44 +384,53 @@ function exportState() {
 
   <div class="stage-workspace">
     {#key workflow.activeStage}
-      <div class="stage-content" in:fade={{ duration: 150, delay: 50 }} out:fade={{ duration: 100 }}>
-        {#if workflow.activeStage === "bootstrap"}
-          <BootstrapStage {store} {commands} />
-        {:else if workflow.activeStage === "draft"}
-          <DraftStage
-            {store}
-            {commands}
-            onGenerate={() => generateChunk()}
-            onRunAudit={() => runAuditManual()}
-            onRunDeepAudit={() => runDeepAudit()}
-            onAutopilot={() => runAutopilot()}
-            onExtractIR={(sceneId) => extractSceneIR(sceneId)}
-          />
-        {:else if workflow.activeStage === "plan"}
-          <PlanStage {store} {commands} />
-        {:else if workflow.activeStage === "audit"}
-          <AuditStage
-            {store}
-            {commands}
-            onRunAudit={() => runAuditManual()}
-            onRunDeepAudit={() => runDeepAudit()}
-          />
-        {:else if workflow.activeStage === "edit"}
-          <EditStage
-            {store}
-            {commands}
-            onRequestRefinement={requestRefinement}
-          />
-        {:else if workflow.activeStage === "complete"}
-          <CompleteStage
-            {store}
-            {commands}
-            onExtractIR={(sceneId) => extractSceneIR(sceneId)}
-          />
-        {:else if workflow.activeStage === "export"}
-          <ExportStage {store} />
-        {/if}
-      </div>
+      <svelte:boundary onerror={(err) => { console.error("[boundary] Stage crash:", err); boundaryErrorMsg = `Something went wrong: ${err instanceof Error ? err.message : "Unknown error"}. Try switching stages or refreshing.`; store.setError(boundaryErrorMsg); }}>
+        <div class="stage-content" in:fade={{ duration: 150, delay: 50 }} out:fade={{ duration: 100 }}>
+          {#if workflow.activeStage === "bootstrap"}
+            <BootstrapStage {store} {commands} />
+          {:else if workflow.activeStage === "draft"}
+            <DraftStage
+              {store}
+              {commands}
+              onGenerate={() => generateChunk()}
+              onRunAudit={() => runAuditManual()}
+              onRunDeepAudit={() => runDeepAudit()}
+              onAutopilot={() => runAutopilot()}
+              onExtractIR={(sceneId) => extractSceneIR(sceneId)}
+            />
+          {:else if workflow.activeStage === "plan"}
+            <PlanStage {store} {commands} />
+          {:else if workflow.activeStage === "audit"}
+            <AuditStage
+              {store}
+              {commands}
+              onRunAudit={() => runAuditManual()}
+              onRunDeepAudit={() => runDeepAudit()}
+            />
+          {:else if workflow.activeStage === "edit"}
+            <EditStage
+              {store}
+              {commands}
+              onRequestRefinement={requestRefinement}
+            />
+          {:else if workflow.activeStage === "complete"}
+            <CompleteStage
+              {store}
+              {commands}
+              onExtractIR={(sceneId) => extractSceneIR(sceneId)}
+            />
+          {:else if workflow.activeStage === "export"}
+            <ExportStage {store} />
+          {/if}
+        </div>
+        {#snippet failed(err, reset)}
+          <div class="stage-crash">
+            <h3>Something went wrong</h3>
+            <p>{err instanceof Error ? err.message : "An unexpected error occurred."}</p>
+            <Button onclick={() => { if (store.error === boundaryErrorMsg) store.setError(null); reset(); }}>Try Again</Button>
+          </div>
+        {/snippet}
+      </svelte:boundary>
     {/key}
   </div>
 
@@ -436,6 +446,7 @@ function exportState() {
   .stage-content { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   .error-margin { margin: 0 8px; }
   .loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 200px; }
+  .stage-crash { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 48px 24px; text-align: center; color: var(--text-secondary); }
   .new-project-form { display: flex; align-items: center; gap: 8px; }
   .project-title {
     font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer;

@@ -300,7 +300,11 @@ export function apiCreateWritingSample(filename: string | null, domain: string, 
 }
 
 export async function apiDeleteWritingSample(id: string): Promise<void> {
-  await fetch(`${BASE}/writing-samples/${id}`, { method: "DELETE" });
+  const res = await fetch(`${BASE}/writing-samples/${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(`Failed to delete writing sample: ${(body as { error: string }).error}`);
+  }
 }
 
 // ─── Project Voice Learning ─────────────────────────
