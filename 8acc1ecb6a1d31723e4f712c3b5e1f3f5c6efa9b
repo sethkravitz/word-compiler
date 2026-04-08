@@ -1,0 +1,67 @@
+server/profile/cipher.ts
+  75790ccc6b48b055 4,46
+eval/artifacts.ts
+  75790ccc6b48b055 3,6
+src/bootstrap/index.ts
+  75790ccc6b48b055 18-19,25-27,29,36-37,40,43,45,49,51,57-58,60-62,66-68,71-74,78,148-152,155-156,160,171-240,242-245,247-250,255,264-266,268-270,275,281,287,291,295-297,299,304
+docs/solutions/domain-adaptation/fiction-to-essay-prompt-rewrite.md
+  75790ccc6b48b055 1-155
+server/profile/pipeline.ts
+  75790ccc6b48b055 10-33,88-92
+tests/compiler/helpers.test.ts
+  75790ccc6b48b055 166,170,172-173,187,189-190
+tests/bootstrap/sceneBootstrap.test.ts
+  75790ccc6b48b055 36
+docs/brainstorms/2026-04-08-essay-writer-adaptation-requirements.md
+  75790ccc6b48b055 1-130
+src/compiler/ring1.ts
+  75790ccc6b48b055 180-188,194-198
+tests/ui/BootstrapModal.test.ts
+  75790ccc6b48b055 235-237
+tests/ir/extractor.test.ts
+  75790ccc6b48b055 186
+tests/server/proxy.test.ts
+  75790ccc6b48b055 434,437
+tests/profile/types.test.ts
+  75790ccc6b48b055 87,89-93,113
+src/types/metadata.ts
+  75790ccc6b48b055 106,129
+src/compiler/helpers.ts
+  75790ccc6b48b055 214-215,219-221,223,225,233-236
+src/compiler/assembler.ts
+  75790ccc6b48b055 87,91,94-96
+tests/compiler/assembler.test.ts
+  75790ccc6b48b055 110
+tests/bootstrap/index.test.ts
+  75790ccc6b48b055 11-14,27-28,30,36,43,47,50,62-65,68-70,73,76,79-80,84,86,89,91,94,96-100,103,105-107,110,112,115,117,120-121,123,125-126,130-131
+tests/tokens/index.test.ts
+  75790ccc6b48b055 94
+src/profile/types.ts
+  75790ccc6b48b055 1,155,238-242,250
+tests/profile/prompts.test.ts
+  75790ccc6b48b055 81,83,89
+tests/compiler/ring3.test.ts
+  75790ccc6b48b055 207-208
+tests/compiler/ring1.test.ts
+  75790ccc6b48b055 255-280
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "8acc1ecb6a1d31723e4f712c3b5e1f3f5c6efa9b",
+  "prompts": {
+    "75790ccc6b48b055": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6658136-7697-415a-b4ee-3ff6fbd7db0c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 668,
+      "total_deletions": 308,
+      "accepted_lines": 670,
+      "overriden_lines": 1
+    }
+  }
+}
