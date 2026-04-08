@@ -1,0 +1,94 @@
+src/app/components/DraftingDesk.svelte
+  ac8190ea061f9627 121,143,154,156,170
+tests/ui/AtlasPane.test.ts
+  ac8190ea061f9627 83
+src/app/store/workflow.svelte.ts
+  ac8190ea061f9627 22-23,27
+src/app/components/SceneGuidedFormTab.svelte
+  ac8190ea061f9627 111,113,116,122,133,179,194
+src/app/components/stages/BootstrapStage.svelte
+  ac8190ea061f9627 25-26,31-32,38,45,47
+src/app/components/stages/CompleteStage.svelte
+  ac8190ea061f9627 75-76,113
+src/app/components/AtlasJsonTab.svelte
+  ac8190ea061f9627 92,130,136
+tests/gates/workflow-gates.test.ts
+  ac8190ea061f9627 58,65
+src/app/components/SceneAuthoringModal.svelte
+  ac8190ea061f9627 81,112,116,127
+src/app/components/BibleGuidedFormTab.svelte
+  ac8190ea061f9627 41,275-276
+docs/plans/2026-04-08-001-feat-essay-ui-relabeling-plan.md
+  ac8190ea061f9627 1-345
+src/app/components/stages/PlanStage.svelte
+  ac8190ea061f9627 48,50,52,61-62,90
+src/app/components/stages/ExportStage.svelte
+  ac8190ea061f9627 71,99
+src/app/components/BootstrapModal.svelte
+  ac8190ea061f9627 97,100,113,136
+tests/ui/SceneAuthoringModal.test.ts
+  ac8190ea061f9627 59,61-62,65,67,75
+src/app/components/BibleAuthoringModal.svelte
+  ac8190ea061f9627 43,61
+src/app/components/SceneBootstrapTab.svelte
+  ac8190ea061f9627 501-502,505,537,542,549,569,578,588,664,719
+src/app/components/ChapterArcEditor.svelte
+  ac8190ea061f9627 40
+tests/ui/BibleAuthoringModal.test.ts
+  ac8190ea061f9627 52,58,60-62
+src/app/components/IRInspector.svelte
+  ac8190ea061f9627 30
+src/app/components/stages/EditStage.svelte
+  ac8190ea061f9627 53
+src/app/components/SceneSequencer.svelte
+  ac8190ea061f9627 42,50,57,59
+tests/ui/DraftingDesk.test.ts
+  ac8190ea061f9627 39
+src/app/components/stages/AuditStage.svelte
+  ac8190ea061f9627 73,144,171
+src/app/components/AtlasBibleTab.svelte
+  ac8190ea061f9627 188,191,193,204,218,238,431
+src/gates/index.ts
+  ac8190ea061f9627 118,121,132,189
+tests/ui/BootstrapModal.test.ts
+  ac8190ea061f9627 73,77,86,93,96,100,104,108,111,122-123,126,140,143,150,156,160,181,183,207,209,246,248,260,285,287,300,302
+src/app/components/AtlasArcTab.svelte
+  ac8190ea061f9627 56,120
+src/app/components/BibleBootstrapTab.svelte
+  ac8190ea061f9627 111,117
+src/app/components/stages/DraftStage.svelte
+  ac8190ea061f9627 326,373
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "b9914944aa649638801c45adc77cb7e71e70e2d4",
+  "prompts": {
+    "75790ccc6b48b055": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6658136-7697-415a-b4ee-3ff6fbd7db0c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 80,
+      "overriden_lines": 0
+    },
+    "ac8190ea061f9627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea62ba6b-c68a-465d-9959-85d37bcdf544",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 475,
+      "overriden_lines": 0
+    }
+  }
+}
