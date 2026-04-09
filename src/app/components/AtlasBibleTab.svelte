@@ -397,7 +397,7 @@ function hasNarrativeData(): boolean {
     {/if}
 
     {#if hasNarrativeData()}
-      <CollapsibleSection bind:this={narrativeRef} summary="Narrative Rules" priority="helpful" sectionId="atlas-bible-narrative" badge={narrativeBadge}>
+      <CollapsibleSection bind:this={narrativeRef} summary="Writing Rules" priority="helpful" sectionId="atlas-bible-narrative" badge={narrativeBadge}>
         <div class="atlas-fields">
           <div class="atlas-field">
             <span class="atlas-label">POV</span>
@@ -414,14 +414,14 @@ function hasNarrativeData(): boolean {
 
           {#if bible.narrativeRules.subtextPolicy}
             <div class="atlas-field">
-              <span class="atlas-label">Subtext Policy</span>
+              <span class="atlas-label">Thesis</span>
               <div class="atlas-value"><TruncatedProse text={bible.narrativeRules.subtextPolicy} /></div>
             </div>
           {/if}
 
           {#if bible.narrativeRules.expositionPolicy}
             <div class="atlas-field">
-              <span class="atlas-label">Exposition Policy</span>
+              <span class="atlas-label">Structure Overview</span>
               <div class="atlas-value"><TruncatedProse text={bible.narrativeRules.expositionPolicy} /></div>
             </div>
           {/if}

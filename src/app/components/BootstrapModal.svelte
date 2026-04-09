@@ -1,7 +1,7 @@
 <script lang="ts">
-import { bootstrapToBible, buildBootstrapPrompt, parseBootstrapResponse } from "../../bootstrap/index.js";
+import { bootstrapToBible, bootstrapToScenePlans, buildBootstrapPrompt, parseBootstrapResponse } from "../../bootstrap/index.js";
 import { generateStream } from "../../llm/client.js";
-import { generateId } from "../../types/index.js";
+import { createEmptyChapterArc, generateId } from "../../types/index.js";
 import { Button, ErrorBanner, Modal, Spinner, TextArea } from "../primitives/index.js";
 import type { Commands } from "../store/commands.js";
 import type { ProjectStore } from "../store/project.svelte.js";
@@ -72,9 +72,26 @@ async function handleBootstrap() {
       return;
     }
 
-    const bible = bootstrapToBible(parsed, store.project?.id ?? generateId(), synopsis);
-    status = "Done!";
+    const projectId = store.project?.id ?? generateId();
+    const bible = bootstrapToBible(parsed, projectId, synopsis);
+    status = "Saving brief...";
     await commands.saveBible(bible);
+
+    // Auto-create section plans from extracted sections
+    const authorId = bible.characters[0]?.id ?? "";
+    const plans = bootstrapToScenePlans(parsed, projectId, authorId);
+    if (plans.length > 0) {
+      status = "Creating section plans...";
+      // Ensure a chapter arc exists for plans to attach to
+      if (!store.chapterArc) {
+        const arc = createEmptyChapterArc(projectId);
+        await commands.saveChapterArc(arc);
+      }
+      const chapterId = store.chapterArc?.id ?? null;
+      const plansWithChapter = plans.map((p) => ({ ...p, chapterId }));
+      await commands.saveMultipleScenePlans(plansWithChapter);
+    }
+    status = "Done!";
 
     setTimeout(() => {
       store.setBootstrapOpen(false);

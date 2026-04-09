@@ -37,9 +37,9 @@ let {
 } = $props();
 
 const stepDefs = [
-  { id: "foundations", label: "Foundations" },
+  { id: "foundations", label: "Voice & Perspective" },
   { id: "characters", label: "Author Voice" },
-  { id: "locations", label: "Locations" },
+  { id: "locations", label: "References" },
   { id: "style", label: "Style Guide" },
   { id: "review", label: "Review" },
 ];
@@ -204,7 +204,7 @@ function removeVocabPref(index: number) {
 </script>
 
 <div class="genre-selector">
-  <FormField label="Genre Template">
+  <FormField label="Style Template">
     <Select
       value=""
       onchange={(e) => {
@@ -213,7 +213,7 @@ function removeVocabPref(index: number) {
         if (tmpl) bible = applyGenreTemplate(bible, tmpl);
       }}
     >
-      <option value="" disabled>Select a genre to pre-fill defaults...</option>
+      <option value="" disabled>Select a style to pre-fill defaults...</option>
       {#each GENRE_TEMPLATES as tmpl (tmpl.id)}
         <option value={tmpl.id}>{tmpl.name} — {tmpl.description}</option>
       {/each}
@@ -233,18 +233,18 @@ function removeVocabPref(index: number) {
 <div class="form-body" bind:this={formBodyEl} onkeydown={onFormKeydown}>
   {#if currentStep === "foundations"}
     <div class="form-step">
-      <FormField label="POV Default" fieldId="povDefault">
+      <FormField label="Perspective" fieldId="povDefault">
         <RadioGroup name="povDefault" value={bible.narrativeRules.pov.default} options={[
-          { value: "first", label: "First" },
-          { value: "close-third", label: "Close Third" },
-          { value: "distant-third", label: "Distant Third" },
-          { value: "omniscient", label: "Omniscient" },
+          { value: "first", label: "First Person" },
+          { value: "close-third", label: "Personal Narrative" },
+          { value: "distant-third", label: "Analytical" },
+          { value: "omniscient", label: "Survey" },
         ]} onchange={(v) => { bible = { ...bible, narrativeRules: { ...bible.narrativeRules, pov: { ...bible.narrativeRules.pov, default: v as any } } }; }} />
       </FormField>
 
-      <CollapsibleSection summary="POV Fine-Tuning" priority="helpful" sectionId="bible-foundations-povTuning">
+      <CollapsibleSection summary="Perspective Fine-Tuning" priority="helpful" sectionId="bible-foundations-povTuning">
         <div class="form-step">
-          <FormField label="POV Distance" fieldId="povDistance">
+          <FormField label="Perspective Distance" fieldId="povDistance">
             <RadioGroup name="povDist" value={bible.narrativeRules.pov.distance} options={[
               { value: "intimate", label: "Intimate" },
               { value: "close", label: "Close" },
@@ -252,14 +252,14 @@ function removeVocabPref(index: number) {
               { value: "distant", label: "Distant" },
             ]} onchange={(v) => { bible = { ...bible, narrativeRules: { ...bible.narrativeRules, pov: { ...bible.narrativeRules.pov, distance: v as any } } }; }} />
           </FormField>
-          <FormField label="POV Interiority" fieldId="povInteriority">
+          <FormField label="Perspective Interiority" fieldId="povInteriority">
             <RadioGroup name="povInt" value={bible.narrativeRules.pov.interiority} options={[
               { value: "stream", label: "Stream" },
               { value: "filtered", label: "Filtered" },
               { value: "behavioral-only", label: "Behavioral Only" },
             ]} onchange={(v) => { bible = { ...bible, narrativeRules: { ...bible.narrativeRules, pov: { ...bible.narrativeRules.pov, interiority: v as any } } }; }} />
           </FormField>
-          <FormField label="POV Reliability" fieldId="povReliability">
+          <FormField label="Perspective Reliability" fieldId="povReliability">
             <RadioGroup name="povRel" value={bible.narrativeRules.pov.reliability} options={[
               { value: "reliable", label: "Reliable" },
               { value: "unreliable", label: "Unreliable" },

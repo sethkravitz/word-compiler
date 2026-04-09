@@ -72,7 +72,7 @@ let nextGate = $derived(checkPlanToDraftGate(store.scenes.map((s) => s.plan)));
           <div class="reference-panel">
             {#if characters.length > 0}
               <div class="ref-section">
-                <span class="ref-label">Characters ({characters.length})</span>
+                <span class="ref-label">Author Voice ({characters.length})</span>
                 {#each characters as char (char.id)}
                   <CharacterCard character={char} />
                 {/each}
