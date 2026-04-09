@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  ANALYTICAL_ESSAY,
   applyGenreTemplate,
   GENRE_TEMPLATES,
-  LITERARY_FICTION,
-  ROMANCE,
-  SCI_FI,
-  THRILLER,
+  NARRATIVE_NONFICTION,
+  OP_ED,
+  PERSONAL_ESSAY,
 } from "../../src/bootstrap/genres.js";
 import type { Bible } from "../../src/types/index.js";
 import { createEmptyBible } from "../../src/types/index.js";
@@ -14,7 +14,7 @@ function makeBible(): Bible {
   return createEmptyBible("p1");
 }
 
-describe("genre templates", () => {
+describe("essay style templates", () => {
   it("all templates have required fields", () => {
     for (const tmpl of GENRE_TEMPLATES) {
       expect(tmpl.id).toBeTruthy();
@@ -29,10 +29,10 @@ describe("genre templates", () => {
   it("exports 4 templates", () => {
     expect(GENRE_TEMPLATES).toHaveLength(4);
     const ids = GENRE_TEMPLATES.map((t) => t.id);
-    expect(ids).toContain("literary-fiction");
-    expect(ids).toContain("thriller");
-    expect(ids).toContain("romance");
-    expect(ids).toContain("sci-fi");
+    expect(ids).toContain("personal-essay");
+    expect(ids).toContain("analytical");
+    expect(ids).toContain("op-ed");
+    expect(ids).toContain("narrative-nonfiction");
   });
 
   it("each template has metaphoric register", () => {
@@ -46,15 +46,15 @@ describe("genre templates", () => {
 describe("applyGenreTemplate", () => {
   it("fills empty killList from template", () => {
     const bible = makeBible();
-    const updated = applyGenreTemplate(bible, LITERARY_FICTION);
+    const updated = applyGenreTemplate(bible, PERSONAL_ESSAY);
     expect(updated.styleGuide.killList.length).toBeGreaterThan(0);
-    expect(updated.styleGuide.killList[0]!.pattern).toBe("suddenly");
+    expect(updated.styleGuide.killList[0]!.pattern).toBe("taught me a valuable lesson");
   });
 
   it("does NOT overwrite existing killList", () => {
     const bible = makeBible();
     bible.styleGuide.killList = [{ pattern: "my-custom-ban", type: "exact" }];
-    const updated = applyGenreTemplate(bible, LITERARY_FICTION);
+    const updated = applyGenreTemplate(bible, PERSONAL_ESSAY);
     expect(updated.styleGuide.killList).toHaveLength(1);
     expect(updated.styleGuide.killList[0]!.pattern).toBe("my-custom-ban");
   });
@@ -62,14 +62,14 @@ describe("applyGenreTemplate", () => {
   it("does not mutate original bible", () => {
     const bible = makeBible();
     const original = structuredClone(bible);
-    applyGenreTemplate(bible, THRILLER);
+    applyGenreTemplate(bible, ANALYTICAL_ESSAY);
     expect(bible).toEqual(original);
   });
 
   it("fills metaphoric register when null", () => {
     const bible = makeBible();
     expect(bible.styleGuide.metaphoricRegister).toBeNull();
-    const updated = applyGenreTemplate(bible, ROMANCE);
+    const updated = applyGenreTemplate(bible, PERSONAL_ESSAY);
     expect(updated.styleGuide.metaphoricRegister).toBeTruthy();
     expect(updated.styleGuide.metaphoricRegister!.approvedDomains.length).toBeGreaterThan(0);
   });
@@ -80,60 +80,47 @@ describe("applyGenreTemplate", () => {
       approvedDomains: ["custom"],
       prohibitedDomains: [],
     };
-    const updated = applyGenreTemplate(bible, LITERARY_FICTION);
+    const updated = applyGenreTemplate(bible, ANALYTICAL_ESSAY);
     expect(updated.styleGuide.metaphoricRegister!.approvedDomains).toEqual(["custom"]);
   });
 
   it("fills sentence architecture when null", () => {
     const bible = makeBible();
-    const updated = applyGenreTemplate(bible, THRILLER);
+    const updated = applyGenreTemplate(bible, OP_ED);
     expect(updated.styleGuide.sentenceArchitecture).toBeTruthy();
     expect(updated.styleGuide.sentenceArchitecture!.fragmentPolicy).toContain("frequent");
   });
 
   it("fills paragraph policy when null", () => {
     const bible = makeBible();
-    const updated = applyGenreTemplate(bible, SCI_FI);
+    const updated = applyGenreTemplate(bible, NARRATIVE_NONFICTION);
     expect(updated.styleGuide.paragraphPolicy).toBeTruthy();
-    expect(updated.styleGuide.paragraphPolicy!.maxSentences).toBe(5);
+    expect(updated.styleGuide.paragraphPolicy!.maxSentences).toBe(6);
   });
 
   it("fills structural bans when empty", () => {
     const bible = makeBible();
-    const updated = applyGenreTemplate(bible, LITERARY_FICTION);
+    const updated = applyGenreTemplate(bible, PERSONAL_ESSAY);
     expect(updated.styleGuide.structuralBans.length).toBeGreaterThan(0);
   });
 
   it("does NOT overwrite existing structural bans", () => {
     const bible = makeBible();
     bible.styleGuide.structuralBans = ["my ban"];
-    const updated = applyGenreTemplate(bible, LITERARY_FICTION);
+    const updated = applyGenreTemplate(bible, PERSONAL_ESSAY);
     expect(updated.styleGuide.structuralBans).toEqual(["my ban"]);
-  });
-
-  it("fills subtext policy when null", () => {
-    const bible = makeBible();
-    const updated = applyGenreTemplate(bible, LITERARY_FICTION);
-    expect(updated.narrativeRules.subtextPolicy).toBeTruthy();
   });
 
   it("fills exposition policy when null", () => {
     const bible = makeBible();
-    const updated = applyGenreTemplate(bible, ROMANCE);
+    const updated = applyGenreTemplate(bible, PERSONAL_ESSAY);
     expect(updated.narrativeRules.expositionPolicy).toBeTruthy();
-  });
-
-  it("does NOT overwrite existing subtext policy", () => {
-    const bible = makeBible();
-    bible.narrativeRules.subtextPolicy = "my policy";
-    const updated = applyGenreTemplate(bible, LITERARY_FICTION);
-    expect(updated.narrativeRules.subtextPolicy).toBe("my policy");
   });
 
   it("fills POV interiority when at default", () => {
     const bible = makeBible();
-    const updated = applyGenreTemplate(bible, ROMANCE);
-    // Romance template sets interiority to "stream"
+    const updated = applyGenreTemplate(bible, PERSONAL_ESSAY);
+    // Personal Essay template sets interiority to "stream"
     expect(updated.narrativeRules.pov.interiority).toBe("stream");
   });
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   bootstrapToBible,
+  bootstrapToScenePlans,
   buildBootstrapPrompt,
   type ParsedBootstrap,
   parseBootstrapResponse,
@@ -86,9 +87,10 @@ describe("bootstrapToBible", () => {
     expect(bible.characters[0]!.voice.vocabularyNotes).toBe("conversational-authoritative");
   });
 
-  it("stores thesis in narrativeRules.subtextPolicy", () => {
+  it("stores thesis in narrativeRules.pov.notes", () => {
     const bible = bootstrapToBible(parsed, "proj-1");
-    expect(bible.narrativeRules.subtextPolicy).toContain("AI writing tools fail");
+    expect(bible.narrativeRules.pov.notes).toContain("AI writing tools fail");
+    expect(bible.narrativeRules.subtextPolicy).toBeNull();
   });
 
   it("merges default and bootstrap kill lists", () => {
@@ -146,5 +148,50 @@ describe("factory function sourcePrompt defaults", () => {
   it("createEmptyChapterArc includes sourcePrompt: null", () => {
     const arc = createEmptyChapterArc("proj-1");
     expect(arc.sourcePrompt).toBeNull();
+  });
+});
+
+describe("bootstrapToScenePlans", () => {
+  const parsed: ParsedBootstrap = {
+    thesis: "AI writing tools fail because they treat voice as a prompt.",
+    sections: [
+      { heading: "The Prompt Fallacy", purpose: "Establish the core problem", keyPoints: ["Point A", "Point B"] },
+      { heading: "What Voice Actually Is", purpose: "Define voice as learned behavior", keyPoints: ["Point C"] },
+      { heading: "A Better Path", purpose: "Propose the solution", keyPoints: ["Point D", "Point E", "Point F"] },
+    ],
+  };
+
+  it("converts sections to ScenePlans", () => {
+    const plans = bootstrapToScenePlans(parsed, "proj-1", "author-id");
+    expect(plans).toHaveLength(3);
+    expect(plans[0]!.title).toBe("The Prompt Fallacy");
+    expect(plans[0]!.narrativeGoal).toBe("Establish the core problem");
+    expect(plans[0]!.povCharacterId).toBe("author-id");
+  });
+
+  it("sets chunkCount from keyPoints length", () => {
+    const plans = bootstrapToScenePlans(parsed, "proj-1", "author-id");
+    expect(plans[0]!.chunkCount).toBe(2);
+    expect(plans[1]!.chunkCount).toBe(1);
+    expect(plans[2]!.chunkCount).toBe(3);
+  });
+
+  it("stores keyPoints as chunkDescriptions", () => {
+    const plans = bootstrapToScenePlans(parsed, "proj-1", "author-id");
+    expect(plans[0]!.chunkDescriptions).toEqual(["Point A", "Point B"]);
+  });
+
+  it("returns empty array when no sections", () => {
+    const empty: ParsedBootstrap = { thesis: "Something" };
+    expect(bootstrapToScenePlans(empty, "proj-1", "author-id")).toEqual([]);
+  });
+
+  it("handles section with no keyPoints", () => {
+    const noKeys: ParsedBootstrap = {
+      sections: [{ heading: "Intro", purpose: "Set the stage" }],
+    };
+    const plans = bootstrapToScenePlans(noKeys, "proj-1", "author-id");
+    expect(plans[0]!.chunkCount).toBe(1);
+    expect(plans[0]!.chunkDescriptions).toEqual([]);
   });
 });

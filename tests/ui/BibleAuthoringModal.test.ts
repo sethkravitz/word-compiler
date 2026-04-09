@@ -48,9 +48,9 @@ function createMockCommands() {
 describe("BibleAuthoringModal", () => {
   it("renders guided form directly with stepper steps", () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    expect(screen.getByText("Foundations")).toBeInTheDocument();
+    expect(screen.getByText("Voice & Perspective")).toBeInTheDocument();
     expect(screen.getByText("Author Voice")).toBeInTheDocument();
-    expect(screen.getByText("Locations")).toBeInTheDocument();
+    expect(screen.getByText("References")).toBeInTheDocument();
     expect(screen.getByText("Style Guide")).toBeInTheDocument();
     expect(screen.getByText("Review")).toBeInTheDocument();
   });
@@ -84,29 +84,29 @@ describe("BibleAuthoringModal", () => {
     expect(screen.getByText("Cancel")).toBeInTheDocument();
   });
 
-  // ─── Genre Selector ──────────────────────────────
+  // ─── Style Template Selector ──────────────────────
 
-  it("renders genre selector dropdown", () => {
+  it("renders style template selector dropdown", () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    expect(screen.getByText("Genre Template")).toBeInTheDocument();
-    expect(screen.getByText(/select a genre to pre-fill/i)).toBeInTheDocument();
+    expect(screen.getByText("Style Template")).toBeInTheDocument();
+    expect(screen.getByText(/select a style to pre-fill/i)).toBeInTheDocument();
   });
 
-  it("genre options include all 4 templates", () => {
+  it("style options include all 4 essay templates", () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
-    expect(screen.getByText(/Literary Fiction/)).toBeInTheDocument();
-    expect(screen.getByText(/Thriller/)).toBeInTheDocument();
-    expect(screen.getByText(/Romance/)).toBeInTheDocument();
-    expect(screen.getByText(/Science Fiction/)).toBeInTheDocument();
+    expect(screen.getByText(/Personal Essay/)).toBeInTheDocument();
+    expect(screen.getByText(/Analytical Essay/)).toBeInTheDocument();
+    expect(screen.getByText(/Op-Ed/)).toBeInTheDocument();
+    expect(screen.getByText(/Narrative Nonfiction/)).toBeInTheDocument();
   });
 
-  it("genre select has correct option values for all 4 templates", () => {
+  it("style select has correct option values for all 4 templates", () => {
     render(BibleAuthoringModal, { store: createMockStore(), commands: createMockCommands() });
     const select = screen.getByRole("combobox") as HTMLSelectElement;
     const options = Array.from(select.options).map((o) => o.value);
-    expect(options).toContain("literary-fiction");
-    expect(options).toContain("thriller");
-    expect(options).toContain("romance");
-    expect(options).toContain("sci-fi");
+    expect(options).toContain("personal-essay");
+    expect(options).toContain("analytical");
+    expect(options).toContain("op-ed");
+    expect(options).toContain("narrative-nonfiction");
   });
 });

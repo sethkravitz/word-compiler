@@ -1,5 +1,5 @@
-import type { Bible, CompiledPayload } from "../types/index.js";
-import { DEFAULT_MODEL, generateId } from "../types/index.js";
+import type { Bible, CompiledPayload, ScenePlan } from "../types/index.js";
+import { createEmptyScenePlan, DEFAULT_MODEL, generateId } from "../types/index.js";
 
 export type { ParsedSceneBootstrap, SceneBootstrapParams } from "./sceneBootstrap.js";
 // Re-export scene bootstrap
@@ -292,12 +292,20 @@ export function bootstrapToBible(parsed: ParsedBootstrap, projectId: string, sou
         distance: "close",
         interiority: "filtered",
         reliability: "reliable",
-        notes: tone
-          ? `Register: ${tone.register || "editorial"}. Audience: ${tone.audience || "general"}. ${tone.pacingNotes || ""}`
-          : undefined,
+        notes:
+          [
+            parsed.thesis ? `Thesis: ${parsed.thesis}` : null,
+            tone?.register ? `Register: ${tone.register}` : null,
+            tone?.audience ? `Audience: ${tone.audience}` : null,
+            tone?.pacingNotes || null,
+          ]
+            .filter(Boolean)
+            .join(". ") || undefined,
       },
-      subtextPolicy: parsed.thesis || null,
-      expositionPolicy: null,
+      subtextPolicy: null,
+      expositionPolicy: parsed.sections
+        ? parsed.sections.map((s, i) => `${i + 1}. ${s.heading}: ${s.purpose}`).join("\n")
+        : null,
       sceneEndingPolicy: null,
       setups: [],
     },
@@ -305,4 +313,29 @@ export function bootstrapToBible(parsed: ParsedBootstrap, projectId: string, sou
     createdAt: new Date().toISOString(),
     sourcePrompt: sourcePrompt ?? null,
   };
+}
+
+// ─── Bootstrap → Section Plans ────────────────────────
+
+/**
+ * Convert extracted sections from the bootstrap response into ScenePlans.
+ * Returns an empty array if no sections were extracted.
+ */
+export function bootstrapToScenePlans(
+  parsed: ParsedBootstrap,
+  projectId: string,
+  authorCharacterId: string,
+): ScenePlan[] {
+  if (!parsed.sections || parsed.sections.length === 0) return [];
+
+  return parsed.sections.map((section) => {
+    const plan = createEmptyScenePlan(projectId);
+    plan.title = section.heading;
+    plan.narrativeGoal = section.purpose;
+    plan.povCharacterId = authorCharacterId;
+    plan.chunkDescriptions = section.keyPoints || [];
+    plan.chunkCount = Math.max(1, (section.keyPoints || []).length);
+    plan.estimatedWordCount = [300, 600];
+    return plan;
+  });
 }
