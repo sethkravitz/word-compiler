@@ -1,4 +1,4 @@
-import type { CharacterBehavior, CharacterDossier, CompiledPayload, VoiceFingerprint } from "../types/index.js";
+import type { CharacterBehavior, CharacterDossier, CompiledPayload } from "../types/index.js";
 import { DEFAULT_MODEL } from "../types/index.js";
 import { extractJsonFromText } from "./index.js";
 
@@ -105,7 +105,7 @@ export function parseProfileResponse(response: string): ExtractedProfile | { err
 // ─── Applier ─────────────────────────────────────
 
 /** Fill a string field only if the current value is null/empty. */
-function fillString<T>(current: string | null, value: string | null): string | null {
+function fillString(current: string | null, value: string | null): string | null {
   return current || value || null;
 }
 
