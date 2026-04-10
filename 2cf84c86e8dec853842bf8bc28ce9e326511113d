@@ -1,0 +1,52 @@
+src/linter/index.ts
+  ac8190ea061f9627 75,87,110
+tests/bootstrap/index.test.ts
+  ac8190ea061f9627 184-189
+src/bootstrap/index.ts
+  ac8190ea061f9627 4-11,344
+tests/gates/index.test.ts
+  ac8190ea061f9627 77,80,83,86,89
+docs/plans/2026-04-10-001-feat-profile-from-samples-and-draft-fixes-plan.md
+  ac8190ea061f9627 1-236
+tests/bootstrap/profileExtractor.test.ts
+  ac8190ea061f9627 1-116
+src/app/components/CharacterFormFields.svelte
+  ac8190ea061f9627 2-3,6,8,14,19,28-81,85-108,185-194
+src/bootstrap/profileExtractor.ts
+  ac8190ea061f9627 1-150
+src/gates/index.ts
+  ac8190ea061f9627 15,18,21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "2cf84c86e8dec853842bf8bc28ce9e326511113d",
+  "prompts": {
+    "75790ccc6b48b055": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6658136-7697-415a-b4ee-3ff6fbd7db0c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 80,
+      "overriden_lines": 0
+    },
+    "ac8190ea061f9627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea62ba6b-c68a-465d-9959-85d37bcdf544",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 668,
+      "total_deletions": 57,
+      "accepted_lines": 648,
+      "overriden_lines": 0
+    }
+  }
+}
