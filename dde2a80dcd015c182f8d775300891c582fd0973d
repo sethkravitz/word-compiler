@@ -1,0 +1,36 @@
+src/bootstrap/profileExtractor.ts
+  ac8190ea061f9627 1,108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "dde2a80dcd015c182f8d775300891c582fd0973d",
+  "prompts": {
+    "75790ccc6b48b055": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6658136-7697-415a-b4ee-3ff6fbd7db0c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 80,
+      "overriden_lines": 0
+    },
+    "ac8190ea061f9627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea62ba6b-c68a-465d-9959-85d37bcdf544",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
