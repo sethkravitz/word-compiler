@@ -4,7 +4,7 @@ import type { CharacterDossier, Location, RingSection, ScenePlan } from "../type
 export function formatSceneContract(plan: ScenePlan): string {
   const lines: string[] = [
     `=== SECTION: ${plan.title} ===`,
-    `POV: ${plan.povCharacterId}, ${plan.povDistance}`,
+    `Voice: ${plan.povCharacterId}, ${plan.povDistance}`,
     `Goal: ${plan.narrativeGoal}`,
     `Emotional beat: ${plan.emotionalBeat}`,
     `Reader should: ${plan.readerEffect}`,
@@ -166,7 +166,7 @@ const POV_INTERIORITY_GUARDRAIL =
   "Show nuance through evidence, qualification, and tonal shifts — never contradict earlier claims without acknowledgment. Do not invent facts or credentials beyond what is provided in context.";
 
 export function formatPovInteriority(char: CharacterDossier, povDistance: string): string {
-  const lines: string[] = [`=== POV INTERIORITY: ${char.name.toUpperCase()} ===`];
+  const lines: string[] = [`=== AUTHOR VOICE: ${char.name.toUpperCase()} ===`];
   const includeDeep = povDistance === "intimate" || povDistance === "close";
   const includeContradictions = includeDeep || povDistance === "moderate";
 

@@ -30,7 +30,7 @@ describe("formatSceneContract", () => {
   it("formats minimal plan", () => {
     const text = formatSceneContract(makePlan());
     expect(text).toContain("=== SECTION: The Bar ===");
-    expect(text).toContain("POV: marcus, close");
+    expect(text).toContain("Voice: marcus, close");
     expect(text).toContain("Goal: Establish tension");
     expect(text).toContain("Failure mode to avoid:");
   });
@@ -288,7 +288,7 @@ describe("formatPovInteriority", () => {
 
   it("intimate distance includes all fields", () => {
     const result = formatPovInteriority(makeFullChar(), "intimate");
-    expect(result).toContain("=== POV INTERIORITY: ELENA ===");
+    expect(result).toContain("=== AUTHOR VOICE: ELENA ===");
     expect(result).toContain("Backstory:");
     expect(result).toContain("coastal Oregon");
     expect(result).toContain("Self-narrative:");
@@ -329,7 +329,7 @@ describe("formatPovInteriority", () => {
   it("handles null fields gracefully", () => {
     const char = createEmptyCharacterDossier("Test");
     const result = formatPovInteriority(char, "intimate");
-    expect(result).toContain("=== POV INTERIORITY: TEST ===");
+    expect(result).toContain("=== AUTHOR VOICE: TEST ===");
     expect(result).not.toContain("null");
   });
 

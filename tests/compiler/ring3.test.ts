@@ -250,7 +250,7 @@ describe("buildRing3", () => {
     const interiority = result.sections.find((s) => s.name === "POV_INTERIORITY");
 
     expect(interiority).toBeDefined();
-    expect(interiority!.text).toContain("POV INTERIORITY: MARCUS");
+    expect(interiority!.text).toContain("AUTHOR VOICE: MARCUS");
     expect(interiority!.text).toContain("Backstory:");
     expect(interiority!.text).toContain("ranch");
     expect(interiority!.immune).toBe(true);

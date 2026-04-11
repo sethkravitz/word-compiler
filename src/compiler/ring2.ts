@@ -44,6 +44,7 @@ function buildCharacterStateFromDeltas(deltas: CharacterDelta[]): string {
 }
 
 function buildChapterBriefSection(chapterArc: ChapterArc): RingSection {
+  // Essays use title only; chapter numbering is fiction-specific. Section position is tracked via section order, not the arc.
   const briefParts: string[] = [`${chapterArc.workingTitle}`];
   if (chapterArc.narrativeFunction) {
     briefParts.push(`Thesis: ${chapterArc.narrativeFunction}`);
