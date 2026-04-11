@@ -1,0 +1,29 @@
+src/compiler/ring2.ts
+  ac8190ea061f9627 47
+src/compiler/helpers.ts
+  ac8190ea061f9627 7,169
+tests/compiler/helpers.test.ts
+  ac8190ea061f9627 33,291,332
+tests/compiler/ring3.test.ts
+  ac8190ea061f9627 253
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "a27e9f764fdf06e747b2e9ed0bdb6d6dc1b3b667",
+  "prompts": {
+    "ac8190ea061f9627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea62ba6b-c68a-465d-9959-85d37bcdf544",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 107,
+      "total_deletions": 6,
+      "accepted_lines": 8610,
+      "overriden_lines": 0
+    }
+  }
+}
