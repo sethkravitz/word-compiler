@@ -13,14 +13,14 @@ let {
 const emptyArc = createEmptyChapterArc("proj-1", 1);
 const filledArc: ChapterArc = {
   ...emptyArc,
-  workingTitle: "The Letter",
-  narrativeFunction: "Inciting incident — shatters Alice's false sense of security",
-  dominantRegister: "Restrained → explosive",
-  pacingTarget: "Slow build in scenes 1-2, rapid acceleration in scene 3",
-  endingPosture: "Cliffhanger — Bob's accusation hangs unanswered",
+  workingTitle: "The Hidden Cost",
+  narrativeFunction: "Core argument — dismantles the productivity myth of remote work",
+  dominantRegister: "Analytical → urgent",
+  pacingTarget: "Slow build in sections 1-2, rapid acceleration in section 3",
+  endingPosture: "Open question — what are we really optimizing for?",
   readerStateEntering: {
-    knows: ["Alice is a journalist investigating corruption"],
-    suspects: ["Bob may be hiding something"],
+    knows: ["Remote work adoption accelerated post-2020"],
+    suspects: ["Productivity gains may be illusory"],
     wrongAbout: ["Marcus is a stranger to Alice"],
     activeTensions: ["Will Alice find evidence?"],
   },

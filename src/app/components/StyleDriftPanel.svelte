@@ -108,10 +108,10 @@ let flaggedCount = $derived(reports.filter((r) => r.flagged).length);
     <div class="drift-overview">
       {#if flaggedCount === 0}
         <Badge variant="accepted">Consistent</Badge>
-        <span class="drift-overview-text">Voice is holding steady across all scenes.</span>
+        <span class="drift-overview-text">Voice is holding steady across all sections.</span>
       {:else}
-        <Badge variant="rejected">{flaggedCount} scene{flaggedCount > 1 ? "s" : ""} drifting</Badge>
-        <span class="drift-overview-text">Compared to "{baselineSceneTitle}" (your first completed scene).</span>
+        <Badge variant="rejected">{flaggedCount} section{flaggedCount > 1 ? "s" : ""} drifting</Badge>
+        <span class="drift-overview-text">Compared to "{baselineSceneTitle}" (your first completed section).</span>
       {/if}
     </div>
 

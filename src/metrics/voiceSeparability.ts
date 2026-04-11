@@ -165,7 +165,7 @@ export function measureVoiceSeparability(
       detail:
         characterStats.length === 0
           ? "No attributed dialogue found — cannot measure voice separability."
-          : "Only one character has attributed dialogue — cannot measure separability.",
+          : "Only one voice has attributed text — cannot measure separability.",
     };
   }
 

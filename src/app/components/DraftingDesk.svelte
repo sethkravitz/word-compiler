@@ -96,7 +96,7 @@ $effect(() => {
         {#if sceneIR}
           <Button onclick={onOpenIRInspector} title="View/edit IR">IR {sceneIR.verified ? "✓" : "?"}</Button>
         {:else}
-          <Button onclick={onExtractIR} disabled={isExtractingIR} title="Extract scene blueprint">
+          <Button onclick={onExtractIR} disabled={isExtractingIR} title="Extract section blueprint">
             {#if isExtractingIR}<Spinner size="sm" /> Extracting...{:else}Extract Blueprint{/if}
           </Button>
         {/if}

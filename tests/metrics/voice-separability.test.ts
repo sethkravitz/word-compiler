@@ -74,7 +74,7 @@ describe("measureVoiceSeparability", () => {
     const prose = `"Let me think about that," Alice said. "I need more time," Alice replied. "Give me a moment," Alice answered.`;
     const result = measureVoiceSeparability([{ sceneId: "s1", prose }], bible);
     expect(result.separable).toBe(true);
-    expect(result.detail).toContain("one character");
+    expect(result.detail).toContain("one voice");
   });
 
   it("combines prose from multiple scenes", () => {
