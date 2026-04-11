@@ -1,0 +1,37 @@
+src/metrics/voiceSeparability.ts
+  ac8190ea061f9627 168
+src/app/components/AtlasPaneStory.svelte
+  ac8190ea061f9627 261-265,267
+src/bootstrap/genres.ts
+  ac8190ea061f9627 73,196-197,202
+src/app/components/AtlasArcTab.svelte
+  ac8190ea061f9627 118
+src/app/components/DraftingDesk.svelte
+  ac8190ea061f9627 99
+src/app/components/ChapterArcEditorStory.svelte
+  ac8190ea061f9627 16-20,22-23
+tests/metrics/voice-separability.test.ts
+  ac8190ea061f9627 77
+src/app/components/StyleDriftPanel.svelte
+  ac8190ea061f9627 111,113-114
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "b284196066282c77dc36fcd0c76c299e6ff509e1",
+  "prompts": {
+    "ac8190ea061f9627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea62ba6b-c68a-465d-9959-85d37bcdf544",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 24,
+      "total_deletions": 24,
+      "accepted_lines": 8626,
+      "overriden_lines": 1
+    }
+  }
+}
