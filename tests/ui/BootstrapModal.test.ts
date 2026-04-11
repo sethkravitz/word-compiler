@@ -106,7 +106,7 @@ describe("BootstrapModal", () => {
     render(BootstrapModal, { store, commands: createMockCommands() });
 
     const textarea = screen.getByPlaceholderText(/Example brief/);
-    await fireEvent.input(textarea, { target: { value: "A noir detective story." } });
+    await fireEvent.input(textarea, { target: { value: "Why remote work fails at scale." } });
 
     const btn = screen.getByText("Bootstrap Brief");
     expect(btn).toBeEnabled();
@@ -121,7 +121,7 @@ describe("BootstrapModal", () => {
 
     // Type description and click bootstrap
     const textarea = screen.getByPlaceholderText(/Example brief/);
-    await fireEvent.input(textarea, { target: { value: "A noir detective story." } });
+    await fireEvent.input(textarea, { target: { value: "Why remote work fails at scale." } });
 
     const btn = screen.getByText("Bootstrap Brief");
     await fireEvent.click(btn);
@@ -138,7 +138,7 @@ describe("BootstrapModal", () => {
     render(BootstrapModal, { store, commands: createMockCommands() });
 
     const textarea = screen.getByPlaceholderText(/Example brief/);
-    await fireEvent.input(textarea, { target: { value: "A noir detective story." } });
+    await fireEvent.input(textarea, { target: { value: "Why remote work fails at scale." } });
 
     await fireEvent.click(screen.getByText("Bootstrap Brief"));
 
@@ -155,11 +155,11 @@ describe("BootstrapModal", () => {
 
     const textarea = screen.getByPlaceholderText(/Example brief/);
     await fireEvent.input(textarea, {
-      target: { value: "A detective in a jazz bar." },
+      target: { value: "The hidden costs of always-on culture." },
     });
     await fireEvent.click(screen.getByText("Bootstrap Brief"));
 
-    expect(buildBootstrapPrompt).toHaveBeenCalledWith("A detective in a jazz bar.");
+    expect(buildBootstrapPrompt).toHaveBeenCalledWith("The hidden costs of always-on culture.");
   });
 
   it("parse error displays via ErrorBanner", async () => {

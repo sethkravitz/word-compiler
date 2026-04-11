@@ -93,7 +93,7 @@ describe("compilePayload", () => {
 
     expect(result.payload.systemMessage).toContain("=== PROJECT VOICE ===");
     expect(result.payload.systemMessage).toContain("NEVER WRITE:");
-    expect(result.payload.userMessage).toContain("=== SCENE: The Bar ===");
+    expect(result.payload.userMessage).toContain("=== SECTION: The Bar ===");
     expect(result.payload.userMessage).toContain("=== MARCUS — VOICE ===");
     expect(result.payload.userMessage).toContain("=== ELENA — VOICE ===");
     expect(result.payload.userMessage).toContain("=== LOCATION: The Bar ===");

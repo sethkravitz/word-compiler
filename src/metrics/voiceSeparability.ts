@@ -4,9 +4,9 @@ import type { Bible, VoiceSeparabilityReport } from "../types/index.js";
 
 // ─── Voice Separability ──────────────────────────────────
 //
-// Parses dialogue attribution by character, measures per-character
+// Parses voice attribution by author voice, measures per-voice
 // sentence length distributions and type-token ratio.
-// Flags if inter-character variance is low (voices are indistinguishable).
+// Flags if inter-voice variance is low (voices are indistinguishable).
 
 interface DialogueBlock {
   characterId: string;
@@ -18,7 +18,7 @@ interface DialogueBlock {
 //
 // Instead of matching specific dialogue verbs ("said", "asked", etc.),
 // we find all quoted text, then search a small context window around each
-// quote for any known character name from the bible. This handles any
+// quote for any known voice name from the essay brief. This handles any
 // attribution style: "Dialogue," Marcus said. / Marcus turned. "Dialogue." /
 // "Dialogue." Marcus slammed the door. — no verb enumeration needed.
 
@@ -165,7 +165,7 @@ export function measureVoiceSeparability(
       detail:
         characterStats.length === 0
           ? "No attributed dialogue found — cannot measure voice separability."
-          : "Only one character has attributed dialogue — cannot measure separability.",
+          : "Only one voice has attributed text — cannot measure separability.",
     };
   }
 

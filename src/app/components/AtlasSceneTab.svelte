@@ -86,7 +86,7 @@ function updateDraft(changes: Partial<ScenePlan>) {
         <span class="atlas-label">Author Voice</span>
         {#if store.bible && store.bible.characters.length > 0}
           <select class="select" value={draft.povCharacterId} onchange={(e) => updateDraft({ povCharacterId: (e.target as HTMLSelectElement).value })}>
-            <option value="">Select character...</option>
+            <option value="">Select voice...</option>
             {#each store.bible.characters as char (char.id)}
               <option value={char.id}>{char.name} ({char.role})</option>
             {/each}
@@ -130,7 +130,7 @@ function updateDraft(changes: Partial<ScenePlan>) {
       </div>
 
       <div class="atlas-field">
-        <span class="atlas-label">Narrative Goal</span>
+        <span class="atlas-label">Section Goal</span>
         <TextArea value={draft.narrativeGoal} variant="compact" rows={2} oninput={(e) => updateDraft({ narrativeGoal: (e.target as HTMLTextAreaElement).value })} />
       </div>
 
@@ -242,7 +242,7 @@ function updateDraft(changes: Partial<ScenePlan>) {
     <div class="atlas-fields">
       {#if plan.narrativeGoal}
         <div class="atlas-field">
-          <span class="atlas-label">Narrative Goal</span>
+          <span class="atlas-label">Section Goal</span>
           <p class="atlas-value">{plan.narrativeGoal}</p>
         </div>
       {/if}

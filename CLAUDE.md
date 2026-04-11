@@ -164,8 +164,8 @@ EssayBrief + SectionPlan + PreviousChunks + Config
 - `src/gates/index.ts` — Workflow gate definitions
 - `src/app/store/project.svelte.ts` — Main application state
 - `src/app/store/commands.ts` — User-facing actions (generate, audit, complete)
-- `src/app/components/field-glossary.ts` — Field tooltips and descriptions (needs essay adaptation)
-- `src/app/components/field-examples.ts` — Example content for form fields (needs essay adaptation)
+- `src/app/components/field-glossary.ts` — Field tooltips and descriptions (fully adapted for essays)
+- `src/app/components/field-examples.ts` — Example content for form fields (fully adapted for essays)
 - `src/app/stories/factories.ts` — Mock data factories for tests and stories
 - `server/proxy.ts` — Express server, LLM proxy, model listing
 - `server/db/schema.ts` — SQLite table definitions
@@ -187,27 +187,39 @@ The fiction-to-essay adaptation is prompt-level only. Here is what has been adap
 
 **Adapted (working for essays):**
 - Bootstrap prompt and parser (thesis, sections, tone, kill list)
+- Bootstrap section planner (`sceneBootstrap.ts` — "essay structure planner", section plans, essay direction)
 - Genre templates (4 essay styles)
 - Assembler generation instruction
 - Anti-ablation guardrails
 - Gate messages (section/voice/goal terminology)
-- Linter messages
+- Linter messages (essay-appropriate subtext check)
 - Profile extraction (essay-specific fields)
-- Key UI components (stage headers, form labels, buttons)
+- Voice pipeline project guide (`projectGuide.ts` — domain "essay", section-based prompts)
+- Ring 1 builder (voice, kill list, guardrails — essay language)
+- Ring 2 builder (thesis tracking, argument state, open questions — fully reframed for essays)
+- Ring 3 builder (section context, previous section bridge)
+- IR extractor (essay structure analyst, claims/evidence/argument progression)
+- Review prompts (essays and nonfiction, argumentative coherence)
+- Auditor prompts (nuance/implication for subtext, factual consistency for epistemic)
+- Learner proposals (sections, essay brief, author voice terminology)
+- All UI components (error messages, labels, buttons, tooltips, field glossary, field examples)
+- All Storybook stories and test factories (essay scenarios)
+- Export (Section headings, essay/section terminology)
+- Server API error messages (essay brief, section plan, essay arc)
+- Code comments and log messages (section/essay/voice terminology across server and src)
 
-**Not yet adapted (still fiction-framed):**
-- `src/bootstrap/sceneBootstrap.ts` — LLM prompt says "narrative architect", asks for subtext/emotionalBeat
-- `src/review/prompt.ts` — System prompts say "long-form fiction"
-- `src/review/refine.ts` — System prompt says "literary fiction"
-- `src/compiler/ring3.ts` — Subtext contract, scene cast guardrail, character knowledge
-- `src/compiler/ring1.ts:127` — "Do not invent backstory" (fiction language)
-- `src/auditor/epistemic.ts` — Tracks character knowledge (fiction concept)
-- `src/auditor/subtext.ts` — Literary subtext checking (fiction concept)
-- `src/ir/extractor.ts` — "Facts in the story world" (fiction framing)
-- `src/app/components/field-glossary.ts` — 44 fiction-oriented tooltips
-- `src/app/components/field-examples.ts` — All examples use fiction scenarios
-- `src/app/App.svelte` — Default title "Untitled Novel"
-- ~28 user-visible fiction strings across UI components (see UI audit)
+**Remaining fiction terminology (intentionally kept):**
+- TypeScript interface names (`Bible`, `ScenePlan`, `CharacterDossier`, etc.) — per scope rules
+- Database column names (`scene_plans`, `chapter_arcs`, etc.) — per scope rules
+- Variable and function names matching interfaces — per scope rules
+- Some internal section name constants (`CHAPTER_BRIEF`, `CHAR_STATE_*`) — non-user-facing
+
+**Not yet built (future features):**
+- Ring 2 functional thesis tracking (data semantics — current reframing is string-level)
+- Essay-specific auditors (argument coherence, transition quality, repetition detection)
+- Research/citation integration (sources panel, citation injection)
+- Thesis refinement loop (post-draft argument analysis)
+- Additional genre templates (Explainer, Review/Criticism, Technical Essay)
 
 ## Scope Rules
 

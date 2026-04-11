@@ -65,7 +65,7 @@ async function handleLoadBible() {
       const parsed = JSON.parse(text) as Bible;
       await commands.saveBible(parsed);
     } catch {
-      store.setError("Invalid Bible JSON");
+      store.setError("Invalid brief JSON");
     }
   }
 }
@@ -97,8 +97,8 @@ async function handleLoadArc() {
 
 <div class="json-tab">
   <div class="json-buttons">
-    <Button onclick={handleLoadBible}>Load Bible</Button>
-    <Button onclick={() => store.bible && store.saveFile(store.bible, "bible.json")} disabled={!store.bible}>Save Bible</Button>
+    <Button onclick={handleLoadBible}>Load Brief</Button>
+    <Button onclick={() => store.bible && store.saveFile(store.bible, "bible.json")} disabled={!store.bible}>Save Brief</Button>
     <Button onclick={handleLoadPlan}>Load Plan</Button>
     <Button onclick={() => store.activeScenePlan && store.saveFile(store.activeScenePlan, "scene-plan.json")} disabled={!store.activeScenePlan}>Save Plan</Button>
     <Button onclick={handleLoadArc}>Load Arc</Button>
@@ -110,18 +110,18 @@ async function handleLoadArc() {
 
   {#if locked}
     <div class="lock-banner">
-      <span class="lock-text">Raw JSON is read-only. Prefer the Bible / Scene / Arc tabs for editing.</span>
+      <span class="lock-text">Raw JSON is read-only. Prefer the Brief / Section / Arc tabs for editing.</span>
       <button class="lock-btn" onclick={() => (locked = false)}>Enable Editing</button>
     </div>
   {:else}
     <div class="lock-banner lock-banner-warn">
-      <span class="lock-text">Editing enabled — changes auto-save. Bible edits create new versions.</span>
+      <span class="lock-text">Editing enabled — changes auto-save. Brief edits create new versions.</span>
       <button class="lock-btn" onclick={() => (locked = true)}>Lock</button>
     </div>
   {/if}
 
   <div class="editor-section">
-    <div class="editor-label">Bible JSON</div>
+    <div class="editor-label">Brief JSON</div>
     <div class="editor-wrapper" class:editor-locked={locked}>
       <CodeMirror value={bibleJson} on:change={(e) => { if (!locked) handleBibleChange(e.detail); }} readonly={locked} {extensions} />
     </div>

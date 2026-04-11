@@ -110,7 +110,7 @@ describe("buildRing3", () => {
     expect(names).not.toContain("CONTINUITY_BRIDGE");
     expect(names).not.toContain("MICRO_DIRECTIVE");
 
-    expect(result.text).toContain("=== SCENE: The Bar ===");
+    expect(result.text).toContain("=== SECTION: The Bar ===");
     expect(result.text).toContain("=== MARCUS — VOICE ===");
     expect(result.text).toContain("=== LOCATION: The Bar ===");
     expect(result.text).toContain("ANCHOR LINES");
@@ -250,7 +250,7 @@ describe("buildRing3", () => {
     const interiority = result.sections.find((s) => s.name === "POV_INTERIORITY");
 
     expect(interiority).toBeDefined();
-    expect(interiority!.text).toContain("POV INTERIORITY: MARCUS");
+    expect(interiority!.text).toContain("AUTHOR VOICE: MARCUS");
     expect(interiority!.text).toContain("Backstory:");
     expect(interiority!.text).toContain("ranch");
     expect(interiority!.immune).toBe(true);
@@ -401,7 +401,7 @@ describe("buildRing3", () => {
     const names = result.sections.map((s) => s.name);
 
     expect(names).toContain("CONTINUITY_BRIDGE");
-    expect(result.text).toContain("previous scene");
+    expect(result.text).toContain("previous section");
     expect(result.text).toContain("She closed the door");
   });
 

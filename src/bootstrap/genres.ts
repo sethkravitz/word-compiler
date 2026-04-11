@@ -70,7 +70,7 @@ export const PERSONAL_ESSAY: GenreTemplate = {
     paragraphPolicy: {
       maxSentences: 6,
       singleSentenceFrequency: "frequent",
-      notes: "Single-sentence paragraphs for emotional turns. Longer paragraphs for scene-setting.",
+      notes: "Single-sentence paragraphs for emotional turns. Longer paragraphs for setting context.",
     },
     structuralBans: [
       "Do not open with a throat-clearing anecdote that delays the point",
@@ -193,13 +193,13 @@ export const NARRATIVE_NONFICTION: GenreTemplate = {
     },
     sentenceArchitecture: {
       targetVariance: "high",
-      fragmentPolicy: "occasional for scene transitions",
-      notes: "Scene-setting sentences can be long and descriptive. Action and dialogue stay tight.",
+      fragmentPolicy: "occasional for section transitions",
+      notes: "Context-setting sentences can be long and descriptive. Arguments and evidence stay tight.",
     },
     paragraphPolicy: {
       maxSentences: 6,
       singleSentenceFrequency: "moderate",
-      notes: "Longer paragraphs for scene-building. Shorter for action and turning points.",
+      notes: "Longer paragraphs for building context. Shorter for key arguments and turning points.",
     },
     structuralBans: [
       "Never confuse the timeline without signaling the jump",

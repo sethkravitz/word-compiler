@@ -62,7 +62,7 @@ export function diffBibles(older: Bible, newer: Bible): BibleDiff[] {
       older.characters,
       newer.characters,
       (c) => c.id,
-      (c) => `Character "${c.name}"`,
+      (c) => `Voice profile "${c.name}"`,
       "character",
     ),
   );

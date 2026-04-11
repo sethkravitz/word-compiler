@@ -56,8 +56,8 @@ export const REVIEW_OUTPUT_SCHEMA: Record<string, unknown> = {
 // ─── Fixed Prompt Sections ──────────────────────
 
 const SEVERITY_DEFINITIONS = `SEVERITY DEFINITIONS:
-- critical: Breaks a stated rule in the style guide or bible (kill list handled separately)
-- warning: Weakens the prose quality, voice consistency, or narrative coherence
+- critical: Breaks a stated rule in the style guide or essay brief (kill list handled separately)
+- warning: Weakens the prose quality, voice consistency, or argumentative coherence
 - info: Minor polish opportunity, stylistic suggestion`;
 
 const ANCHOR_INSTRUCTIONS = `ANCHOR FORMAT:
@@ -65,7 +65,7 @@ For each annotation, provide an anchor object:
 - prefix: 8-15 words of verbatim prose immediately before the flagged span
 - focus: the EXACT verbatim text being flagged — copied character-for-character from the input
 - suffix: 8-15 words of verbatim prose immediately after the flagged span
-Set scope to "dialogue" for issues in spoken text, "narration" for narrative prose, or "both" if the issue spans both.
+Set scope to "dialogue" for issues in spoken text, "prose" for narrative prose, or "both" if the issue spans both.
 
 CRITICAL — FOCUS/SUGGESTION ALIGNMENT:
 When you provide a suggestion, anchor.focus MUST span the COMPLETE text that the suggestion replaces.

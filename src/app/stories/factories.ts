@@ -48,19 +48,19 @@ export function makeChunk(overrides: Partial<Chunk> = {}): Chunk {
 export function makeScenePlan(overrides: Partial<ScenePlan> = {}): ScenePlan {
   return {
     ...createEmptyScenePlan("proj-1"),
-    title: "The Confrontation",
-    povCharacterId: "char-alice",
-    narrativeGoal: "Alice discovers the letter and confronts Bob",
-    emotionalBeat: "Rising tension → explosive reveal",
-    readerEffect: "Reader realizes Bob has been lying",
-    pacing: "Slow build to fast climax",
+    title: "The Hidden Cost",
+    povCharacterId: "char-author",
+    narrativeGoal: "Establish the central argument through a concrete example",
+    emotionalBeat: "Growing unease → dawning recognition",
+    readerEffect: "Reader questions their own assumptions about productivity",
+    pacing: "Measured opening to sharp pivot",
     density: "dense",
     estimatedWordCount: [800, 1200],
     chunkCount: 3,
     chunkDescriptions: [
-      "Alice enters the study and finds the letter",
-      "She reads the letter and pieces it together",
-      "Bob walks in — confrontation erupts",
+      "Open with the anecdote that triggered the investigation",
+      "Present the evidence that contradicts conventional wisdom",
+      "Draw the connection the reader hasn't made yet",
     ],
     failureModeToAvoid: "Heavy-handed thesis statement; telegraphing the conclusion too early",
     ...overrides,
@@ -89,23 +89,29 @@ export function makeNarrativeIR(overrides: Partial<NarrativeIR> = {}): Narrative
   return {
     ...createEmptyNarrativeIR("scene-1"),
     events: [
-      "Alice entered the study",
-      "She discovered the letter hidden in the desk drawer",
-      "Bob confronted her about reading his correspondence",
+      "Introduced the remote work productivity paradox",
+      "Presented the 2024 Stanford study contradicting earlier findings",
+      "Drew the connection between surveillance tools and declining output",
     ],
-    factsIntroduced: ["The letter was written by Marcus three weeks prior"],
-    factsRevealedToReader: ["The letter was written by Marcus", "Alice knew about the affair all along"],
-    factsWithheld: ["Marcus is actually Alice's brother"],
+    factsIntroduced: ["Remote workers log 15% more hours but produce 8% less measurable output"],
+    factsRevealedToReader: [
+      "The productivity gains were a measurement artifact",
+      "The original study had a self-selection bias",
+    ],
+    factsWithheld: ["The author's own company made the same mistake"],
     characterDeltas: [
       {
-        characterId: "char-alice",
-        learned: "Bob has been lying about his alibi",
-        suspicionGained: "Marcus may have been involved in the cover-up",
-        emotionalShift: "Fear → determination",
+        characterId: "char-author",
+        learned: "The data contradicts the prevailing narrative",
+        suspicionGained: "The metrics themselves may be the problem",
+        emotionalShift: "Confidence → doubt",
         relationshipChange: null,
       },
     ],
-    unresolvedTensions: ["Who actually sent the letter?", "What does Marcus know about the incident?"],
+    unresolvedTensions: [
+      "Are we measuring the right things?",
+      "What happens when the surveillance tools become the product?",
+    ],
     ...overrides,
   };
 }
@@ -235,16 +241,16 @@ export function makeVoiceReport(overrides: Partial<VoiceSeparabilityReport> = {}
   return {
     characterStats: [
       {
-        characterId: "char-alice",
-        characterName: "Alice",
+        characterId: "char-author",
+        characterName: "Author",
         dialogueCount: 24,
         avgSentenceLength: 8.3,
         sentenceLengthStdDev: 3.1,
         typeTokenRatio: 0.72,
       },
       {
-        characterId: "char-bob",
-        characterName: "Bob",
+        characterId: "char-editor",
+        characterName: "Editor",
         dialogueCount: 18,
         avgSentenceLength: 14.6,
         sentenceLengthStdDev: 5.8,
@@ -253,7 +259,8 @@ export function makeVoiceReport(overrides: Partial<VoiceSeparabilityReport> = {}
     ],
     interCharacterVariance: 0.42,
     separable: true,
-    detail: "Distinct voice signatures: Alice uses short, clipped sentences; Bob favors longer, hedging constructions.",
+    detail:
+      "Distinct voice signatures: Author uses short, clipped sentences; Editor favors longer, hedging constructions.",
     ...overrides,
   };
 }
@@ -265,22 +272,22 @@ export function makeChapterArc(overrides: Partial<ChapterArc> = {}): ChapterArc 
     id: generateId(),
     projectId: "proj-1",
     chapterNumber: 1,
-    workingTitle: "The Letter",
-    narrativeFunction: "Inciting incident — shatters Alice's false sense of security",
-    dominantRegister: "Restrained → explosive",
-    pacingTarget: "Slow build in sections 1-2, rapid acceleration in section 3",
-    endingPosture: "Cliffhanger — Bob's accusation hangs unanswered",
+    workingTitle: "The Productivity Illusion",
+    narrativeFunction: "Establish the central thesis through evidence and personal experience",
+    dominantRegister: "Analytical → personal",
+    pacingTarget: "Measured opening, accelerating through evidence, reflective close",
+    endingPosture: "Open question — the reader must decide what to do with this",
     readerStateEntering: {
-      knows: ["Alice is a journalist investigating corruption"],
-      suspects: ["Bob may be hiding something"],
-      wrongAbout: ["Marcus is a stranger to Alice"],
-      activeTensions: ["Will Alice find evidence?"],
+      knows: ["Remote work became the default after 2020"],
+      suspects: ["The productivity numbers may be inflated"],
+      wrongAbout: ["More hours equals more output"],
+      activeTensions: ["Is remote work actually working?"],
     },
     readerStateExiting: {
-      knows: ["Alice is a journalist investigating corruption", "Bob lied about his alibi"],
-      suspects: ["Marcus is connected to the cover-up"],
+      knows: ["Remote work became the default after 2020", "The metrics are measuring the wrong things"],
+      suspects: ["The surveillance tools are making it worse"],
       wrongAbout: [],
-      activeTensions: ["What will Alice do with the letter?", "Is Bob dangerous?"],
+      activeTensions: ["What should companies actually measure?", "Can trust replace tracking?"],
     },
     sourcePrompt: null,
     ...overrides,
@@ -341,10 +348,10 @@ export function makeProject(overrides: Partial<Project> = {}): Project {
 
 export function makeCharacterDelta(overrides: Partial<CharacterDelta> = {}): CharacterDelta {
   return {
-    characterId: "char-alice",
-    learned: "Bob has been lying about his alibi",
-    suspicionGained: "Marcus may have been involved",
-    emotionalShift: "Fear → determination",
+    characterId: "char-author",
+    learned: "The data contradicts the prevailing narrative",
+    suspicionGained: "The metrics themselves may be the problem",
+    emotionalShift: "Confidence → doubt",
     relationshipChange: null,
     ...overrides,
   };

@@ -74,8 +74,8 @@ describe("exportToMarkdown", () => {
   it("generates chapter heading from arc title", () => {
     const scenes = [makeScene("s1", "Opening", 0)];
     const chunks = { s1: [makeChunk("Hello world.")] };
-    const result = exportToMarkdown(scenes, chunks, makeArc("Chapter One"));
-    expect(result).toContain("# Chapter One");
+    const result = exportToMarkdown(scenes, chunks, makeArc("Section One"));
+    expect(result).toContain("# Section One");
   });
 
   it("generates scene headings", () => {

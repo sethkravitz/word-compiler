@@ -85,12 +85,12 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
     res.json({ ok: true });
   });
 
-  // ─── Bibles ─────────────────────────────────────────
+  // ─── Essay Briefs ───────────────────────────────────
   router.get("/projects/:projectId/bibles/latest", (req, res) => {
     const bible = bibles.getLatestBible(db, req.params.projectId);
     if (!bible) {
-      console.debug(`[data] No bible found for project: ${req.params.projectId}`);
-      return res.status(404).json({ error: "No bible found" });
+      console.debug(`[data] No essay brief found for project: ${req.params.projectId}`);
+      return res.status(404).json({ error: "No essay brief found" });
     }
     res.json(bible);
   });
@@ -98,8 +98,10 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
   router.get("/projects/:projectId/bibles/:version", (req, res) => {
     const bible = bibles.getBibleVersion(db, req.params.projectId, parseInt(req.params.version, 10));
     if (!bible) {
-      console.warn(`[data] Bible version not found: project=${req.params.projectId} version=${req.params.version}`);
-      return res.status(404).json({ error: "Bible version not found" });
+      console.warn(
+        `[data] Essay brief version not found: project=${req.params.projectId} version=${req.params.version}`,
+      );
+      return res.status(404).json({ error: "Essay brief version not found" });
     }
     res.json(bible);
   });
@@ -112,12 +114,12 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
     ensureProject(req.params.projectId);
     const bible = bibles.createBible(db, req.body);
     console.log(
-      `[data] Created bible: project=${req.params.projectId} version=${bible.version} chars=${bible.characters?.length ?? 0} locations=${bible.locations?.length ?? 0}`,
+      `[data] Created brief: project=${req.params.projectId} version=${bible.version} voices=${bible.characters?.length ?? 0} sources=${bible.locations?.length ?? 0}`,
     );
     res.status(201).json(bible);
   });
 
-  // ─── Chapter Arcs ──────────────────────────────────
+  // ─── Essay Arcs ────────────────────────────────────
   router.get("/projects/:projectId/chapters", (req, res) => {
     res.json(chapterArcs.listChapterArcs(db, req.params.projectId));
   });
@@ -125,8 +127,8 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
   router.get("/chapters/:id", (req, res) => {
     const arc = chapterArcs.getChapterArc(db, req.params.id);
     if (!arc) {
-      console.warn(`[data] Chapter arc not found: ${req.params.id}`);
-      return res.status(404).json({ error: "Chapter arc not found" });
+      console.warn(`[data] Essay arc not found: ${req.params.id}`);
+      return res.status(404).json({ error: "Essay arc not found" });
     }
     res.json(arc);
   });
@@ -134,7 +136,7 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
   router.post("/chapters", (req, res) => {
     if (req.body.projectId) ensureProject(req.body.projectId);
     const arc = chapterArcs.createChapterArc(db, req.body);
-    console.log(`[data] Created chapter arc: ${arc.id} project=${req.body.projectId}`);
+    console.log(`[data] Created essay arc: ${arc.id} project=${req.body.projectId}`);
     res.status(201).json(arc);
   });
 
@@ -143,11 +145,11 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
       return res.status(400).json({ error: "URL id and body id do not match" });
     }
     const arc = chapterArcs.updateChapterArc(db, req.body);
-    console.log(`[data] Updated chapter arc: ${req.params.id}`);
+    console.log(`[data] Updated essay arc: ${req.params.id}`);
     res.json(arc);
   });
 
-  // ─── Scene Plans ───────────────────────────────────
+  // ─── Section Plans ─────────────────────────────────
   router.get("/chapters/:chapterId/scenes", (req, res) => {
     res.json(scenePlans.listScenePlans(db, req.params.chapterId));
   });
@@ -155,8 +157,8 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
   router.get("/scenes/:id", (req, res) => {
     const result = scenePlans.getScenePlan(db, req.params.id);
     if (!result) {
-      console.warn(`[data] Scene plan not found: ${req.params.id}`);
-      return res.status(404).json({ error: "Scene plan not found" });
+      console.warn(`[data] Section plan not found: ${req.params.id}`);
+      return res.status(404).json({ error: "Section plan not found" });
     }
     res.json(result);
   });
@@ -165,7 +167,7 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
     const { plan, sceneOrder } = req.body;
     if (plan.projectId) ensureProject(plan.projectId);
     const created = scenePlans.createScenePlan(db, plan, sceneOrder ?? 0);
-    console.log(`[data] Created scene plan: ${created.id} order=${sceneOrder ?? 0}`);
+    console.log(`[data] Created section plan: ${created.id} order=${sceneOrder ?? 0}`);
     res.status(201).json(created);
   });
 
@@ -174,17 +176,17 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
       return res.status(400).json({ error: "URL id and body id do not match" });
     }
     const updated = scenePlans.updateScenePlan(db, req.body);
-    console.log(`[data] Updated scene plan: ${req.params.id}`);
+    console.log(`[data] Updated section plan: ${req.params.id}`);
     res.json(updated);
   });
 
   router.patch("/scenes/:id/status", (req, res) => {
     const ok = scenePlans.updateSceneStatus(db, req.params.id, req.body.status);
     if (!ok) {
-      console.warn(`[data] Scene not found for status update: ${req.params.id}`);
-      return res.status(404).json({ error: "Scene not found" });
+      console.warn(`[data] Section not found for status update: ${req.params.id}`);
+      return res.status(404).json({ error: "Section not found" });
     }
-    console.log(`[data] Scene ${req.params.id} status → ${req.body.status}`);
+    console.log(`[data] Section ${req.params.id} status → ${req.body.status}`);
     res.json({ ok: true });
   });
 
@@ -204,7 +206,7 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
 
   router.post("/chunks", (req, res) => {
     const chunk = chunks.createChunk(db, req.body);
-    console.log(`[data] Created chunk: ${chunk.id} scene=${chunk.sceneId} seq=${chunk.sequenceNumber}`);
+    console.log(`[data] Created chunk: ${chunk.id} section=${chunk.sceneId} seq=${chunk.sequenceNumber}`);
     res.status(201).json(chunk);
   });
 
@@ -263,7 +265,7 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
   router.get("/scenes/:sceneId/ir", (req, res) => {
     const ir = narrativeIRs.getNarrativeIR(db, req.params.sceneId);
     if (!ir) {
-      console.debug(`[data] IR not found for scene: ${req.params.sceneId}`);
+      console.debug(`[data] IR not found for section: ${req.params.sceneId}`);
       return res.status(404).json({ error: "IR not found" });
     }
     res.json(ir);
@@ -271,7 +273,7 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
 
   router.post("/scenes/:sceneId/ir", (req, res) => {
     const ir = narrativeIRs.createNarrativeIR(db, req.body);
-    console.log(`[data] Created narrative IR: scene=${req.params.sceneId}`);
+    console.log(`[data] Created narrative IR: section=${req.params.sceneId}`);
     res.status(201).json(ir);
   });
 
@@ -280,7 +282,7 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
       return res.status(400).json({ error: "URL sceneId and body sceneId do not match" });
     }
     const ir = narrativeIRs.updateNarrativeIR(db, req.body);
-    console.log(`[data] Updated narrative IR: scene=${req.params.sceneId}`);
+    console.log(`[data] Updated narrative IR: section=${req.params.sceneId}`);
     res.json(ir);
   });
 
@@ -290,7 +292,7 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
       console.warn(`[data] IR not found for verify: ${req.params.sceneId}`);
       return res.status(404).json({ error: "IR not found" });
     }
-    console.log(`[data] Verified narrative IR: scene=${req.params.sceneId}`);
+    console.log(`[data] Verified narrative IR: section=${req.params.sceneId}`);
     res.json({ ok: true });
   });
 
@@ -526,7 +528,7 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
   });
 
   // Re-distill ring1Injection from all 3 sources. Called on startup to ensure
-  // any CIPHER preferences accumulated since last scene completion are reflected.
+  // any CIPHER preferences accumulated since last section completion are reflected.
   router.post("/projects/:projectId/voice/redistill", async (req, res) => {
     const { projectId } = req.params;
     if (!anthropicClient) {
@@ -573,7 +575,7 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
     }
     req.setTimeout(600_000);
     try {
-      // 1. Update project voice from the new scene
+      // 1. Update project voice from the new section
       const existingProjectGuide = projectVoiceGuideRepo.getProjectVoiceGuide(db, projectId);
       const projectGuide = await updateProjectVoice(existingProjectGuide, sceneText, sceneId, anthropicClient);
       projectVoiceGuideRepo.saveProjectVoiceGuide(db, projectId, projectGuide);
@@ -596,7 +598,7 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
         voiceGuideRepo.saveVoiceGuide(db, authorGuide);
       }
 
-      console.log(`[data] Voice updated: project=${projectId} scene=${sceneId}`);
+      console.log(`[data] Voice updated: project=${projectId} section=${sceneId}`);
       res.status(201).json({ projectGuide, ring1Injection });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";

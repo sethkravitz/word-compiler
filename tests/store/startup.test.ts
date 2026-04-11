@@ -18,7 +18,7 @@ describe("initializeApp", () => {
   });
 
   it("loads single project with all data", async () => {
-    const project = { id: "proj-1", title: "Novel", status: "drafting" as const, createdAt: "", updatedAt: "" };
+    const project = { id: "proj-1", title: "Essay", status: "drafting" as const, createdAt: "", updatedAt: "" };
     const bible = createEmptyBible("proj-1");
     const arc = makeChapterArc({ id: "ch-1", projectId: "proj-1" });
     const plan = createEmptyScenePlan("proj-1");
@@ -63,7 +63,7 @@ describe("initializeApp", () => {
   });
 
   it("handles missing bible gracefully", async () => {
-    const project = { id: "proj-1", title: "Novel", status: "bootstrap" as const, createdAt: "", updatedAt: "" };
+    const project = { id: "proj-1", title: "Essay", status: "bootstrap" as const, createdAt: "", updatedAt: "" };
     mockedApi.apiListProjects.mockResolvedValue([project]);
     mockedApi.apiGetProject.mockResolvedValue(project);
     mockedApi.apiGetLatestBible.mockRejectedValue(new Error("No bible found"));

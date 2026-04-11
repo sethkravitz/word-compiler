@@ -21,7 +21,7 @@ vi.mock("@tiptap/extension-paragraph", () => ({ default: {} }));
 vi.mock("@tiptap/extension-text", () => ({ default: {} }));
 
 function createMockStore(overrides = {}) {
-  const scene = makeSceneEntry("scene-1", "The Confrontation", "drafting");
+  const scene = makeSceneEntry("scene-1", "The Hidden Cost", "drafting");
   const chunk = makeChunk({ sceneId: "scene-1" });
   return {
     scenes: [scene],
@@ -65,7 +65,7 @@ describe("EditStage", () => {
       onRequestRefinement: vi.fn(),
     });
     // Title appears in both SceneSequencer and toolbar
-    const titles = screen.getAllByText("The Confrontation");
+    const titles = screen.getAllByText("The Hidden Cost");
     expect(titles.length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText(/words/)).toBeInTheDocument();
   });
@@ -99,6 +99,6 @@ describe("EditStage", () => {
       onRequestRefinement: vi.fn(),
     });
     // SceneSequencer renders scene titles as buttons
-    expect(screen.getByRole("button", { name: /The Confrontation/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /The Hidden Cost/ })).toBeInTheDocument();
   });
 });

@@ -320,7 +320,7 @@ export function mapToProposedAction(group: PatternGroup): ProposedAction | null 
 function mapAdvisoryAction(group: PatternGroup): ProposedAction {
   const n = Math.round(group.weightedCount);
   const scenes = new Set(group.edits.map((e) => e.sceneId)).size;
-  const evidence = `(${n} edits across ${scenes} scene${scenes > 1 ? "s" : ""})`;
+  const evidence = `(${n} edits across ${scenes} section${scenes > 1 ? "s" : ""})`;
 
   switch (group.patternType) {
     case "CUT_FILLER":
@@ -351,12 +351,12 @@ function mapAdvisoryAction(group: PatternGroup): ProposedAction {
     case "TONE_SHIFT":
       return {
         target: "compilationNotes",
-        value: `You frequently adjust tone — consider refining voice guidance in your bible ${evidence}`,
+        value: `You frequently adjust tone — consider refining voice guidance in your essay brief ${evidence}`,
       };
     case "DIALOGUE_VOICE":
       return {
         target: "compilationNotes",
-        value: `Dialogue frequently revised — consider strengthening character voice definitions ${evidence}`,
+        value: `Dialogue frequently revised — consider strengthening author voice definitions ${evidence}`,
       };
     case "REORDER":
       return {

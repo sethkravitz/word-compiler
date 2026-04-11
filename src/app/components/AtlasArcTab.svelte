@@ -115,7 +115,7 @@ function updateDraft(changes: Partial<ChapterArc>) {
     <div class="arc-header">
       <h3 class="arc-title">
         {arc.workingTitle || "Untitled Essay"}
-        <span class="arc-chapter">Ch. {arc.chapterNumber}</span>
+        <span class="arc-chapter">Sec. {arc.chapterNumber}</span>
       </h3>
       <button class="edit-btn" onclick={startEdit} title="Edit essay arc">edit</button>
     </div>

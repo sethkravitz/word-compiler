@@ -24,16 +24,16 @@ export const NotSeparable: Story = {
     report: makeVoiceReport({
       characterStats: [
         {
-          characterId: "char-alice",
-          characterName: "Alice",
+          characterId: "char-author",
+          characterName: "Author",
           dialogueCount: 20,
           avgSentenceLength: 11.2,
           sentenceLengthStdDev: 3.5,
           typeTokenRatio: 0.64,
         },
         {
-          characterId: "char-bob",
-          characterName: "Bob",
+          characterId: "char-editor",
+          characterName: "Editor",
           dialogueCount: 16,
           avgSentenceLength: 12.1,
           sentenceLengthStdDev: 3.8,
@@ -43,7 +43,7 @@ export const NotSeparable: Story = {
       interCharacterVariance: 0.8,
       separable: false,
       detail:
-        "Character voices are too similar. Alice and Bob share similar sentence lengths and vocabulary complexity.",
+        "Voice registers are too similar. Author and Editor share similar sentence lengths and vocabulary complexity.",
     }),
   },
 };
@@ -53,16 +53,16 @@ export const ManyCharacters: Story = {
     report: makeVoiceReport({
       characterStats: [
         {
-          characterId: "char-alice",
-          characterName: "Alice",
+          characterId: "char-author",
+          characterName: "Author",
           dialogueCount: 24,
           avgSentenceLength: 8.3,
           sentenceLengthStdDev: 3.1,
           typeTokenRatio: 0.72,
         },
         {
-          characterId: "char-bob",
-          characterName: "Bob",
+          characterId: "char-editor",
+          characterName: "Editor",
           dialogueCount: 18,
           avgSentenceLength: 14.6,
           sentenceLengthStdDev: 5.8,
@@ -85,8 +85,8 @@ export const ManyCharacters: Story = {
           typeTokenRatio: 0.69,
         },
         {
-          characterId: "char-detective",
-          characterName: "Det. Vasquez",
+          characterId: "char-critic",
+          characterName: "Critic",
           dialogueCount: 7,
           avgSentenceLength: 10.8,
           sentenceLengthStdDev: 4.5,
@@ -96,7 +96,7 @@ export const ManyCharacters: Story = {
       interCharacterVariance: 3.84,
       separable: true,
       detail:
-        "Strong voice differentiation. Marcus uses long, formal constructions; Alice is clipped and direct; Elena speaks in fragments.",
+        "Strong voice differentiation. Marcus uses long, formal constructions; Author is clipped and direct; Elena speaks in fragments.",
     }),
   },
 };
@@ -106,16 +106,16 @@ export const TwoCharacters: Story = {
     report: makeVoiceReport({
       characterStats: [
         {
-          characterId: "char-alice",
-          characterName: "Alice",
+          characterId: "char-author",
+          characterName: "Author",
           dialogueCount: 30,
           avgSentenceLength: 7.5,
           sentenceLengthStdDev: 2.8,
           typeTokenRatio: 0.74,
         },
         {
-          characterId: "char-bob",
-          characterName: "Bob",
+          characterId: "char-editor",
+          characterName: "Editor",
           dialogueCount: 26,
           avgSentenceLength: 16.2,
           sentenceLengthStdDev: 6.1,
@@ -124,7 +124,7 @@ export const TwoCharacters: Story = {
       ],
       interCharacterVariance: 4.12,
       separable: true,
-      detail: "Clear contrast: Alice's dialogue is terse and punchy; Bob's is meandering and verbose.",
+      detail: "Clear contrast: Author's voice is terse and punchy; Editor's is meandering and verbose.",
     }),
   },
 };

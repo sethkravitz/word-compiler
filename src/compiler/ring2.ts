@@ -8,13 +8,13 @@ export interface Ring2Result {
   tokenCount: number;
 }
 
-// ─── IR-derived character state ──────────────────────────
+// ─── IR-derived voice state ──────────────────────────
 
 function buildCharacterStateFromDeltas(deltas: CharacterDelta[]): string {
   const parts: string[] = [];
   if (deltas.some((d) => d.learned)) {
     parts.push(
-      `Knows: ${deltas
+      `Established: ${deltas
         .filter((d) => d.learned)
         .map((d) => d.learned)
         .join("; ")}`,
@@ -22,7 +22,7 @@ function buildCharacterStateFromDeltas(deltas: CharacterDelta[]): string {
   }
   if (deltas.some((d) => d.suspicionGained)) {
     parts.push(
-      `Suspects: ${deltas
+      `Building toward: ${deltas
         .filter((d) => d.suspicionGained)
         .map((d) => d.suspicionGained)
         .join("; ")}`,
@@ -30,11 +30,11 @@ function buildCharacterStateFromDeltas(deltas: CharacterDelta[]): string {
   }
   if (deltas.some((d) => d.emotionalShift)) {
     const last = [...deltas].reverse().find((d) => d.emotionalShift);
-    if (last) parts.push(`Emotional state: ${last.emotionalShift}`);
+    if (last) parts.push(`Tonal register: ${last.emotionalShift}`);
   }
   if (deltas.some((d) => d.relationshipChange)) {
     parts.push(
-      `Relationships: ${deltas
+      `Rhetorical stance: ${deltas
         .filter((d) => d.relationshipChange)
         .map((d) => d.relationshipChange)
         .join("; ")}`,
@@ -44,9 +44,10 @@ function buildCharacterStateFromDeltas(deltas: CharacterDelta[]): string {
 }
 
 function buildChapterBriefSection(chapterArc: ChapterArc): RingSection {
-  const briefParts: string[] = [`Chapter ${chapterArc.chapterNumber}: ${chapterArc.workingTitle}`];
+  // Essays use title only; chapter numbering is fiction-specific. Section position is tracked via section order, not the arc.
+  const briefParts: string[] = [`${chapterArc.workingTitle}`];
   if (chapterArc.narrativeFunction) {
-    briefParts.push(`Function: ${chapterArc.narrativeFunction}`);
+    briefParts.push(`Thesis: ${chapterArc.narrativeFunction}`);
   }
   if (chapterArc.dominantRegister) {
     briefParts.push(`Register: ${chapterArc.dominantRegister}`);
@@ -59,7 +60,7 @@ function buildChapterBriefSection(chapterArc: ChapterArc): RingSection {
   }
   return {
     name: "CHAPTER_BRIEF",
-    text: `=== CHAPTER CONTEXT ===\n${briefParts.join("\n")}`,
+    text: `=== ESSAY THESIS & STRUCTURE ===\n${briefParts.join("\n")}`,
     priority: 0,
     immune: true,
   };
@@ -68,14 +69,14 @@ function buildChapterBriefSection(chapterArc: ChapterArc): RingSection {
 function buildReaderStateSection(entering: ChapterArc["readerStateEntering"]): RingSection | null {
   if (!entering) return null;
   const parts: string[] = [];
-  if (entering.knows.length > 0) parts.push(`Knows: ${entering.knows.join("; ")}`);
-  if (entering.suspects.length > 0) parts.push(`Suspects: ${entering.suspects.join("; ")}`);
-  if (entering.wrongAbout.length > 0) parts.push(`Wrong about: ${entering.wrongAbout.join("; ")}`);
-  if (entering.activeTensions.length > 0) parts.push(`Tensions: ${entering.activeTensions.join("; ")}`);
+  if (entering.knows.length > 0) parts.push(`Established: ${entering.knows.join("; ")}`);
+  if (entering.suspects.length > 0) parts.push(`Expects: ${entering.suspects.join("; ")}`);
+  if (entering.wrongAbout.length > 0) parts.push(`Assumptions challenged: ${entering.wrongAbout.join("; ")}`);
+  if (entering.activeTensions.length > 0) parts.push(`Open questions: ${entering.activeTensions.join("; ")}`);
   if (parts.length === 0) return null;
   return {
     name: "READER_STATE_ENTRY",
-    text: `READER STATE AT CHAPTER START:\n${parts.join("\n")}`,
+    text: `ARGUMENT STATE ENTERING THIS SECTION:\n${parts.join("\n")}`,
     priority: 3,
     immune: false,
   };
@@ -86,7 +87,7 @@ function buildActiveSetupsSection(bible: Bible): RingSection | null {
   if (activeSetups.length === 0) return null;
   return {
     name: "ACTIVE_SETUPS",
-    text: `ACTIVE SETUPS:\n${activeSetups.map((s) => `- ${s.description} [${s.status}]`).join("\n")}`,
+    text: `ACTIVE ARGUMENT THREADS:\n${activeSetups.map((s) => `- ${s.description} [${s.status}]`).join("\n")}`,
     priority: 4,
     immune: false,
   };
@@ -107,7 +108,7 @@ function buildCharacterStateSections(verifiedIRs: NarrativeIR[], bible: Bible): 
     const char = bible.characters.find((c) => c.id === charId);
     const characterName = char?.name ?? charId;
 
-    // Cumulative deltas for this character across all prior scenes
+    // Cumulative deltas for this voice across all prior sections
     const cumulativeDeltas = verifiedIRs.flatMap((ir) => ir.characterDeltas.filter((d) => d.characterId === charId));
 
     const stateText = buildCharacterStateFromDeltas(cumulativeDeltas);
@@ -119,11 +120,11 @@ function buildCharacterStateSections(verifiedIRs: NarrativeIR[], bible: Bible): 
       .find((ir) => ir.characterPositions[characterName] || ir.characterPositions[charId]);
     const position = lastPositionIR?.characterPositions[characterName] ?? lastPositionIR?.characterPositions[charId];
 
-    const fullText = position ? `${stateText}\nLast position: ${position}` : stateText;
+    const fullText = position ? `${stateText}\nCurrent position: ${position}` : stateText;
 
     sections.push({
       name: `CHAR_STATE_${charId.toUpperCase().replace(/-/g, "_")}`,
-      text: `CHARACTER STATE — ${characterName.toUpperCase()} (entering this scene):\n${fullText}`,
+      text: `VOICE STATE — ${characterName.toUpperCase()} (entering this section):\n${fullText}`,
       priority: 2,
       immune: false,
     });
@@ -136,7 +137,7 @@ function buildUnresolvedTensionsSection(lastIR: NarrativeIR): RingSection | null
   if (lastIR.unresolvedTensions.length === 0) return null;
   return {
     name: "UNRESOLVED_TENSIONS",
-    text: `UNRESOLVED TENSIONS ENTERING THIS SCENE:\n${lastIR.unresolvedTensions.map((t) => `- ${t}`).join("\n")}`,
+    text: `OPEN QUESTIONS ENTERING THIS SECTION:\n${lastIR.unresolvedTensions.map((t) => `- ${t}`).join("\n")}`,
     priority: 3,
     immune: false,
   };
@@ -161,13 +162,13 @@ export function buildRing2(
   const setups = buildActiveSetupsSection(bible);
   if (setups) sections.push(setups);
 
-  // --- IR-Derived Character States (compressible, one section per active character) ---
-  // Only added when verified IRs are available — skip for scene 1
+  // --- IR-Derived Character States (compressible, one section per active voice) ---
+  // Only added when verified IRs are available — skip for section 1
   const verifiedIRs = previousSceneIRs.filter((ir) => ir.verified);
   if (verifiedIRs.length > 0) {
     sections.push(...buildCharacterStateSections(verifiedIRs, bible));
 
-    // --- Unresolved Tensions from last scene (compressible) ---
+    // --- Open questions from last section (compressible) ---
     const lastIR = verifiedIRs[verifiedIRs.length - 1]!;
     const tensions = buildUnresolvedTensionsSection(lastIR);
     if (tensions) sections.push(tensions);

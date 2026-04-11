@@ -3,16 +3,17 @@ import type { CharacterDossier, Location, RingSection, ScenePlan } from "../type
 
 export function formatSceneContract(plan: ScenePlan): string {
   const lines: string[] = [
-    `=== SCENE: ${plan.title} ===`,
-    `POV: ${plan.povCharacterId}, ${plan.povDistance}`,
+    `=== SECTION: ${plan.title} ===`,
+    `Voice: ${plan.povCharacterId}, ${plan.povDistance}`,
     `Goal: ${plan.narrativeGoal}`,
     `Emotional beat: ${plan.emotionalBeat}`,
     `Reader should: ${plan.readerEffect}`,
   ];
 
   if (plan.subtext) {
+    // Fiction-specific; essays skip via null data
     lines.push(
-      `\nSUBTEXT CONTRACT:`,
+      `\nIMPLICIT MEANING CONTRACT:`,
       `Surface: ${plan.subtext.surfaceConversation}`,
       `Actual: ${plan.subtext.actualConversation}`,
       `RULE: ${plan.subtext.enforcementRule}`,
@@ -38,8 +39,9 @@ export function formatSceneContract(plan: ScenePlan): string {
     );
   }
 
+  // Fiction-specific; essays skip via empty data
   if (Object.keys(plan.characterKnowledgeChanges).length > 0) {
-    lines.push(`\nCHARACTER KNOWLEDGE CHANGES:`);
+    lines.push(`\nKNOWLEDGE STATE CHANGES:`);
     for (const [charId, change] of Object.entries(plan.characterKnowledgeChanges)) {
       lines.push(`${charId}: ${change}`);
     }
@@ -97,7 +99,7 @@ export function formatCharacterVoice(char: CharacterDossier, sceneConstraints: s
   lines.push(...formatVoiceDetails(char.voice));
 
   if (sceneConstraints.length > 0) {
-    lines.push(`\nIn this scene:`);
+    lines.push(`\nIn this section:`);
     for (const constraint of sceneConstraints) {
       lines.push(`- ${constraint}`);
     }
@@ -140,7 +142,7 @@ function formatBackstorySection(char: CharacterDossier): string[] {
 
 function formatContradictionsSection(contradictions: string[] | null): string[] {
   if (!Array.isArray(contradictions) || contradictions.length === 0) return [];
-  const lines = ["Contradictions (show through action, never state directly):"];
+  const lines = ["Contradictions (demonstrate through evidence and reasoning, not assertion):"];
   for (const c of contradictions) {
     lines.push(`- ${c}`);
   }
@@ -164,7 +166,7 @@ const POV_INTERIORITY_GUARDRAIL =
   "Show nuance through evidence, qualification, and tonal shifts — never contradict earlier claims without acknowledgment. Do not invent facts or credentials beyond what is provided in context.";
 
 export function formatPovInteriority(char: CharacterDossier, povDistance: string): string {
-  const lines: string[] = [`=== POV INTERIORITY: ${char.name.toUpperCase()} ===`];
+  const lines: string[] = [`=== AUTHOR VOICE: ${char.name.toUpperCase()} ===`];
   const includeDeep = povDistance === "intimate" || povDistance === "close";
   const includeContradictions = includeDeep || povDistance === "moderate";
 
@@ -204,7 +206,7 @@ export function formatAntiAblation(plan: ScenePlan): string {
   const lines: string[] = [`=== ANTI-ABLATION ===`];
 
   if (plan.sceneSpecificProhibitions.length > 0) {
-    lines.push(`Scene-specific bans:`);
+    lines.push(`Section-specific bans:`);
     for (const p of plan.sceneSpecificProhibitions) {
       lines.push(`- ${p}`);
     }

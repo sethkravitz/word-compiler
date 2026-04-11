@@ -333,7 +333,7 @@ let canGenerate = $derived(!!store.bible && !!store.activeScenePlan && !!store.c
 
 let gateMessages = $derived.by(() => {
   const msgs: string[] = [];
-  if (!store.bible) msgs.push("No bible loaded.");
+  if (!store.bible) msgs.push("No brief loaded.");
   if (!store.activeScenePlan) msgs.push("No section plan selected.");
   if (store.activeScenePlan) {
     const planGate = checkScenePlanGate(store.activeScenePlan);

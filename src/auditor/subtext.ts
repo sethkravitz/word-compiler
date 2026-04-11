@@ -3,7 +3,7 @@ import { DEFAULT_FAST_MODEL, generateId } from "../types/index.js";
 
 // ─── Subtext Compliance ──────────────────────────────────
 //
-// LLM-assisted check: does any character explicitly state the subtext?
+// LLM-assisted check: does the author explicitly state what should remain implicit?
 // "Does not make subtext into text" is one of the most important style rules.
 
 export interface SubtextClient {
@@ -45,7 +45,7 @@ function parseSubtextResponse(text: string): SubtextCheckResult {
   };
 }
 
-const SUBTEXT_SYSTEM = `You are a literary editor specializing in subtext and implication. Your job is to identify whether characters explicitly state emotional truths that should remain unstated.`;
+const SUBTEXT_SYSTEM = `You are an editorial reviewer specializing in nuance and implication. Your job is to identify whether the author explicitly states what the reader should feel rather than letting evidence speak.`;
 
 export async function checkSubtext(
   prose: string,
@@ -68,8 +68,8 @@ ${prose}
 
 ---
 
-Does any character or narrator explicitly state the subtext ("${actualConversation.slice(0, 100)}")?
-Explicit statements include: direct declarations of feeling, characters saying exactly what they mean, narrator explaining what the scene is "really" about.
+Does the author explicitly state the subtext ("${actualConversation.slice(0, 100)}")?
+Explicit statements include: direct declarations of feeling, the author telling the reader what to think, or explaining what the section is "really" about.
 
 Return JSON:
 {

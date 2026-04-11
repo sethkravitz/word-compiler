@@ -61,13 +61,13 @@ describe("createWritingSample", () => {
   });
 
   it("stores filename and domain", () => {
-    const sample = createWritingSample("draft.md", "fiction", "Some text here");
+    const sample = createWritingSample("draft.md", "essay", "Some text here");
     expect(sample.filename).toBe("draft.md");
-    expect(sample.domain).toBe("fiction");
+    expect(sample.domain).toBe("essay");
   });
 
   it("allows null filename", () => {
-    const sample = createWritingSample(null, "fiction", "Some text here");
+    const sample = createWritingSample(null, "essay", "Some text here");
     expect(sample.filename).toBeNull();
   });
 

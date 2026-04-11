@@ -192,9 +192,9 @@ describe("buildRefinementUserPrompt", () => {
   });
 
   it("includes scene title and goal", () => {
-    const prompt = buildRefinementUserPrompt("text", baseRequest, "The Letter", "Alice discovers truth");
-    expect(prompt).toContain("SCENE: The Letter");
-    expect(prompt).toContain("GOAL: Alice discovers truth");
+    const prompt = buildRefinementUserPrompt("text", baseRequest, "The Hidden Cost", "Establish the central argument");
+    expect(prompt).toContain("SCENE: The Hidden Cost");
+    expect(prompt).toContain("GOAL: Establish the central argument");
   });
 
   it("includes chips when provided", () => {

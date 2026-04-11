@@ -67,7 +67,7 @@ describe("GET /api/chapters/:id", () => {
   it("returns 404 for a nonexistent chapter arc", async () => {
     const res = await request(app).get("/api/chapters/nonexistent-id");
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ error: "Chapter arc not found" });
+    expect(res.body).toEqual({ error: "Essay arc not found" });
   });
 });
 

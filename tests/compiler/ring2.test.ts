@@ -67,9 +67,9 @@ const config = createDefaultCompilationConfig();
 describe("buildRing2", () => {
   it("includes chapter brief with all fields", () => {
     const result = buildRing2(makeArc(), makeBible(), [], config);
-    expect(result.text).toContain("=== CHAPTER CONTEXT ===");
-    expect(result.text).toContain("Chapter 1: The Beginning");
-    expect(result.text).toContain("Function: Establish the world");
+    expect(result.text).toContain("=== ESSAY THESIS & STRUCTURE ===");
+    expect(result.text).toContain("The Beginning");
+    expect(result.text).toContain("Thesis: Establish the world");
     expect(result.text).toContain("Register: literary realism");
     expect(result.text).toContain("Pacing: slow build");
     expect(result.text).toContain("Ending: question mark");
@@ -84,10 +84,10 @@ describe("buildRing2", () => {
 
   it("includes reader state at entry when populated", () => {
     const result = buildRing2(makeArc(), makeBible(), [], config);
-    expect(result.text).toContain("READER STATE AT CHAPTER START");
-    expect(result.text).toContain("Knows: protagonist is a teacher");
-    expect(result.text).toContain("Suspects: something is wrong at the school");
-    expect(result.text).toContain("Tensions: who sent the letter");
+    expect(result.text).toContain("ARGUMENT STATE ENTERING THIS SECTION");
+    expect(result.text).toContain("Established: protagonist is a teacher");
+    expect(result.text).toContain("Expects: something is wrong at the school");
+    expect(result.text).toContain("Open questions: who sent the letter");
   });
 
   it("reader state section is compressible", () => {
@@ -107,7 +107,7 @@ describe("buildRing2", () => {
 
   it("includes only active setups (planned + planted, not paid-off)", () => {
     const result = buildRing2(makeArc(), makeBible(), [], config);
-    expect(result.text).toContain("ACTIVE SETUPS");
+    expect(result.text).toContain("ACTIVE ARGUMENT THREADS");
     expect(result.text).toContain("The letter in the desk [planned]");
     expect(result.text).toContain("Missing keys [planted]");
     expect(result.text).not.toContain("Dog barking");
@@ -140,7 +140,7 @@ describe("buildRing2", () => {
 
   it("minimal arc produces only chapter brief", () => {
     const arc = makeArc({
-      workingTitle: "Chapter One",
+      workingTitle: "Section One",
       narrativeFunction: "",
       dominantRegister: "",
       pacingTarget: "",

@@ -3,7 +3,7 @@ import type { Chunk } from "../types/index.js";
 import { getCanonicalText } from "../types/index.js";
 
 /**
- * Export scenes as plain text with scene separators.
+ * Export sections as plain text with section separators.
  */
 export function exportToPlaintext(scenes: SceneEntry[], sceneChunks: Record<string, Chunk[]>): string {
   const sorted = [...scenes].sort((a, b) => a.sceneOrder - b.sceneOrder);

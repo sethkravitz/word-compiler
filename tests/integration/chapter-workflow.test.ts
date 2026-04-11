@@ -331,7 +331,7 @@ describe("4-scene chapter end-to-end workflow", () => {
       const result = compilePayload(bible, scenePlans[1]!, [], 0, config, chapterArc, prevSceneLastChunk);
 
       // User message should contain the bridge text
-      expect(result.payload.userMessage).toContain("previous scene");
+      expect(result.payload.userMessage).toContain("previous section");
       expect(result.payload.userMessage).toContain("empty desk");
       expect(result.log.ring3Contents).toContain("CONTINUITY_BRIDGE");
     });
@@ -340,7 +340,7 @@ describe("4-scene chapter end-to-end workflow", () => {
       const result = compilePayload(bible, scenePlans[1]!, [], 0, config, chapterArc);
       expect(result.log.ring2Contents).toContain("CHAPTER_BRIEF");
       // Reader state should be present
-      expect(result.payload.userMessage).toContain("CHAPTER CONTEXT");
+      expect(result.payload.userMessage).toContain("ESSAY THESIS & STRUCTURE");
     });
   });
 

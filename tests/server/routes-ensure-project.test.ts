@@ -63,7 +63,7 @@ describe("ensureProject auto-creation", () => {
       id: "ch1",
       projectId: "proj-ch",
       chapterNumber: 1,
-      title: "Chapter One",
+      title: "Section One",
       premise: "test",
       scenes: [],
     };

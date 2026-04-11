@@ -104,7 +104,7 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
 
   async function generateChunk(pinnedSceneId?: string) {
     if (!canGenerate()) {
-      store.setError("Cannot generate: missing compiled payload, bible, or scene plan");
+      store.setError("Cannot generate: missing compiled payload, brief, or section plan");
       return;
     }
 
@@ -140,7 +140,7 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
   async function runAuditManual(pinnedSceneId?: string) {
     const plan = store.activeScenePlan;
     if (!store.bible || !plan) {
-      store.setError("Cannot audit: missing bible or scene plan");
+      store.setError("Cannot audit: missing brief or section plan");
       return;
     }
 
@@ -167,11 +167,11 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
   ): { plan: typeof store.activeScenePlan & object; sceneId: string; prose: string } | null {
     const plan = store.activeScenePlan;
     if (!plan) {
-      store.setError("Cannot extract IR: no active scene plan");
+      store.setError("Cannot extract IR: no active section plan");
       return null;
     }
     if (!store.bible) {
-      store.setError("Cannot extract IR: no bible loaded");
+      store.setError("Cannot extract IR: no brief loaded");
       return null;
     }
 
@@ -242,7 +242,7 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
   async function runDeepAudit(pinnedSceneId?: string) {
     const plan = store.activeScenePlan;
     if (!store.bible || !plan) {
-      store.setError("Cannot run deep audit: missing bible or scene plan");
+      store.setError("Cannot run deep audit: missing brief or section plan");
       return;
     }
 
@@ -318,7 +318,7 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
   async function runAutopilot() {
     const plan = store.activeScenePlan;
     if (!plan || !store.compiledPayload || !store.bible) {
-      store.setError("Cannot start autopilot: missing scene plan, compiled payload, or bible");
+      store.setError("Cannot start autopilot: missing section plan, compiled payload, or brief");
       return;
     }
 
@@ -344,7 +344,7 @@ export function createGenerationActions(store: ProjectStore, commands: Commands)
 
   async function requestRefinement(request: RefinementRequest): Promise<RefinementResult | null> {
     if (!store.bible || !store.activeScenePlan) {
-      store.setError("Cannot refine: missing bible or scene plan");
+      store.setError("Cannot refine: missing brief or section plan");
       return null;
     }
 

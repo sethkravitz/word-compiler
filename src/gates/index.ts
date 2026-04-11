@@ -99,7 +99,7 @@ export function checkBibleVersioningGate(bible: Bible, latestVersion: number): G
   return {
     passed: false,
     messages: [
-      `Bible version ${bible.version} is outdated — latest is ${latestVersion}. Recompile with current bible.`,
+      `Brief version ${bible.version} is outdated — latest is ${latestVersion}. Recompile with current brief.`,
     ],
   };
 }

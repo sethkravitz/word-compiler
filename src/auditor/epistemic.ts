@@ -1,10 +1,10 @@
 import type { AuditFlag, Bible, NarrativeIR } from "../types/index.js";
 import { generateId } from "../types/index.js";
 
-// ─── Epistemic Leak Detection ────────────────────────────
+// ─── Factual Consistency Detection ────────────────────────────
 //
-// Checks whether any character in the current scene references knowledge
-// that has no documented source in prior IRs or the current scene's
+// Checks whether any voice in the current section references knowledge
+// that has no documented source in prior IRs or the current section's
 // factsIntroduced / factsRevealedToReader.
 
 function buildCharacterKnowledgeSet(characterId: string, priorIRs: NarrativeIR[]): Set<string> {
@@ -60,7 +60,7 @@ export function checkEpistemicLeaks(sceneIR: NarrativeIR, allPriorIRs: Narrative
         sceneId: sceneIR.sceneId,
         severity: "warning",
         category: "epistemic_leak",
-        message: `${charName} appears to know "${learned}" but no source was found in prior scene IRs or current scene facts. Possible epistemic leak.`,
+        message: `${charName} references "${learned}" but no prior section established this. Possible factual consistency issue.`,
         lineReference: null,
         resolved: false,
         resolvedAction: null,

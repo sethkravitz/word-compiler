@@ -40,7 +40,7 @@ describe("GET /api/projects", () => {
 
 describe("GET /api/projects/:id", () => {
   it("returns the project when it exists", async () => {
-    const p = makeProject({ title: "My Novel" });
+    const p = makeProject({ title: "My Essay" });
     projects.createProject(db, p);
 
     const res = await request(app).get(`/api/projects/${p.id}`);
@@ -48,7 +48,7 @@ describe("GET /api/projects/:id", () => {
     expect(res.body).toEqual(
       expect.objectContaining({
         id: p.id,
-        title: "My Novel",
+        title: "My Essay",
         status: "bootstrap",
       }),
     );

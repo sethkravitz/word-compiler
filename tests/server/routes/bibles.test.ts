@@ -47,7 +47,7 @@ describe("GET /api/projects/:projectId/bibles/latest", () => {
 
     const res = await request(app).get(`/api/projects/${p.id}/bibles/latest`);
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ error: "No bible found" });
+    expect(res.body).toEqual({ error: "No essay brief found" });
   });
 });
 
@@ -66,7 +66,7 @@ describe("GET /api/projects/:projectId/bibles/:version", () => {
 
     const res = await request(app).get(`/api/projects/${project.id}/bibles/99`);
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ error: "Bible version not found" });
+    expect(res.body).toEqual({ error: "Essay brief version not found" });
   });
 });
 

@@ -11,15 +11,15 @@ export interface SceneReaderState {
   sceneId: string;
   sceneOrder: number;
   state: ReaderState;
-  /** Facts newly revealed in this scene */
+  /** Facts newly revealed in this section */
   newFacts: string[];
-  /** Tensions newly introduced in this scene */
+  /** Tensions newly introduced in this section */
   newTensions: string[];
-  /** Tensions resolved by this scene */
+  /** Tensions resolved by this section */
   resolvedTensions: string[];
-  /** Setups planted in this scene */
+  /** Setups planted in this section */
   setupsPlanted: string[];
-  /** Payoffs executed in this scene */
+  /** Payoffs executed in this section */
   payoffsExecuted: string[];
 }
 
@@ -68,7 +68,7 @@ function accumulateFactsFromIR(ir: NarrativeIR, current: ReaderState): string[] 
   return newFacts;
 }
 
-/** Accumulate suspicions from character deltas. */
+/** Accumulate suspicions from voice deltas. */
 function accumulateSuspicionsFromIR(ir: NarrativeIR, current: ReaderState): void {
   for (const delta of ir.characterDeltas) {
     if (delta.suspicionGained) {
@@ -93,11 +93,11 @@ function accumulateTensionsFromIR(
     }
   }
 
-  // Detect resolved tensions (were in cumulative set but not in current scene's list)
+  // Detect resolved tensions (were in cumulative set but not in current section's list)
   const currentSceneTensions = new Set(ir.unresolvedTensions);
   for (const existing of current.unresolvedTensions) {
     if (!currentSceneTensions.has(existing) && !newTensions.includes(existing)) {
-      // This tension was in the cumulative set but the scene's IR no longer lists it
+      // This tension was in the cumulative set but the section's IR no longer lists it
       // Only count as resolved if it was in the previous cumulative state
       resolvedTensions.push(existing);
     }
@@ -110,7 +110,7 @@ function accumulateTensionsFromIR(
 }
 
 /**
- * Accumulate reader epistemic state across a sequence of scenes.
+ * Accumulate reader epistemic state across a sequence of sections.
  * Only verified IRs contribute to state changes.
  */
 export function accumulateReaderState(scenes: SceneInput[]): SceneReaderState[] {
@@ -157,7 +157,7 @@ export function accumulateReaderState(scenes: SceneInput[]): SceneReaderState[] 
   return results;
 }
 
-/** Resolve a character ID to a human-readable name via the bible. */
+/** Resolve a voice ID to a human-readable name via the essay brief. */
 function resolveCharacterName(characterId: string, bible?: Bible): string {
   if (!bible) return `[${characterId}]`;
   const char = bible.characters.find((c) => c.id === characterId);
@@ -241,7 +241,7 @@ function hasOverlap(a: string, b: string): boolean {
   return wordsA.some((w) => wordsB.has(w));
 }
 
-/** Check if any character acts on knowledge explicitly withheld from the reader. */
+/** Check if any voice acts on knowledge explicitly withheld from the reader. */
 function checkKnowledgeAhead(
   ir: NarrativeIR,
   withheldFacts: Set<string>,
@@ -289,7 +289,7 @@ function checkPrematurePayoff(ir: NarrativeIR, allSetups: Set<string>, sceneId: 
 
 /**
  * Detect epistemic inconsistencies across accumulated reader states.
- * Checks for: characters acting on explicitly withheld knowledge, unmatched payoffs.
+ * Checks for: voices referencing explicitly withheld knowledge, unmatched payoffs.
  */
 export function detectEpistemicIssues(
   scenes: SceneInput[],
@@ -301,7 +301,7 @@ export function detectEpistemicIssues(
   const readerStateIds = new Set(readerStates.map((rs) => rs.sceneId));
   const sorted = [...scenes].sort((a, b) => a.sceneOrder - b.sceneOrder);
 
-  // Cumulative withheld facts across all prior scenes
+  // Cumulative withheld facts across all prior sections
   const withheldFacts = new Set<string>();
 
   for (const scene of sorted) {
