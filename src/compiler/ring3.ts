@@ -62,7 +62,7 @@ function buildCrossSceneBridge(
   const verbatim = lastNTokens(canonText, config.bridgeVerbatimTokens);
   sections.push({
     name: "CONTINUITY_BRIDGE",
-    text: `=== PRECEDING TEXT (previous scene — match rhythm and continuity) ===\n${verbatim}`,
+    text: `=== PRECEDING TEXT (previous section — match rhythm and continuity) ===\n${verbatim}`,
     priority: 3,
     immune: false,
   });

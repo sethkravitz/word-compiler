@@ -121,7 +121,7 @@ async function saveEditLoc() {
 // ─── Add new entities ────────────────────────────
 async function addCharacter() {
   if (!bible) return;
-  const newChar = createEmptyCharacterDossier("New Character");
+  const newChar = createEmptyCharacterDossier("New Voice");
   const updated = { ...bible, characters: [...bible.characters, newChar] };
   saving = true;
   await commands.saveBible(updated);
@@ -229,7 +229,7 @@ function hasNarrativeData(): boolean {
           <div class="card-with-edit">
             <CharacterCard character={char} />
             {#if editingCharId === null}
-              <button class="edit-btn" onclick={() => startEditChar(char)} title="Edit character">edit</button>
+              <button class="edit-btn" onclick={() => startEditChar(char)} title="Edit voice profile">edit</button>
             {/if}
           </div>
         {/if}
@@ -264,7 +264,7 @@ function hasNarrativeData(): boolean {
     </CollapsibleSection>
 
     {#if query && filteredChars.length === 0 && filteredLocs.length === 0}
-      <div class="search-empty">No characters or locations matching "{searchQuery.trim()}"</div>
+      <div class="search-empty">No voices or references matching "{searchQuery.trim()}"</div>
     {/if}
 
     {#if hasStyleData()}

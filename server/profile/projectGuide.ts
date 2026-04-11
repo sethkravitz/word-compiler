@@ -8,13 +8,13 @@ import { textCall } from "./llm.js";
 import { analyzeChunks } from "./stage1.js";
 import { synthesizeDocument } from "./stage2.js";
 
-// ─── Project Voice: scene-by-scene in-domain analysis ────────────
+// ─── Project Voice: section-by-section in-domain analysis ────────────
 
 const SYNTHESIS_SYSTEM =
-  "You are a writing style analyst building an evolving understanding of a fiction project's voice from completed scenes.";
+  "You are a writing style analyst building an evolving understanding of an essay project's voice from completed sections.";
 
 /**
- * Update the project voice summary by analyzing a completed scene
+ * Update the project voice summary by analyzing a completed section
  * and integrating it with the existing project voice (if any).
  *
  * This does NOT produce a ring1Injection — that happens in distillVoice(),
@@ -30,16 +30,16 @@ export async function updateProjectVoice(
   config.sourceDomain = "in_project";
   config.targetDomain = "in_project";
 
-  const sample = createWritingSample(sceneId, "fiction", sceneText);
+  const sample = createWritingSample(sceneId, "essay", sceneText);
 
-  // Run Stages 1-2 on the new scene
-  console.log(`[projectVoice] Analyzing scene ${sceneId} (${sample.wordCount} words)`);
+  // Run Stages 1-2 on the new section
+  console.log(`[projectVoice] Analyzing section ${sceneId} (${sample.wordCount} words)`);
   const chunks = chunkDocument(sample, config);
   const chunkAnalyses = await analyzeChunks(sceneId, chunks, config, client);
   const docAnalysis = await synthesizeDocument(sample, chunkAnalyses, config, client);
 
   const sceneNumber = existingGuide ? existingGuide.corpusSize + 1 : 1;
-  console.log(`[projectVoice] Synthesizing project voice (scene ${sceneNumber})`);
+  console.log(`[projectVoice] Synthesizing project voice (section ${sceneNumber})`);
 
   const narrativeSummary = await synthesizeProjectVoice(
     existingGuide,
@@ -60,8 +60,8 @@ export async function updateProjectVoice(
   guide.versionHistory.push({
     version,
     updatedAt: guide.updatedAt,
-    changeReason: existingGuide ? `Updated from scene ${sceneId}` : `Initial project voice from scene ${sceneId}`,
-    changeSummary: `Synthesized from ${sceneNumber} scene${sceneNumber > 1 ? "s" : ""}.`,
+    changeReason: existingGuide ? `Updated from section ${sceneId}` : `Initial project voice from section ${sceneId}`,
+    changeSummary: `Synthesized from ${sceneNumber} section${sceneNumber > 1 ? "s" : ""}.`,
     confirmedFeatures: [],
     contradictedFeatures: [],
     newFeatures: [],
@@ -70,7 +70,7 @@ export async function updateProjectVoice(
   // No ring1Injection here — that's distillVoice()'s job
   guide.ring1Injection = "";
 
-  console.log(`[projectVoice] v${version}: ${sceneNumber} scenes, ${countTokens(narrativeSummary)} tokens`);
+  console.log(`[projectVoice] v${version}: ${sceneNumber} sections, ${countTokens(narrativeSummary)} tokens`);
   return guide;
 }
 
@@ -89,29 +89,29 @@ async function synthesizeProjectVoice(
   let prompt: string;
 
   if (existingGuide) {
-    prompt = `You are maintaining a project voice summary that evolves as more scenes are completed.
+    prompt = `You are maintaining a project voice summary that evolves as more sections are completed.
 
-EXISTING PROJECT VOICE (based on ${existingGuide.corpusSize} scene${existingGuide.corpusSize > 1 ? "s" : ""}):
+EXISTING PROJECT VOICE (based on ${existingGuide.corpusSize} section${existingGuide.corpusSize > 1 ? "s" : ""}):
 ${existingGuide.narrativeSummary}
 
-NEW SCENE ANALYSIS (scene ${sceneNumber}):
+NEW SECTION ANALYSIS (section ${sceneNumber}):
 ${newSceneAnalysis}
 
-Update the project voice summary by integrating what we learned from this new scene. Rules:
-- PRESERVE patterns from the existing summary that the new scene confirms or doesn't contradict
-- ADD new patterns the new scene reveals
-- If the new scene shows something different, note the variation — don't delete unless clearly wrong
-- Weight the existing summary more heavily — it represents ${existingGuide.corpusSize} scene${existingGuide.corpusSize > 1 ? "s" : ""} of evidence
+Update the project voice summary by integrating what we learned from this new section. Rules:
+- PRESERVE patterns from the existing summary that the new section confirms or doesn't contradict
+- ADD new patterns the new section reveals
+- If the new section shows something different, note the variation — don't delete unless clearly wrong
+- Weight the existing summary more heavily — it represents ${existingGuide.corpusSize} section${existingGuide.corpusSize > 1 ? "s" : ""} of evidence
 - Write as a cohesive voice summary, not a changelog
 
 3-5 paragraphs covering: core voice patterns, emotional handling, structural habits. No headers or metadata.`;
   } else {
-    prompt = `Write an initial project voice summary based on the first completed scene.
+    prompt = `Write an initial project voice summary based on the first completed section.
 
-SCENE ANALYSIS:
+SECTION ANALYSIS:
 ${newSceneAnalysis}
 
-Capture what we know so far about this project's voice. Be appropriately tentative — this is one scene. Note which patterns seem deliberate vs. scene-specific.
+Capture what we know so far about this project's voice. Be appropriately tentative — this is one section. Note which patterns seem deliberate vs. section-specific.
 
 3-5 paragraphs covering: emerging voice patterns, emotional handling, structural habits. No headers or metadata.`;
   }
@@ -128,7 +128,7 @@ const DISTILL_SYSTEM =
  * Distill a single ring1Injection from all available evidence:
  * 1. Author voice guide (out-of-domain baseline from writing samples)
  * 2. CIPHER preferences (explicit author corrections, highest signal)
- * 3. Project voice (in-domain scene analyses)
+ * 3. Project voice (in-domain section analyses)
  *
  * Any source may be absent. The distillation adapts to what's available.
  */
@@ -157,7 +157,7 @@ ${cipherPreferences.map((s, i) => `${i + 1}. ${s}`).join("\n")}`);
   }
 
   if (projectGuide?.narrativeSummary) {
-    sections.push(`PROJECT VOICE (from ${projectGuide.corpusSize} completed scene${projectGuide.corpusSize !== 1 ? "s" : ""}, in-domain):
+    sections.push(`PROJECT VOICE (from ${projectGuide.corpusSize} completed section${projectGuide.corpusSize !== 1 ? "s" : ""}, in-domain):
 ${projectGuide.narrativeSummary}`);
   }
 
@@ -175,7 +175,7 @@ ${sections.join("\n\n")}
 Rules:
 - Start from the CURRENT VOICE INSTRUCTION as your baseline
 - Integrate new evidence gradually — small refinements, not wholesale rewrites
-- A single scene or CIPHER batch should shift the instruction slightly, not transform it
+- A single section or CIPHER batch should shift the instruction slightly, not transform it
 - Only drop an existing directive if new evidence clearly contradicts it across multiple sources
 - The instruction should feel stable over time, evolving slowly as evidence accumulates`
     : `Distill the following evidence about an author's writing voice into a compact writing instruction (200-300 tokens) for an LLM system message.
@@ -185,7 +185,7 @@ ${sections.join("\n\n")}`;
   const sharedRules = `
 Priority order for conflicts:
 1. AUTHOR EDIT PREFERENCES (explicit corrections — the author literally changed this)
-2. PROJECT VOICE (in-domain evidence from their fiction)
+2. PROJECT VOICE (in-domain evidence from their essays)
 3. AUTHOR VOICE (out-of-domain baseline — valuable but may not fully transfer)
 
 The instruction should:

@@ -59,13 +59,13 @@ describe("renderGenerationFragment", () => {
         domainFilterDecision: "keep",
         filterRationale: "",
         needsNewObject: true,
-        newObjectNote: "journalism metaphors won't work in fiction",
+        newObjectNote: "journalism metaphors won't work in essays",
       },
     ];
     const fragment = renderGenerationFragment(guide);
     expect(fragment).toContain("FEATURES NEEDING NEW EXPRESSION");
     expect(fragment).toContain("metaphor density");
-    expect(fragment).toContain("journalism metaphors won't work in fiction");
+    expect(fragment).toContain("journalism metaphors won't work in essays");
   });
 });
 

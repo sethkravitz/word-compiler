@@ -63,7 +63,7 @@ describe("WorkflowStore", () => {
     project.setBible(bible);
     workflow.goToStage("plan");
 
-    const plan = makeScenePlan({ title: "Opening", narrativeGoal: "Establish world" });
+    const plan = makeScenePlan({ title: "Opening", narrativeGoal: "Establish thesis" });
     project.setScenes([{ plan, status: "planned", sceneOrder: 0 }]);
 
     expect(workflow.getStageStatus("draft")).toBe("available");
@@ -75,7 +75,7 @@ describe("WorkflowStore", () => {
     const bible = createEmptyBible("test");
     bible.characters.push(createEmptyCharacterDossier("Marcus"));
     project.setBible(bible);
-    const plan = makeScenePlan({ title: "Opening", narrativeGoal: "Establish world" });
+    const plan = makeScenePlan({ title: "Opening", narrativeGoal: "Establish thesis" });
     project.setScenes([{ plan, status: "drafting", sceneOrder: 0 }]);
     project.setSceneChunks(plan.id, [makeChunk({ sceneId: plan.id })]);
     workflow.goToStage("draft");
@@ -88,7 +88,7 @@ describe("WorkflowStore", () => {
     const bible = createEmptyBible("test");
     bible.characters.push(createEmptyCharacterDossier("Marcus"));
     project.setBible(bible);
-    const plan = makeScenePlan({ title: "Opening", narrativeGoal: "Establish world" });
+    const plan = makeScenePlan({ title: "Opening", narrativeGoal: "Establish thesis" });
     project.setScenes([{ plan, status: "drafting", sceneOrder: 0 }]);
     project.setSceneChunks(plan.id, [makeChunk({ sceneId: plan.id })]);
     workflow.goToStage("audit");
@@ -101,7 +101,7 @@ describe("WorkflowStore", () => {
     const bible = createEmptyBible("test");
     bible.characters.push(createEmptyCharacterDossier("Marcus"));
     project.setBible(bible);
-    const plan = makeScenePlan({ title: "Opening", narrativeGoal: "Establish world" });
+    const plan = makeScenePlan({ title: "Opening", narrativeGoal: "Establish thesis" });
     project.setScenes([{ plan, status: "drafting", sceneOrder: 0 }]);
     project.setSceneChunks(plan.id, [makeChunk({ sceneId: plan.id })]);
     workflow.goToStage("edit");
@@ -113,7 +113,7 @@ describe("WorkflowStore", () => {
     const bible = createEmptyBible("test");
     bible.characters.push(createEmptyCharacterDossier("Marcus"));
     project.setBible(bible);
-    const plan = makeScenePlan({ title: "Opening", narrativeGoal: "Establish world" });
+    const plan = makeScenePlan({ title: "Opening", narrativeGoal: "Establish thesis" });
     project.setScenes([{ plan, status: "complete", sceneOrder: 0 }]);
     project.setSceneChunks(plan.id, [makeChunk({ sceneId: plan.id })]);
     workflow.goToStage("complete");

@@ -18,10 +18,10 @@ type Story = StoryObj<SceneSequencer>;
 export const MultipleScenes: Story = {
   args: {
     scenes: [
-      makeSceneEntry("s1", "The Arrival", "complete"),
-      makeSceneEntry("s2", "The Confrontation", "drafting"),
-      makeSceneEntry("s3", "The Revelation", "planned"),
-      makeSceneEntry("s4", "The Escape", "planned"),
+      makeSceneEntry("s1", "The Setup", "complete"),
+      makeSceneEntry("s2", "The Hidden Cost", "drafting"),
+      makeSceneEntry("s3", "The Counter-Evidence", "planned"),
+      makeSceneEntry("s4", "The Implication", "planned"),
     ],
     activeSceneIndex: 1,
     sceneChunks: {
@@ -62,14 +62,14 @@ export const EmptyProject: Story = {
 export const ManyScenes: Story = {
   args: {
     scenes: [
-      makeSceneEntry("s1", "The Departure", "complete"),
-      makeSceneEntry("s2", "The Journey", "complete"),
-      makeSceneEntry("s3", "The Arrival", "complete"),
-      makeSceneEntry("s4", "The Discovery", "drafting"),
-      makeSceneEntry("s5", "The Confrontation", "planned"),
-      makeSceneEntry("s6", "The Betrayal", "planned"),
-      makeSceneEntry("s7", "The Escape", "planned"),
-      makeSceneEntry("s8", "The Return", "planned"),
+      makeSceneEntry("s1", "The Premise", "complete"),
+      makeSceneEntry("s2", "The Evidence", "complete"),
+      makeSceneEntry("s3", "The Anecdote", "complete"),
+      makeSceneEntry("s4", "The Counter-Argument", "drafting"),
+      makeSceneEntry("s5", "The Hidden Cost", "planned"),
+      makeSceneEntry("s6", "The Deeper Problem", "planned"),
+      makeSceneEntry("s7", "The Synthesis", "planned"),
+      makeSceneEntry("s8", "The Call to Action", "planned"),
     ],
     activeSceneIndex: 3,
     sceneChunks: {

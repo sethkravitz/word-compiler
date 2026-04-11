@@ -15,9 +15,9 @@ function makePlan() {
   return {
     ...plan,
     id: SCENE_ID,
-    title: "The Confrontation",
-    narrativeGoal: "Alice discovers the truth",
-    emotionalBeat: "shock turning to resolve",
+    title: "The Hidden Cost",
+    narrativeGoal: "Establish the central argument through evidence",
+    emotionalBeat: "growing unease turning to recognition",
   };
 }
 
@@ -83,8 +83,8 @@ const VALID_IR_JSON = JSON.stringify({
 describe("buildIRExtractionPrompt", () => {
   it("includes scene title and narrative goal", () => {
     const prompt = buildIRExtractionPrompt("Some prose here.", makePlan(), makeBible());
-    expect(prompt).toContain("The Confrontation");
-    expect(prompt).toContain("Alice discovers the truth");
+    expect(prompt).toContain("The Hidden Cost");
+    expect(prompt).toContain("Establish the central argument through evidence");
   });
 
   it("includes character list with ids", () => {

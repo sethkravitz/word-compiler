@@ -172,9 +172,9 @@ describe("writing samples repository", () => {
   });
 
   it("lists samples ordered by created_at", () => {
-    const s1 = createWritingSample("a.txt", "fiction", "First sample text here.");
+    const s1 = createWritingSample("a.txt", "essay", "First sample text here.");
     s1.createdAt = "2024-01-01T00:00:00Z";
-    const s2 = createWritingSample("b.txt", "fiction", "Second sample text here.");
+    const s2 = createWritingSample("b.txt", "essay", "Second sample text here.");
     s2.createdAt = "2024-06-01T00:00:00Z";
     writingSamples.createWritingSampleRecord(db, s1);
     writingSamples.createWritingSampleRecord(db, s2);
@@ -197,9 +197,9 @@ describe("writing samples repository", () => {
   });
 
   it("gets multiple samples by ids", () => {
-    const s1 = createWritingSample("a.txt", "fiction", "Sample A.");
-    const s2 = createWritingSample("b.txt", "fiction", "Sample B.");
-    const s3 = createWritingSample("c.txt", "fiction", "Sample C.");
+    const s1 = createWritingSample("a.txt", "essay", "Sample A.");
+    const s2 = createWritingSample("b.txt", "essay", "Sample B.");
+    const s3 = createWritingSample("c.txt", "essay", "Sample C.");
     writingSamples.createWritingSampleRecord(db, s1);
     writingSamples.createWritingSampleRecord(db, s2);
     writingSamples.createWritingSampleRecord(db, s3);

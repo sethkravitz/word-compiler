@@ -29,16 +29,16 @@ export const Empty: Story = {};
 
 export const SingleProject: Story = {
   args: {
-    projects: [makeProject({ title: "The Letter", status: "drafting" })],
+    projects: [makeProject({ title: "Why Remote Work Fails", status: "drafting" })],
   },
 };
 
 export const MixedStatuses: Story = {
   args: {
     projects: [
-      makeProject({ title: "The Letter", status: "drafting" }),
-      makeProject({ title: "Summer Noir", status: "planning" }),
-      makeProject({ title: "First Light", status: "revising" }),
+      makeProject({ title: "Why Remote Work Fails", status: "drafting" }),
+      makeProject({ title: "The Productivity Paradox", status: "planning" }),
+      makeProject({ title: "On Algorithmic Taste", status: "revising" }),
       makeProject({ title: "Untitled", status: "bootstrap" }),
     ],
   },
@@ -47,13 +47,13 @@ export const MixedStatuses: Story = {
 export const AllStatuses: Story = {
   args: {
     projects: [
-      makeProject({ title: "The Letter", status: "drafting" }),
-      makeProject({ title: "Summer Noir", status: "planning" }),
-      makeProject({ title: "First Light", status: "revising" }),
+      makeProject({ title: "Why Remote Work Fails", status: "drafting" }),
+      makeProject({ title: "The Productivity Paradox", status: "planning" }),
+      makeProject({ title: "On Algorithmic Taste", status: "revising" }),
       makeProject({ title: "Untitled Sketch", status: "bootstrap" }),
-      makeProject({ title: "The Harbor", status: "bible" }),
-      makeProject({ title: "Red Lantern", status: "drafting" }),
-      makeProject({ title: "After the Storm", status: "revising" }),
+      makeProject({ title: "The Attention Economy", status: "bible" }),
+      makeProject({ title: "Against Best Practices", status: "drafting" }),
+      makeProject({ title: "What We Lost in Translation", status: "revising" }),
       makeProject({ title: "New Idea", status: "bootstrap" }),
     ],
   },

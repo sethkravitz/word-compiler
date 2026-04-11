@@ -288,7 +288,7 @@ export function condensedExistingScenes(scenes: ExistingSceneSummary[] | undefin
   if (!scenes || scenes.length === 0) return "";
   return scenes
     .map((s, i) => {
-      const parts = [`${i + 1}. "${s.title}" — POV: ${s.povCharacterName} (${s.povDistance})`];
+      const parts = [`${i + 1}. "${s.title}" — Voice: ${s.povCharacterName} (${s.povDistance})`];
       if (s.narrativeGoal) parts.push(`   Goal: ${s.narrativeGoal}`);
       if (s.emotionalBeat) parts.push(`   Beat: ${s.emotionalBeat}`);
       if (s.readerStateExiting) {
@@ -358,12 +358,12 @@ export function condensedNarrativeRules(rules: BootstrapNarrativeRules | undefin
   const parts: string[] = [];
   const pov = rules.pov;
   parts.push(
-    `POV CONTRACT: ${pov.default} person, ${pov.distance} distance, ${pov.interiority} interiority, ${pov.reliability} narrator.`,
+    `VOICE CONTRACT: ${pov.default} person, ${pov.distance} distance, ${pov.interiority} interiority, ${pov.reliability} narrator.`,
   );
-  if (pov.notes) parts.push(`POV notes: ${pov.notes}`);
+  if (pov.notes) parts.push(`Voice notes: ${pov.notes}`);
   if (rules.subtextPolicy) parts.push(`SUBTEXT POLICY: ${rules.subtextPolicy}`);
   if (rules.expositionPolicy) parts.push(`EXPOSITION POLICY: ${rules.expositionPolicy}`);
-  if (rules.sceneEndingPolicy) parts.push(`SCENE ENDING POLICY: ${rules.sceneEndingPolicy}`);
+  if (rules.sceneEndingPolicy) parts.push(`SECTION ENDING POLICY: ${rules.sceneEndingPolicy}`);
   return parts.join("\n");
 }
 
@@ -384,18 +384,18 @@ function buildContextBlocks(params: SceneBootstrapParams): string[] {
   if (params.chapterArc) {
     const a = params.chapterArc;
     blocks.push(
-      `ESTABLISHED CHAPTER ARC:\nTitle: ${a.workingTitle}\nFunction: ${a.narrativeFunction}\nRegister: ${a.dominantRegister}\nPacing: ${a.pacingTarget}\nEnding: ${a.endingPosture}`,
+      `ESTABLISHED ESSAY ARC:\nTitle: ${a.workingTitle}\nFunction: ${a.narrativeFunction}\nRegister: ${a.dominantRegister}\nPacing: ${a.pacingTarget}\nEnding: ${a.endingPosture}`,
     );
   }
 
   const scenesBlock = condensedExistingScenes(params.existingScenes);
   if (scenesBlock) {
-    blocks.push(`EXISTING SCENES (do not contradict or duplicate):\n${scenesBlock}`);
+    blocks.push(`EXISTING SECTIONS (do not contradict or duplicate):\n${scenesBlock}`);
   }
 
   const dossiersBlock = condensedCharacterDossiers(params.characterDossiers);
   if (dossiersBlock) {
-    blocks.push(`CHARACTER DOSSIERS:\n${dossiersBlock}`);
+    blocks.push(`VOICE PROFILES:\n${dossiersBlock}`);
   }
 
   const locsBlock = condensedLocationDetails(params.locationDetails);
@@ -429,20 +429,20 @@ function buildContinuityNotes(params: SceneBootstrapParams): { positionHint: str
   if (existingCount === 0) return { positionHint: "", continuityNote: "" };
   if (params.sceneCount === 1) {
     return {
-      positionHint: `\nThis is scene ${existingCount + 1} of the chapter.`,
-      continuityNote: "\nThis scene must continue seamlessly from the existing ones.",
+      positionHint: `\nThis is section ${existingCount + 1} of the essay.`,
+      continuityNote: "\nThis section must continue seamlessly from the existing ones.",
     };
   }
   return {
     positionHint: "",
-    continuityNote: `\nYou are generating scenes ${existingCount + 1} through ${existingCount + params.sceneCount}. New scenes must continue seamlessly from existing ones.`,
+    continuityNote: `\nYou are generating sections ${existingCount + 1} through ${existingCount + params.sceneCount}. New sections must continue seamlessly from existing ones.`,
   };
 }
 
 function buildCharacterInstruction(hasCharacters: boolean): string {
   if (hasCharacters) {
     return `"povCharacterId": "",
-      "povCharacterName": "REQUIRED — exact character name from the list above (ID will be resolved automatically)",`;
+      "povCharacterName": "REQUIRED — exact voice profile name from the list above (ID will be resolved automatically)",`;
   }
   return `"povCharacterId": "",
       "povCharacterName": "",`;
@@ -451,7 +451,7 @@ function buildCharacterInstruction(hasCharacters: boolean): string {
 export function buildSceneBootstrapPrompt(params: SceneBootstrapParams): CompiledPayload {
   const characterList =
     params.characters.length > 0
-      ? `\nAvailable characters:\n${params.characters.map((c) => `- ${c.name} (id: "${c.id}", role: ${c.role})`).join("\n")}`
+      ? `\nAvailable voice profiles:\n${params.characters.map((c) => `- ${c.name} (id: "${c.id}", role: ${c.role})`).join("\n")}`
       : "";
 
   const locationList =
@@ -476,25 +476,25 @@ export function buildSceneBootstrapPrompt(params: SceneBootstrapParams): Compile
       ? "\nIMPORTANT: No voice profiles have been selected for this essay. Leave povCharacterId and povCharacterName as empty strings. Do NOT invent or reference specific named voices — write sections that work without assigned voice profiles."
       : "";
 
-  const userMessage = `CHAPTER DIRECTION:
+  const userMessage = `ESSAY DIRECTION:
 ${params.direction}${contextSection}
 
-Generate exactly ${params.sceneCount} scene plan${params.sceneCount !== 1 ? "s" : ""}.${characterList}${locationList}${constraintBlock}${noCharsWarning}
+Generate exactly ${params.sceneCount} section plan${params.sceneCount !== 1 ? "s" : ""}.${characterList}${locationList}${constraintBlock}${noCharsWarning}
 
 Return JSON:
 {
   "scenes": [
     {
-      "title": "Scene title",
+      "title": "Section title",
       ${buildCharacterInstruction(params.characters.length > 0)}
       "povDistance": "intimate|close|moderate|distant",
-      "narrativeGoal": "What must this scene accomplish?",
+      "narrativeGoal": "What must this section accomplish?",
       "emotionalBeat": "What should the reader FEEL?",
       "readerEffect": "What shifts in the reader's understanding?",
-      "failureModeToAvoid": "What would make this scene fail?",
+      "failureModeToAvoid": "What would make this section fail?",
       "density": "sparse|moderate|dense",
       "pacing": "Pacing notes",
-      "sensoryNotes": "1-3 sensory details that serve THIS scene's dramatic purpose (build tension, reveal character state, ground unfamiliar setting). Each must have a narrative job — do not list ambient flavor.",
+      "sensoryNotes": "1-3 sensory details that ground the reader in THIS section (set the scene, support the argument's atmosphere, anchor abstract ideas in concrete experience). Each must serve a purpose — do not list ambient flavor.",
       "locationId": "",
       "locationName": "exact location name from the list above, or empty string if none (ID will be resolved automatically)",
       "estimatedWordCount": [min, max],
@@ -513,25 +513,25 @@ Return JSON:
         "activeTensions": ["new or continuing tensions"]
       },
       "subtext": {
-        "surfaceConversation": "What characters appear to discuss",
-        "actualConversation": "What's really being communicated",
+        "surfaceConversation": "Surface-level statement or topic",
+        "actualConversation": "Deeper implication or unstated argument",
         "enforcementRule": "How to maintain the gap"
       },
-      "presentCharacterIds": ["character IDs from the list above who are physically present in this scene"],
-      "sceneSpecificProhibitions": ["things to avoid in this specific scene"],
+      "presentCharacterIds": ["voice profile IDs referenced in this section"],
+      "sceneSpecificProhibitions": ["things to avoid in this specific section"],
       "anchorLines": [
-        { "text": "A line that must appear", "placement": "where in the scene", "verbatim": true }
+        { "text": "A line that must appear", "placement": "where in the section", "verbatim": true }
       ]
     }
   ]${
     params.includeChapterArc
       ? `,
   "chapterArc": {
-    "workingTitle": "Chapter working title",
-    "narrativeFunction": "What this chapter accomplishes in the larger story",
+    "workingTitle": "Essay working title",
+    "narrativeFunction": "What this essay accomplishes in the larger essay",
     "dominantRegister": "The tonal register",
     "pacingTarget": "Overall pacing description",
-    "endingPosture": "How the chapter should end",
+    "endingPosture": "How the essay should end",
     "readerStateEntering": { "knows": [], "suspects": [], "wrongAbout": [], "activeTensions": [] },
     "readerStateExiting": { "knows": [], "suspects": [], "wrongAbout": [], "activeTensions": [] }
   }`
@@ -539,7 +539,7 @@ Return JSON:
   }
 }
 
-CRITICAL: Maintain reader state continuity across scenes. Scene 2's readerStateEntering must build on Scene 1's readerStateExiting.${chapterArcInstruction}${positionHint}${continuityNote}`;
+CRITICAL: Maintain reader state continuity across sections. Section 2's readerStateEntering must build on Section 1's readerStateExiting.${chapterArcInstruction}${positionHint}${continuityNote}`;
 
   return {
     systemMessage,

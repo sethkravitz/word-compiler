@@ -3,7 +3,7 @@ import { chunkDocument, splitParagraphs, splitSentences } from "../../src/profil
 import type { PipelineConfig, WritingSample } from "../../src/profile/types.js";
 import { createDefaultPipelineConfig, createWritingSample } from "../../src/profile/types.js";
 
-function makeSample(text: string, domain = "fiction"): WritingSample {
+function makeSample(text: string, domain = "essay"): WritingSample {
   return createWritingSample(null, domain, text);
 }
 

@@ -46,7 +46,7 @@ let overBudget = $derived(lintCodes.has("TOTAL_OVER_BUDGET"));
     {/if}
   {/snippet}
     {#if !payload || !log}
-      <div class="empty-state">Load a Bible and Scene Plan to see the compiled payload.</div>
+      <div class="empty-state">Load a brief and section plan to see the compiled payload.</div>
     {:else}
       <!-- Budget Gauge -->
       <ProgressBar

@@ -3,7 +3,7 @@ import type { ChapterArc, Chunk } from "../types/index.js";
 import { getCanonicalText } from "../types/index.js";
 
 /**
- * Export scenes as Markdown with chapter/scene headings.
+ * Export sections as Markdown with essay/section headings.
  */
 export function exportToMarkdown(
   scenes: SceneEntry[],
@@ -29,7 +29,7 @@ export function exportToMarkdown(
       parts.push("");
     }
 
-    parts.push(`## ${scene.plan.title || `Scene ${i + 1}`}`);
+    parts.push(`## ${scene.plan.title || `Section ${i + 1}`}`);
     parts.push("");
 
     const prose = chunks.map((c) => getCanonicalText(c)).join("\n\n");

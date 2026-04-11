@@ -110,7 +110,7 @@ describe("buildRing3", () => {
     expect(names).not.toContain("CONTINUITY_BRIDGE");
     expect(names).not.toContain("MICRO_DIRECTIVE");
 
-    expect(result.text).toContain("=== SCENE: The Bar ===");
+    expect(result.text).toContain("=== SECTION: The Bar ===");
     expect(result.text).toContain("=== MARCUS — VOICE ===");
     expect(result.text).toContain("=== LOCATION: The Bar ===");
     expect(result.text).toContain("ANCHOR LINES");
@@ -401,7 +401,7 @@ describe("buildRing3", () => {
     const names = result.sections.map((s) => s.name);
 
     expect(names).toContain("CONTINUITY_BRIDGE");
-    expect(result.text).toContain("previous scene");
+    expect(result.text).toContain("previous section");
     expect(result.text).toContain("She closed the door");
   });
 

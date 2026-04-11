@@ -76,7 +76,7 @@ describe("GET /api/scenes/:id", () => {
   it("returns 404 for a nonexistent scene plan", async () => {
     const res = await request(app).get("/api/scenes/nonexistent-id");
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ error: "Scene plan not found" });
+    expect(res.body).toEqual({ error: "Section plan not found" });
   });
 });
 
@@ -164,6 +164,6 @@ describe("PATCH /api/scenes/:id/status", () => {
   it("returns 404 for a nonexistent scene", async () => {
     const res = await request(app).patch("/api/scenes/nonexistent-id/status").send({ status: "drafting" });
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ error: "Scene not found" });
+    expect(res.body).toEqual({ error: "Section not found" });
   });
 });

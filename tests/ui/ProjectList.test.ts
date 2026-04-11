@@ -6,7 +6,7 @@ import type { Project } from "../../src/types/index.js";
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {
     id: "p1",
-    title: "Test Novel",
+    title: "Test Essay",
     status: "drafting",
     createdAt: "2025-01-01T00:00:00Z",
     updatedAt: "2025-01-15T00:00:00Z",
@@ -29,13 +29,13 @@ describe("ProjectList", () => {
   it("renders project cards", () => {
     render(ProjectList, {
       props: {
-        projects: [makeProject(), makeProject({ id: "p2", title: "Second Novel" })],
+        projects: [makeProject(), makeProject({ id: "p2", title: "Second Essay" })],
         onSelectProject: vi.fn(),
         onCreateProject: vi.fn(),
       },
     });
-    expect(screen.getByText("Test Novel")).toBeTruthy();
-    expect(screen.getByText("Second Novel")).toBeTruthy();
+    expect(screen.getByText("Test Essay")).toBeTruthy();
+    expect(screen.getByText("Second Essay")).toBeTruthy();
   });
 
   it("calls onSelectProject when card is clicked", async () => {
@@ -47,7 +47,7 @@ describe("ProjectList", () => {
         onCreateProject: vi.fn(),
       },
     });
-    await fireEvent.click(screen.getByText("Test Novel"));
+    await fireEvent.click(screen.getByText("Test Essay"));
     expect(onSelect).toHaveBeenCalledWith("p1");
   });
 

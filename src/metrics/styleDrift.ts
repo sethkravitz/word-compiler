@@ -3,8 +3,8 @@ import type { ProseMetrics, StyleDriftReport } from "../types/index.js";
 
 // ─── Style Drift ─────────────────────────────────────────
 //
-// Measures how far the current scene's prose metrics have drifted
-// from the chapter 1 baseline. Flags any metric drifting > 10%.
+// Measures how far the current section's prose metrics have drifted
+// from the first section baseline. Flags any metric drifting > 10%.
 
 const DRIFT_THRESHOLD = 0.1; // 10% per SPEC.md §9
 

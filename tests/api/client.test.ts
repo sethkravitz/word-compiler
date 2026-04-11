@@ -139,7 +139,7 @@ describe("Projects", () => {
   });
 
   it("apiGetProject fetches GET /api/data/projects/:id", async () => {
-    const project = { id: "p1", title: "Novel" } as Project;
+    const project = { id: "p1", title: "Essay" } as Project;
     const fn = mockFetch(200, project);
     const result = await apiGetProject("p1");
     expect(result).toEqual(project);

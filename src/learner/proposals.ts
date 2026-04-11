@@ -224,9 +224,9 @@ function buildAdvisoryTitle(group: PatternGroup): string {
 
 function buildDescription(group: PatternGroup): string {
   const sceneIds = new Set(group.edits.map((e) => e.sceneId));
-  const base = `Based on ${Math.round(group.weightedCount)} edits across ${sceneIds.size} scene${sceneIds.size > 1 ? "s" : ""}.`;
+  const base = `Based on ${Math.round(group.weightedCount)} edits across ${sceneIds.size} section${sceneIds.size > 1 ? "s" : ""}.`;
   if (group.advisory) {
-    return `${base} This is a broad editing trend — consider adjusting your bible or style guide to address it.`;
+    return `${base} This is a broad editing trend — consider adjusting your essay brief or style guide to address it.`;
   }
   return `${base} Confidence: ${Math.round(group.confidence * 100)}%.`;
 }

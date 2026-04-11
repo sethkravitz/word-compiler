@@ -28,7 +28,7 @@ export function buildIRExtractionPrompt(prose: string, plan: ScenePlan, bible: B
 
   return `SECTION PLAN:
 Title: ${plan.title}
-Narrative goal: ${plan.narrativeGoal}
+Section goal: ${plan.narrativeGoal}
 Emotional beat: ${plan.emotionalBeat}
 
 VOICES IN BRIEF:
@@ -48,36 +48,36 @@ ${prose}
 
 ---
 
-Extract the narrative internal record for this section. Return ONLY valid JSON in this exact shape:
+Extract the essay structural record for this section. Return ONLY valid JSON in this exact shape:
 
 {
-  "events": ["List of concrete events that occurred — factual claims, not atmosphere"],
-  "factsIntroduced": ["Facts that now exist in the essay after this section"],
-  "factsRevealedToReader": ["Facts the reader now knows (may differ from what sources know)"],
-  "factsWithheld": ["Facts that exist but were deliberately not revealed to reader"],
+  "events": ["List of concrete claims, arguments, or points made — factual content, not atmosphere"],
+  "factsIntroduced": ["Claims or evidence established in the essay after this section"],
+  "factsRevealedToReader": ["Claims the reader now knows or points made explicitly in this section"],
+  "factsWithheld": ["Evidence gaps or claims not yet supported — points implied but not proven"],
   "characterDeltas": [
     {
       "characterId": "exact id from voice list",
-      "learned": "what this voice learned, or null",
-      "suspicionGained": "new suspicion formed, or null",
-      "emotionalShift": "emotional state change, or null",
-      "relationshipChange": "relationship dynamic change, or null"
+      "learned": "new insight or evidence the author introduced, or null",
+      "suspicionGained": "where the argument is heading or foreshadowed conclusions, or null",
+      "emotionalShift": "shift in tone or rhetorical stance, or null",
+      "relationshipChange": "change in how the author relates to the subject or audience, or null"
     }
   ],
   "setupsPlanted": ["description of each setup planted in this section — quote from prose if possible"],
   "payoffsExecuted": ["<setup description from ACTIVE SETUPS> — <how it was paid off>"],
   "characterPositions": [
-    { "characterId": "voice name or id", "position": "narrative position at section end" }
+    { "characterId": "voice name or id", "position": "author's stated position on key topics at section end" }
   ],
-  "unresolvedTensions": ["tensions still active at section end — what keeps the reader engaged"]
+  "unresolvedTensions": ["open questions or unresolved counterarguments — what keeps the reader engaged"]
 }
 
-Be specific and factual. Keep each string value TERSE (under 15 words). Do not add commentary. Do not invent facts not present in the prose.`;
+Be specific and factual. Keep each string value TERSE (under 15 words). Do not add commentary. Do not invent claims not present in the prose.`;
 }
 
 // ─── Extractor ───────────────────────────────────────────
 
-const IR_SYSTEM_MESSAGE = `You are a narrative structure analyst. Your job is to extract a precise, factual internal record from section prose. You identify events, knowledge states, and tensions without interpretation or evaluation. Return only JSON.`;
+const IR_SYSTEM_MESSAGE = `You are an essay structure analyst. Your job is to extract a precise, factual structural record from section prose. You identify claims, argument progression, and unresolved questions without interpretation or evaluation. Return only JSON.`;
 
 export async function extractIR(
   prose: string,

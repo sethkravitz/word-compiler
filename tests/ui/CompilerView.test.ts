@@ -38,7 +38,7 @@ const lintResult = { issues: [] };
 describe("CompilerView", () => {
   it("shows empty state when no payload", () => {
     render(CompilerView, defaultProps());
-    expect(screen.getByText("Load a Bible and Scene Plan to see the compiled payload.")).toBeInTheDocument();
+    expect(screen.getByText("Load a brief and section plan to see the compiled payload.")).toBeInTheDocument();
   });
 
   it("shows 'Draft Engine' title always", () => {

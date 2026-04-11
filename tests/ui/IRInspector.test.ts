@@ -10,7 +10,7 @@ function makeIR(overrides = {}) {
 describe("IRInspector", () => {
   const defaultProps = {
     ir: null as ReturnType<typeof createEmptyNarrativeIR> | null,
-    sceneTitle: "The Confrontation",
+    sceneTitle: "The Hidden Cost",
     isExtracting: false,
     canExtract: true,
     onExtract: vi.fn(),
@@ -21,7 +21,7 @@ describe("IRInspector", () => {
 
   it("renders scene title in header", () => {
     render(IRInspector, defaultProps);
-    expect(screen.getByText(/The Confrontation/)).toBeInTheDocument();
+    expect(screen.getByText(/The Hidden Cost/)).toBeInTheDocument();
   });
 
   it("shows 'Extract Blueprint' button when no IR and canExtract", () => {
@@ -92,24 +92,24 @@ describe("IRInspector", () => {
   });
 
   it("renders IR events when IR has data", () => {
-    const ir = makeIR({ events: ["Alice entered the room", "Bob left"] });
+    const ir = makeIR({ events: ["Introduced the productivity paradox", "Cited the Stanford study"] });
     render(IRInspector, { ...defaultProps, ir });
-    expect(screen.getByText("Alice entered the room")).toBeInTheDocument();
-    expect(screen.getByText("Bob left")).toBeInTheDocument();
+    expect(screen.getByText("Introduced the productivity paradox")).toBeInTheDocument();
+    expect(screen.getByText("Cited the Stanford study")).toBeInTheDocument();
   });
 
   it("renders unresolved tensions", () => {
-    const ir = makeIR({ unresolvedTensions: ["Who sent the letter?"] });
+    const ir = makeIR({ unresolvedTensions: ["Are we measuring the right things?"] });
     render(IRInspector, { ...defaultProps, ir });
-    expect(screen.getByText("Who sent the letter?")).toBeInTheDocument();
+    expect(screen.getByText("Are we measuring the right things?")).toBeInTheDocument();
   });
 
   it("renders character deltas", () => {
     const ir = makeIR({
       characterDeltas: [
         {
-          characterId: "char-alice",
-          learned: "Bob has been lying",
+          characterId: "char-author",
+          learned: "The data contradicts the narrative",
           suspicionGained: null,
           emotionalShift: null,
           relationshipChange: null,
@@ -117,6 +117,6 @@ describe("IRInspector", () => {
       ],
     });
     render(IRInspector, { ...defaultProps, ir });
-    expect(screen.getByText("Bob has been lying")).toBeInTheDocument();
+    expect(screen.getByText("The data contradicts the narrative")).toBeInTheDocument();
   });
 });

@@ -84,7 +84,7 @@ describe("buildSceneBootstrapPrompt", () => {
       locations: [],
       includeChapterArc: false,
     });
-    expect(payload.userMessage).toContain("exact character name from the list above");
+    expect(payload.userMessage).toContain("exact voice profile name from the list above");
     expect(payload.userMessage).toContain("ID will be resolved automatically");
     expect(payload.userMessage).not.toContain("No voice profiles have been selected");
   });
@@ -99,7 +99,7 @@ describe("buildSceneBootstrapPrompt", () => {
     });
     expect(payload.systemMessage).toContain("generate the next section plan");
     expect(payload.systemMessage).not.toContain("1 section plans");
-    expect(payload.userMessage).toContain("Generate exactly 1 scene plan.");
+    expect(payload.userMessage).toContain("Generate exactly 1 section plan.");
     expect(payload.userMessage).not.toContain("1 section plans");
   });
 
@@ -134,8 +134,8 @@ describe("buildSceneBootstrapPrompt", () => {
       includeChapterArc: false,
       existingScenes,
     });
-    expect(payload.userMessage).toContain("This is scene 3 of the chapter");
-    expect(payload.userMessage).toContain("This scene must continue seamlessly from the existing ones");
+    expect(payload.userMessage).toContain("This is section 3 of the essay");
+    expect(payload.userMessage).toContain("This section must continue seamlessly from the existing ones");
     // Should NOT use the multi-scene range format
     expect(payload.userMessage).not.toContain("scenes 3 through");
   });
@@ -149,8 +149,8 @@ describe("buildSceneBootstrapPrompt", () => {
       includeChapterArc: false,
       existingScenes,
     });
-    expect(payload.userMessage).toContain("You are generating scenes 3 through 4");
-    expect(payload.userMessage).not.toContain("This is scene");
+    expect(payload.userMessage).toContain("You are generating sections 3 through 4");
+    expect(payload.userMessage).not.toContain("This is section");
   });
 
   it("includes constraints when provided", () => {
@@ -373,16 +373,16 @@ const existingScenes: ExistingSceneSummary[] = [
     },
   },
   {
-    title: "The Confrontation",
+    title: "The Counter-Evidence",
     povCharacterName: "Elena Voss",
     povDistance: "intimate",
-    narrativeGoal: "Reveal Elena's motive",
-    emotionalBeat: "Cold fury",
+    narrativeGoal: "Present the opposing data",
+    emotionalBeat: "Cold precision",
     readerStateExiting: {
-      knows: ["Elena wants the ledger"],
+      knows: ["The original study had flaws"],
       suspects: [],
       wrongAbout: [],
-      activeTensions: ["Will Marcus hand it over?"],
+      activeTensions: ["Which dataset should we trust?"],
     },
   },
 ];
@@ -440,13 +440,13 @@ describe("condensation helpers", () => {
   it("condensedExistingScenes formats numbered scene summaries", () => {
     const result = condensedExistingScenes(existingScenes);
     expect(result).toContain('1. "The Arrival"');
-    expect(result).toContain("POV: Marcus Cole (close)");
+    expect(result).toContain("Voice: Marcus Cole (close)");
     expect(result).toContain("Goal: Establish the setting");
     expect(result).toContain("Beat: Quiet dread");
     expect(result).toContain("knows: Marcus arrived at the bar");
     expect(result).toContain("suspects: Something is wrong");
-    expect(result).toContain('2. "The Confrontation"');
-    expect(result).toContain("POV: Elena Voss (intimate)");
+    expect(result).toContain('2. "The Counter-Evidence"');
+    expect(result).toContain("Voice: Elena Voss (intimate)");
   });
 
   it("condensedCharacterDossiers returns empty string for empty/undefined", () => {
@@ -488,12 +488,12 @@ describe("condensation helpers", () => {
   it("condensedNarrativeRules formats POV contract and policies", () => {
     const result = condensedNarrativeRules(sampleRules);
     expect(result).toContain(
-      "POV CONTRACT: close-third person, close distance, filtered interiority, reliable narrator",
+      "VOICE CONTRACT: close-third person, close distance, filtered interiority, reliable narrator",
     );
-    expect(result).toContain("POV notes: Never break POV");
+    expect(result).toContain("Voice notes: Never break POV");
     expect(result).toContain("SUBTEXT POLICY: Characters never say what they mean directly");
     expect(result).toContain("EXPOSITION POLICY: Drip-feed only through action");
-    expect(result).toContain("SCENE ENDING POLICY: End on an unresolved question");
+    expect(result).toContain("SECTION ENDING POLICY: End on an unresolved question");
   });
 
   it("condensedKillListAndBans returns empty for empty inputs", () => {
@@ -522,9 +522,9 @@ describe("context-aware prompt building", () => {
       ...baseParams,
       existingScenes,
     });
-    expect(payload.userMessage).toContain("EXISTING SCENES (do not contradict or duplicate)");
+    expect(payload.userMessage).toContain("EXISTING SECTIONS (do not contradict or duplicate)");
     expect(payload.userMessage).toContain('"The Arrival"');
-    expect(payload.userMessage).toContain('"The Confrontation"');
+    expect(payload.userMessage).toContain('"The Counter-Evidence"');
     expect(payload.userMessage).toContain("knows: Marcus arrived at the bar");
   });
 
@@ -539,7 +539,7 @@ describe("context-aware prompt building", () => {
         endingPosture: "Cliffhanger",
       },
     });
-    expect(payload.userMessage).toContain("ESTABLISHED CHAPTER ARC");
+    expect(payload.userMessage).toContain("ESTABLISHED ESSAY ARC");
     expect(payload.userMessage).toContain("Title: The Reckoning");
     expect(payload.userMessage).toContain("Function: Establish the central conflict");
     expect(payload.userMessage).toContain("Register: noir");
@@ -550,11 +550,11 @@ describe("context-aware prompt building", () => {
       ...baseParams,
       narrativeRules: sampleRules,
     });
-    expect(payload.systemMessage).toContain("POV CONTRACT: close-third person");
+    expect(payload.systemMessage).toContain("VOICE CONTRACT: close-third person");
     expect(payload.systemMessage).toContain("SUBTEXT POLICY");
     expect(payload.systemMessage).toContain("EXPOSITION POLICY");
     // Should NOT appear in user message
-    expect(payload.userMessage).not.toContain("POV CONTRACT");
+    expect(payload.userMessage).not.toContain("VOICE CONTRACT");
   });
 
   it("character dossiers appear in user message", () => {
@@ -562,7 +562,7 @@ describe("context-aware prompt building", () => {
       ...baseParams,
       characterDossiers: sampleDossiers,
     });
-    expect(payload.userMessage).toContain("CHARACTER DOSSIERS");
+    expect(payload.userMessage).toContain("VOICE PROFILES");
     expect(payload.userMessage).toContain("Ex-detective turned bar owner");
     expect(payload.userMessage).toContain("Gets very still");
   });
@@ -591,16 +591,16 @@ describe("context-aware prompt building", () => {
 
   it("empty/undefined context fields produce no extra blocks (backward compat)", () => {
     const payload = buildSceneBootstrapPrompt(baseParams);
-    expect(payload.userMessage).not.toContain("EXISTING SCENES");
-    expect(payload.userMessage).not.toContain("ESTABLISHED CHAPTER ARC");
-    expect(payload.userMessage).not.toContain("CHARACTER DOSSIERS");
+    expect(payload.userMessage).not.toContain("EXISTING SECTIONS");
+    expect(payload.userMessage).not.toContain("ESTABLISHED ESSAY ARC");
+    expect(payload.userMessage).not.toContain("VOICE PROFILES");
     expect(payload.userMessage).not.toContain("LOCATION DETAILS");
     expect(payload.userMessage).not.toContain("ACTIVE SETUPS");
-    expect(payload.systemMessage).not.toContain("POV CONTRACT");
+    expect(payload.systemMessage).not.toContain("VOICE CONTRACT");
     expect(payload.systemMessage).not.toContain("NEVER USE");
     // Original content still present
     expect(payload.systemMessage).toContain("essay structure planner");
-    expect(payload.userMessage).toContain("CHAPTER DIRECTION");
+    expect(payload.userMessage).toContain("ESSAY DIRECTION");
   });
 
   it("continuity note references correct scene numbering", () => {
@@ -609,9 +609,9 @@ describe("context-aware prompt building", () => {
       sceneCount: 2,
       existingScenes,
     });
-    // 2 existing scenes + generating 2 more → scenes 3 through 4
-    expect(payload.userMessage).toContain("You are generating scenes 3 through 4");
-    expect(payload.userMessage).toContain("New scenes must continue seamlessly from existing ones");
+    // 2 existing scenes + generating 2 more → sections 3 through 4
+    expect(payload.userMessage).toContain("You are generating sections 3 through 4");
+    expect(payload.userMessage).toContain("New sections must continue seamlessly from existing ones");
   });
 
   it("active setups appear in user message", () => {

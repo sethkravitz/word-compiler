@@ -226,7 +226,7 @@ describe("chapter arcs repository", () => {
     const arc = makeChapterArc(projectId);
     chapterArcs.createChapterArc(db, arc);
     const found = chapterArcs.getChapterArc(db, arc.id);
-    expect(found!.workingTitle).toBe("Chapter One");
+    expect(found!.workingTitle).toBe("Section One");
   });
 
   it("retrieves by project and chapter number", () => {

@@ -29,7 +29,7 @@ function makePlan(overrides: Partial<ScenePlan> = {}): ScenePlan {
 describe("formatSceneContract", () => {
   it("formats minimal plan", () => {
     const text = formatSceneContract(makePlan());
-    expect(text).toContain("=== SCENE: The Bar ===");
+    expect(text).toContain("=== SECTION: The Bar ===");
     expect(text).toContain("POV: marcus, close");
     expect(text).toContain("Goal: Establish tension");
     expect(text).toContain("Failure mode to avoid:");
@@ -45,7 +45,7 @@ describe("formatSceneContract", () => {
         },
       }),
     );
-    expect(text).toContain("SUBTEXT CONTRACT:");
+    expect(text).toContain("IMPLICIT MEANING CONTRACT:");
     expect(text).toContain("Surface: Catching up");
     expect(text).toContain("RULE: Never mention loyalty directly");
   });
@@ -111,7 +111,7 @@ describe("formatCharacterVoice", () => {
     expect(text).toContain("Metaphors from: machinery and water");
     expect(text).toContain("Never says: awesome, literally");
     expect(text).toContain("Voice samples:");
-    expect(text).toContain("In this scene:");
+    expect(text).toContain("In this section:");
     expect(text).toContain("- Guarded, not hostile");
     expect(text).toContain("Body shows emotion: Jaw tightens");
     expect(text).toContain("Under stress: Goes still");
@@ -177,7 +177,7 @@ describe("formatAntiAblation", () => {
     const text = formatAntiAblation(
       makePlan({ sceneSpecificProhibitions: ["No flashbacks", "No internal monologue"] }),
     );
-    expect(text).toContain("Scene-specific bans:");
+    expect(text).toContain("Section-specific bans:");
     expect(text).toContain("- No flashbacks");
     expect(text).toContain("- No internal monologue");
   });

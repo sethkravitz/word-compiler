@@ -84,7 +84,7 @@ function checkMissingSubtext(speakingCharIds: string[], plan: ScenePlan): LintIs
     return {
       code: "MISSING_SUBTEXT",
       severity: "warning",
-      message: `Multi-voice section has no implicit meaning contract. High ablation risk.`,
+      message: `Section lacks tonal direction. Consider adding tone or register guidance.`,
     };
   }
   return null;

@@ -92,7 +92,7 @@ export function createSchema(db: Database.Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_compiled_payloads_chunk ON compiled_payloads(chunk_id);
 
-    -- Narrative IRs (one per scene, LLM-extracted, human-verified)
+    -- Narrative IRs (one per section, LLM-extracted, human-verified)
     CREATE TABLE IF NOT EXISTS narrative_irs (
       id TEXT PRIMARY KEY,
       scene_id TEXT NOT NULL REFERENCES scene_plans(id),
