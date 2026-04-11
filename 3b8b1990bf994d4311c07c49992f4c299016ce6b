@@ -1,0 +1,133 @@
+src/app/components/ForwardSimulator.stories.ts
+  ac8190ea061f9627 22
+src/app/components/CompilerView.stories.ts
+  ac8190ea061f9627 20,111,222
+src/app/components/SceneAuthoringModal.stories.ts
+  ac8190ea061f9627 13,20,24
+src/app/components/stages/EditStage.svelte
+  ac8190ea061f9627 21
+src/app/components/BibleAuthoringModal.stories.ts
+  ac8190ea061f9627 12,19,23
+src/app/components/AnnotationTooltip.stories.ts
+  ac8190ea061f9627 43
+src/app/components/stages/CompleteStage.svelte
+  ac8190ea061f9627 46,55
+src/app/components/ChapterArcEditor.stories.ts
+  ac8190ea061f9627 13
+e2e/errors.spec.ts
+  ac8190ea061f9627 24,31,54,61,84,95
+src/app/stories/factories.ts
+  ac8190ea061f9627 65,135,141-143,146-148,271
+src/app/primitives/SectionPanel.stories.ts
+  ac8190ea061f9627 14
+src/app/components/DraftingDesk.stories.ts
+  ac8190ea061f9627 14,72-73
+tests/compiler/ring1.test.ts
+  ac8190ea061f9627 35
+src/app/components/LearnerPanel.svelte
+  ac8190ea061f9627 66,70,133
+e2e/scene.spec.ts
+  ac8190ea061f9627 4,8,12-17,20-23,29,51-52,56
+e2e/bootstrap.spec.ts
+  ac8190ea061f9627 70-71,76,101
+src/app/components/VoiceSeparabilityView.svelte
+  ac8190ea061f9627 12,26,38-39
+src/review/refine.ts
+  ac8190ea061f9627 45,47,52
+src/app/components/AtlasArcTab.svelte
+  ac8190ea061f9627 117
+src/app/components/field-glossary.ts
+  ac8190ea061f9627 24,29,31-33,38,40-42,44-46,55-56,58-60,67-69,71-72,76,81-83,88,90-92,96-102,104,108-111,113-114,120-121,123,125,127,134-137,144,146-147,152-153,155-156,160-164,167,175,177,184-185,187-189,195,197,199-202,204,209-212,214-216,221-224,226-228,234,236,238,240-242,248,253-255,261-263,281,283,298,311,313,320,326,335-336,345,356-357,364,372,375-377,379,383,388-390,394-397,402-403,405-407,412-413,415-416,418-420,427,429-430,436,438,440-441,448-449,453-454,459,465-467,474,483-486,493,495-497,499,502,506-507,514-515,522,524,531-532,534,539,544-545,547,549,551,558-560,562-564,572,574,576-578,583,585-586,588,593-596,600-603,608-611,618,620-621,623,630,635,640-642,648,656-661,663
+tests/bootstrap/sceneBootstrap.test.ts
+  ac8190ea061f9627 39,74,89,100-101,103,602
+src/app/components/AtlasSceneTab.svelte
+  ac8190ea061f9627 75,86,100,223-224,229,231,238
+tests/compiler/helpers.test.ts
+  ac8190ea061f9627 338-339
+src/app/components/BootstrapModal.stories.ts
+  ac8190ea061f9627 13
+src/app/components/field-examples.ts
+  ac8190ea061f9627 30-31,33,35,39,42,44,48,51,53,60-61,63,65,69,72,74,81,84,91,97-98,100,102,106,109,111,115,118,120,131,134,136,140-141,143,145,149-150,152,154,165-166,168,170,174-175,177,183,186,188,193,199-200,202,204,208-209,211,213,217,220,222,233-234,236,242,245,247,251,254,256,267,270,272,276-277,279,281,285,288,290,301,304,306,310-311,313,315,319,322,324,335,338,340,344,347,353,369,372,378-379,381,383,387,390,392
+src/app/components/stages/ExportStage.svelte
+  ac8190ea061f9627 34
+src/app/components/ForwardSimulator.svelte
+  ac8190ea061f9627 50,64,144
+src/app/components/LearnerPanel.stories.ts
+  ac8190ea061f9627 13
+src/app/components/AuditPanel.stories.ts
+  ac8190ea061f9627 93,100
+src/app/components/BibleGuidedFormTab.stories.ts
+  ac8190ea061f9627 12-13,20,24
+tests/ui/AtlasPane.test.ts
+  ac8190ea061f9627 58,65,73,75-76
+src/app/components/IRInspector.stories.ts
+  ac8190ea061f9627 14
+e2e/app.spec.ts
+  ac8190ea061f9627 29-30
+src/app/components/SetupPayoffPanel.stories.ts
+  ac8190ea061f9627 13
+src/app/components/ExportModal.stories.ts
+  ac8190ea061f9627 13,24
+tests/review/refine.test.ts
+  ac8190ea061f9627 139
+src/app/components/SceneGuidedFormTab.svelte
+  ac8190ea061f9627 125
+src/bootstrap/sceneBootstrap.ts
+  ac8190ea061f9627 417-418,476
+src/compiler/ring3.ts
+  ac8190ea061f9627 101,107
+src/app/components/stages/AuditStage.svelte
+  ac8190ea061f9627 156
+tests/ui/ForwardSimulator.test.ts
+  ac8190ea061f9627 14,38,41-42
+tests/review/prompt.test.ts
+  ac8190ea061f9627 213
+src/app/App.svelte
+  ac8190ea061f9627 92,120
+e2e/bible.spec.ts
+  ac8190ea061f9627 4,9,14-15,20,25,30,32
+tests/compiler/ring3.test.ts
+  ac8190ea061f9627 328
+src/app/components/AtlasPane.svelte
+  ac8190ea061f9627 25-26,39
+src/app/components/SceneGuidedFormTab.stories.ts
+  ac8190ea061f9627 12,20,24
+src/review/prompt.ts
+  ac8190ea061f9627 138,155,205
+src/compiler/helpers.ts
+  ac8190ea061f9627 164
+src/app/components/ExportModal.svelte
+  ac8190ea061f9627 34
+src/app/components/AtlasPane.stories.ts
+  ac8190ea061f9627 11,16,19,21-22
+src/app/components/SceneBootstrapTab.svelte
+  ac8190ea061f9627 307,321,510,591,594,617,682,684,687,702,724
+src/app/components/stages/DraftStage.svelte
+  ac8190ea061f9627 337,574
+src/ir/extractor.ts
+  ac8190ea061f9627 29,34,41,46,51,54-56,60-61,67,70,72,80
+src/compiler/ring1.ts
+  ac8190ea061f9627 126
+e2e/genre.spec.ts
+  ac8190ea061f9627 9,11,13-14,17,20-24,32-33,37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "3b8b1990bf994d4311c07c49992f4c299016ce6b",
+  "prompts": {
+    "ac8190ea061f9627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea62ba6b-c68a-465d-9959-85d37bcdf544",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 895,
+      "total_deletions": 497,
+      "accepted_lines": 1374,
+      "overriden_lines": 14
+    }
+  }
+}
