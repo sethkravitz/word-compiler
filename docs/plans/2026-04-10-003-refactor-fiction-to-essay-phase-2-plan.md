@@ -1,7 +1,7 @@
 ---
 title: "refactor: Fiction-to-essay adaptation phase 2 — complete remaining prompts, UI, and functional gaps"
 type: refactor
-status: active
+status: completed
 date: 2026-04-10
 origin: docs/brainstorms/2026-04-08-essay-writer-adaptation-requirements.md
 ---
