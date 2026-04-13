@@ -16,6 +16,39 @@ export type SectionState =
   | { state: "failed"; reason: "error" | "aborted"; message: string };
 
 /**
+ * A revert slot is created on Regenerate. It captures the prior canonical text
+ * synchronously before dispatching the new generation so the composer can
+ * restore it within the 60-second window. The composer owns the timer that
+ * expires the slot — see Pattern A in DraftStage.svelte:186-216.
+ */
+export interface RevertSlot {
+  priorText: string;
+  expiresAt: number;
+  timerId: ReturnType<typeof setTimeout> | null;
+}
+
+/**
+ * Anchored to the section that triggered the first Generate click while the
+ * voice profile is empty. Cleared on dismissal or on "Generate Voice" click.
+ */
+export interface VoiceNudge {
+  sceneId: string;
+}
+
+/**
+ * Discriminated union of events the section state machine reducer accepts.
+ * See sectionStateMachine.ts for the transition table.
+ */
+export type StateEvent =
+  | { type: "GENERATE_REQUESTED"; hasPending: boolean }
+  | { type: "GENERATE_DISPATCHED" }
+  | { type: "GENERATE_SUCCEEDED" }
+  | { type: "GENERATE_FAILED"; reason: "error" | "aborted"; message: string }
+  | { type: "CANCELLED" }
+  | { type: "REVERTED" }
+  | { type: "CLEARED" };
+
+/**
  * Derived from (state, isFirstSection, isLastSection, isRevertable, hasText)
  * by SectionCard. Drives every visible/disabled control on the card.
  *
