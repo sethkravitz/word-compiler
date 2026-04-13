@@ -1,0 +1,38 @@
+tests/ui/composer/auditMapping.test.ts
+  75790ccc6b48b055 1-198
+src/app/components/composer/auditMapping.ts
+  75790ccc6b48b055 1-138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "03ccfbcf40842d6fef06cc053751aa075ebcb6eb",
+  "prompts": {
+    "75790ccc6b48b055": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6658136-7697-415a-b4ee-3ff6fbd7db0c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 395,
+      "total_deletions": 55,
+      "accepted_lines": 793,
+      "overriden_lines": 0
+    },
+    "ac8190ea061f9627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea62ba6b-c68a-465d-9959-85d37bcdf544",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 6646,
+      "overriden_lines": 0
+    }
+  }
+}
