@@ -23,6 +23,10 @@ export function createApiActions(store: ProjectStore) {
     store.addScenePlan(saved); // addScenePlan replaces by id if it already exists
   }
 
+  async function deleteScenePlan(sceneId: string): Promise<void> {
+    await api.apiDeleteScenePlan(sceneId);
+  }
+
   async function saveMultipleScenePlans(plans: ScenePlan[]): Promise<void> {
     const saved = await Promise.all(plans.map((plan, i) => api.apiSaveScenePlan(plan, store.scenes.length + i)));
     store.addMultipleScenePlans(saved);
@@ -88,6 +92,7 @@ export function createApiActions(store: ProjectStore) {
     saveBible,
     saveScenePlan,
     updateScenePlan,
+    deleteScenePlan,
     saveMultipleScenePlans,
     saveChapterArc,
     updateChapterArc,

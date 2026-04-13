@@ -59,3 +59,79 @@ export function updateSceneStatus(db: Database.Database, id: string, status: Sce
   const result = db.prepare(`UPDATE scene_plans SET status = ?, updated_at = ? WHERE id = ?`).run(status, now, id);
   return result.changes > 0;
 }
+
+export interface SceneCascadeCounts {
+  chunks: number;
+  compilationLogs: number;
+  compiledPayloads: number;
+  auditFlags: number;
+  narrativeIRs: number;
+  editPatterns: number;
+}
+
+export interface DeleteScenePlanResult {
+  deleted: boolean;
+  cascadeCounts: SceneCascadeCounts;
+}
+
+/**
+ * Deletes a scene plan and cascades cleanup across every FK-referenced
+ * table. Mirrors `deleteProject` at scene-plan scope.
+ *
+ * Order matters because `foreign_keys = ON`:
+ *   1. `edit_patterns` first — its FK references both chunks and scene_plans
+ *   2. `compilation_logs` + `compiled_payloads` per chunk (no FK, safe either order)
+ *   3. `chunks` (FK → scene_plans)
+ *   4. `audit_flags` + `narrative_irs` (FK → scene_plans)
+ *   5. `scene_plans` row itself
+ *
+ * Wrapped in a transaction so any failure rolls back the entire delete.
+ */
+export function deleteScenePlan(db: Database.Database, sceneId: string): DeleteScenePlanResult {
+  const run = db.transaction((id: string): DeleteScenePlanResult => {
+    const counts: SceneCascadeCounts = {
+      chunks: 0,
+      compilationLogs: 0,
+      compiledPayloads: 0,
+      auditFlags: 0,
+      narrativeIRs: 0,
+      editPatterns: 0,
+    };
+
+    const sceneExists = db.prepare("SELECT 1 FROM scene_plans WHERE id = ?").get(id);
+    if (!sceneExists) {
+      return { deleted: false, cascadeCounts: counts };
+    }
+
+    const chunkIds = (db.prepare("SELECT id FROM chunks WHERE scene_id = ?").all(id) as Array<{ id: string }>).map(
+      (r) => r.id,
+    );
+
+    // 1. Delete edit_patterns for this scene BEFORE chunks (FK to chunks(id) + scene_plans(id))
+    const editPatternsResult = db.prepare("DELETE FROM edit_patterns WHERE scene_id = ?").run(id);
+    counts.editPatterns = editPatternsResult.changes;
+
+    // 2. Delete chunk-scoped leaf tables (no FK constraints, but cleans orphans)
+    const logStmt = db.prepare("DELETE FROM compilation_logs WHERE chunk_id = ?");
+    const payloadStmt = db.prepare("DELETE FROM compiled_payloads WHERE chunk_id = ?");
+    for (const chunkId of chunkIds) {
+      counts.compilationLogs += logStmt.run(chunkId).changes;
+      counts.compiledPayloads += payloadStmt.run(chunkId).changes;
+    }
+
+    // 3. Delete chunks (FK → scene_plans)
+    const chunksResult = db.prepare("DELETE FROM chunks WHERE scene_id = ?").run(id);
+    counts.chunks = chunksResult.changes;
+
+    // 4. Delete remaining scene-scoped tables (FK → scene_plans)
+    counts.auditFlags = db.prepare("DELETE FROM audit_flags WHERE scene_id = ?").run(id).changes;
+    counts.narrativeIRs = db.prepare("DELETE FROM narrative_irs WHERE scene_id = ?").run(id).changes;
+
+    // 5. Finally, delete the scene_plans row itself
+    const sceneResult = db.prepare("DELETE FROM scene_plans WHERE id = ?").run(id);
+
+    return { deleted: sceneResult.changes > 0, cascadeCounts: counts };
+  });
+
+  return run(sceneId);
+}

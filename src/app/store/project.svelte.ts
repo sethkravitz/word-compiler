@@ -360,6 +360,41 @@ export class ProjectStore {
     this.activeSceneIndex = this.scenes.length - 1;
   }
 
+  /**
+   * Removes a scene plan from the store along with its associated chunks,
+   * narrative IR, and editorial annotations. Clamps `activeSceneIndex` to
+   * remain within bounds after deletion.
+   */
+  removeScenePlan(sceneId: string) {
+    const removedIndex = this.scenes.findIndex((s) => s.plan.id === sceneId);
+    if (removedIndex < 0) return;
+
+    this.scenes = this.scenes.filter((s) => s.plan.id !== sceneId);
+
+    const { [sceneId]: _removedChunks, ...restChunks } = this.sceneChunks;
+    this.sceneChunks = restChunks;
+
+    const { [sceneId]: _removedIR, ...restIRs } = this.sceneIRs;
+    this.sceneIRs = restIRs;
+
+    const { [sceneId]: _removedAnns, ...restAnns } = this.editorialAnnotations;
+    this.editorialAnnotations = restAnns;
+
+    // Clamp activeSceneIndex so the getter never returns null if other scenes remain
+    if (this.scenes.length === 0) {
+      this.activeSceneIndex = 0;
+    } else if (this.activeSceneIndex >= this.scenes.length) {
+      this.activeSceneIndex = this.scenes.length - 1;
+    } else if (removedIndex < this.activeSceneIndex) {
+      // The removal shifted everything after it left by one — keep the same scene active
+      this.activeSceneIndex = this.activeSceneIndex - 1;
+    }
+    // Otherwise (removedIndex >= activeSceneIndex and scenes still in bounds) the
+    // active index now points at what was the next scene, which is the right behavior.
+
+    this.selectedChunkIndex = null;
+  }
+
   loadFromServer(data: {
     project: Project;
     bible: Bible | null;

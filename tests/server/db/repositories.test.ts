@@ -5,10 +5,12 @@ import * as bibles from "../../../server/db/repositories/bibles.js";
 import * as chapterArcs from "../../../server/db/repositories/chapter-arcs.js";
 import * as chunks from "../../../server/db/repositories/chunks.js";
 import * as compilationLogs from "../../../server/db/repositories/compilation-logs.js";
+import * as editPatterns from "../../../server/db/repositories/edit-patterns.js";
+import * as narrativeIRs from "../../../server/db/repositories/narrative-irs.js";
 import * as projects from "../../../server/db/repositories/projects.js";
 import * as scenePlans from "../../../server/db/repositories/scene-plans.js";
 import { createSchema } from "../../../server/db/schema.js";
-import type { CompilationLog } from "../../../src/types/index.js";
+import { type CompilationLog, createEmptyNarrativeIR } from "../../../src/types/index.js";
 import {
   createEmptyBible,
   createEmptyScenePlan,
@@ -16,6 +18,7 @@ import {
   makeAuditFlag,
   makeChapterArc,
   makeChunk,
+  makeEditPattern,
   makeProject,
 } from "../../helpers/factories.js";
 
@@ -349,6 +352,175 @@ describe("scene plans repository", () => {
 
     const found = scenePlans.getScenePlan(db, plan.id);
     expect(found!.plan.title).toBe("Reloaded");
+  });
+
+  // ─── deleteScenePlan (cascade) ──────────────────
+
+  describe("deleteScenePlan (cascade)", () => {
+    it("returns { deleted: false } when the scene does not exist", () => {
+      const result = scenePlans.deleteScenePlan(db, "does-not-exist");
+      expect(result.deleted).toBe(false);
+      expect(result.cascadeCounts).toEqual({
+        chunks: 0,
+        compilationLogs: 0,
+        compiledPayloads: 0,
+        auditFlags: 0,
+        narrativeIRs: 0,
+        editPatterns: 0,
+      });
+    });
+
+    it("deletes a scene with zero children and returns zero cascade counts", () => {
+      const plan = { ...createEmptyScenePlan(projectId), chapterId };
+      scenePlans.createScenePlan(db, plan, 0);
+
+      const result = scenePlans.deleteScenePlan(db, plan.id);
+
+      expect(result.deleted).toBe(true);
+      expect(result.cascadeCounts).toEqual({
+        chunks: 0,
+        compilationLogs: 0,
+        compiledPayloads: 0,
+        auditFlags: 0,
+        narrativeIRs: 0,
+        editPatterns: 0,
+      });
+      expect(scenePlans.getScenePlan(db, plan.id)).toBeNull();
+    });
+
+    it("cascades cleanup across every FK-referenced table", () => {
+      // Seed: 1 scene, 3 chunks, 2 compilation logs, 2 compiled payloads,
+      // 5 audit flags, 1 narrative IR, 4 edit patterns
+      const plan = { ...createEmptyScenePlan(projectId), chapterId };
+      scenePlans.createScenePlan(db, plan, 0);
+
+      const chunk0 = makeChunk(plan.id, 0);
+      const chunk1 = makeChunk(plan.id, 1);
+      const chunk2 = makeChunk(plan.id, 2);
+      chunks.createChunk(db, chunk0);
+      chunks.createChunk(db, chunk1);
+      chunks.createChunk(db, chunk2);
+
+      const log1: CompilationLog = {
+        id: generateId(),
+        chunkId: chunk0.id,
+        payloadHash: "h1",
+        ring1Tokens: 0,
+        ring2Tokens: 0,
+        ring3Tokens: 0,
+        totalTokens: 0,
+        availableBudget: 1000,
+        ring1Contents: [],
+        ring2Contents: [],
+        ring3Contents: [],
+        lintWarnings: [],
+        lintErrors: [],
+        timestamp: new Date().toISOString(),
+      };
+      const log2: CompilationLog = { ...log1, id: generateId(), chunkId: chunk1.id, payloadHash: "h2" };
+      compilationLogs.createCompilationLog(db, log1);
+      compilationLogs.createCompilationLog(db, log2);
+
+      // compiled_payloads has no repository — insert directly
+      db.prepare("INSERT INTO compiled_payloads (id, chunk_id, data, created_at) VALUES (?, ?, ?, ?)").run(
+        generateId(),
+        chunk0.id,
+        "{}",
+        new Date().toISOString(),
+      );
+      db.prepare("INSERT INTO compiled_payloads (id, chunk_id, data, created_at) VALUES (?, ?, ?, ?)").run(
+        generateId(),
+        chunk1.id,
+        "{}",
+        new Date().toISOString(),
+      );
+
+      auditFlagsRepo.createAuditFlags(db, [
+        makeAuditFlag(plan.id),
+        makeAuditFlag(plan.id),
+        makeAuditFlag(plan.id),
+        makeAuditFlag(plan.id),
+        makeAuditFlag(plan.id),
+      ]);
+
+      narrativeIRs.createNarrativeIR(db, createEmptyNarrativeIR(plan.id));
+
+      editPatterns.createEditPatterns(db, [
+        makeEditPattern({ chunkId: chunk0.id, sceneId: plan.id, projectId }),
+        makeEditPattern({ chunkId: chunk0.id, sceneId: plan.id, projectId }),
+        makeEditPattern({ chunkId: chunk1.id, sceneId: plan.id, projectId }),
+        makeEditPattern({ chunkId: chunk2.id, sceneId: plan.id, projectId }),
+      ]);
+
+      // Delete + verify cascade counts
+      const result = scenePlans.deleteScenePlan(db, plan.id);
+
+      expect(result.deleted).toBe(true);
+      expect(result.cascadeCounts).toEqual({
+        chunks: 3,
+        compilationLogs: 2,
+        compiledPayloads: 2,
+        auditFlags: 5,
+        narrativeIRs: 1,
+        editPatterns: 4,
+      });
+
+      // Verify every table is empty for this scene / its chunks
+      expect(scenePlans.getScenePlan(db, plan.id)).toBeNull();
+      expect(chunks.listChunksForScene(db, plan.id)).toEqual([]);
+      expect(auditFlagsRepo.listAuditFlags(db, plan.id)).toEqual([]);
+      expect(narrativeIRs.getNarrativeIR(db, plan.id)).toBeNull();
+      expect(editPatterns.listEditPatternsForScene(db, plan.id)).toEqual([]);
+
+      for (const chunkId of [chunk0.id, chunk1.id, chunk2.id]) {
+        expect(compilationLogs.listCompilationLogs(db, chunkId)).toEqual([]);
+        const payloadRows = db
+          .prepare("SELECT COUNT(*) as count FROM compiled_payloads WHERE chunk_id = ?")
+          .get(chunkId) as { count: number };
+        expect(payloadRows.count).toBe(0);
+        expect(chunks.getChunk(db, chunkId)).toBeNull();
+      }
+    });
+
+    it("does not affect unrelated scenes", () => {
+      // Two scenes under the same chapter, each with children
+      const keepPlan = { ...createEmptyScenePlan(projectId), chapterId };
+      const dropPlan = { ...createEmptyScenePlan(projectId), chapterId };
+      scenePlans.createScenePlan(db, keepPlan, 0);
+      scenePlans.createScenePlan(db, dropPlan, 1);
+
+      const keepChunk = makeChunk(keepPlan.id, 0);
+      const dropChunk = makeChunk(dropPlan.id, 0);
+      chunks.createChunk(db, keepChunk);
+      chunks.createChunk(db, dropChunk);
+
+      auditFlagsRepo.createAuditFlags(db, [makeAuditFlag(keepPlan.id), makeAuditFlag(keepPlan.id)]);
+      auditFlagsRepo.createAuditFlags(db, [makeAuditFlag(dropPlan.id)]);
+
+      narrativeIRs.createNarrativeIR(db, createEmptyNarrativeIR(keepPlan.id));
+      narrativeIRs.createNarrativeIR(db, createEmptyNarrativeIR(dropPlan.id));
+
+      editPatterns.createEditPatterns(db, [
+        makeEditPattern({ chunkId: keepChunk.id, sceneId: keepPlan.id, projectId }),
+        makeEditPattern({ chunkId: dropChunk.id, sceneId: dropPlan.id, projectId }),
+      ]);
+
+      // Delete only the drop scene
+      const result = scenePlans.deleteScenePlan(db, dropPlan.id);
+      expect(result.deleted).toBe(true);
+
+      // Keep scene + all its children survive intact
+      expect(scenePlans.getScenePlan(db, keepPlan.id)).not.toBeNull();
+      expect(chunks.listChunksForScene(db, keepPlan.id)).toHaveLength(1);
+      expect(auditFlagsRepo.listAuditFlags(db, keepPlan.id)).toHaveLength(2);
+      expect(narrativeIRs.getNarrativeIR(db, keepPlan.id)).not.toBeNull();
+      expect(editPatterns.listEditPatternsForScene(db, keepPlan.id)).toHaveLength(1);
+
+      // Drop scene is fully gone
+      expect(scenePlans.getScenePlan(db, dropPlan.id)).toBeNull();
+      expect(chunks.listChunksForScene(db, dropPlan.id)).toEqual([]);
+      expect(narrativeIRs.getNarrativeIR(db, dropPlan.id)).toBeNull();
+    });
   });
 });
 

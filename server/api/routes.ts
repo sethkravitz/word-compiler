@@ -190,6 +190,16 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
     res.json({ ok: true });
   });
 
+  router.delete("/scenes/:id", (req, res) => {
+    const result = scenePlans.deleteScenePlan(db, req.params.id);
+    if (!result.deleted) {
+      console.warn(`[data] Section plan not found for delete: ${req.params.id}`);
+      return res.status(404).json({ error: "Section plan not found" });
+    }
+    console.log(`[data] Deleted section plan: ${req.params.id} (cascade: ${JSON.stringify(result.cascadeCounts)})`);
+    res.json({ ok: true, cascadeCounts: result.cascadeCounts });
+  });
+
   // ─── Chunks ────────────────────────────────────────
   router.get("/scenes/:sceneId/chunks", (req, res) => {
     res.json(chunks.listChunksForScene(db, req.params.sceneId));

@@ -135,6 +135,19 @@ export function apiUpdateSceneStatus(id: string, status: SceneStatus): Promise<v
   });
 }
 
+export interface SceneCascadeCounts {
+  chunks: number;
+  compilationLogs: number;
+  compiledPayloads: number;
+  auditFlags: number;
+  narrativeIRs: number;
+  editPatterns: number;
+}
+
+export function apiDeleteScenePlan(id: string): Promise<{ ok: true; cascadeCounts: SceneCascadeCounts }> {
+  return fetchJson(`${BASE}/scenes/${id}`, { method: "DELETE" });
+}
+
 // ─── Chunks ──────────────────────────────────────────
 
 export function apiListChunks(sceneId: string): Promise<Chunk[]> {

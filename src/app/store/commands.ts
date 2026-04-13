@@ -95,6 +95,20 @@ export function createCommands(store: ProjectStore, actions?: ApiActions) {
     }
   }
 
+  async function removeScenePlan(sceneId: string): Promise<CommandResult> {
+    try {
+      // API call first — if it fails, the store is NOT mutated and the UI
+      // still shows the scene, which is the correct failure mode.
+      if (actions) {
+        await actions.deleteScenePlan(sceneId);
+      }
+      store.removeScenePlan(sceneId);
+      return success();
+    } catch (err) {
+      return failure(handleError(err));
+    }
+  }
+
   // ─── Chapter Arc ────────────────────────────────
 
   async function saveChapterArc(arc: ChapterArc): Promise<CommandResult> {
@@ -428,6 +442,7 @@ export function createCommands(store: ProjectStore, actions?: ApiActions) {
     saveBible,
     saveScenePlan,
     updateScenePlan,
+    removeScenePlan,
     saveMultipleScenePlans,
     saveChapterArc,
     updateChapterArc,

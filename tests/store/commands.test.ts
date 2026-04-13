@@ -16,6 +16,7 @@ function mockActions(): ApiActions {
     saveBible: vi.fn().mockResolvedValue(undefined),
     saveScenePlan: vi.fn().mockResolvedValue(undefined),
     updateScenePlan: vi.fn().mockResolvedValue(undefined),
+    deleteScenePlan: vi.fn().mockResolvedValue(undefined),
     saveMultipleScenePlans: vi.fn().mockResolvedValue(undefined),
     saveChapterArc: vi.fn().mockResolvedValue(undefined),
     updateChapterArc: vi.fn().mockResolvedValue(undefined),
@@ -131,6 +132,56 @@ describe("createCommands", () => {
       await cmds.saveMultipleScenePlans(plans);
 
       expect(store.scenes).toHaveLength(2);
+    });
+  });
+
+  // ─── removeScenePlan ──────────────────────────
+
+  describe("removeScenePlan", () => {
+    it("calls the API action then the store method in order", async () => {
+      const cmds = createCommands(store, actions);
+      const plan = createEmptyScenePlan("proj-1");
+      store.addScenePlan(plan);
+      const removeSpy = vi.spyOn(store, "removeScenePlan");
+
+      const result = await cmds.removeScenePlan(plan.id);
+
+      expect(result.ok).toBe(true);
+      expect(actions.deleteScenePlan).toHaveBeenCalledWith(plan.id);
+      expect(removeSpy).toHaveBeenCalledWith(plan.id);
+      expect(store.scenes).toHaveLength(0);
+
+      // Ordering: API action must resolve before the store mutation runs
+      const apiCallOrder = (actions.deleteScenePlan as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]!;
+      const storeCallOrder = removeSpy.mock.invocationCallOrder[0]!;
+      expect(apiCallOrder).toBeLessThan(storeCallOrder);
+    });
+
+    it("does not mutate the store when the API action fails", async () => {
+      (actions.deleteScenePlan as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network down"));
+      const cmds = createCommands(store, actions);
+      const plan = createEmptyScenePlan("proj-1");
+      store.addScenePlan(plan);
+
+      const result = await cmds.removeScenePlan(plan.id);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBe("Network down");
+      expect(store.error).toBe("Network down");
+      // Scene still in store — UI continues to show it
+      expect(store.scenes).toHaveLength(1);
+      expect(store.scenes[0]!.plan.id).toBe(plan.id);
+    });
+
+    it("removes scene from store in store-only mode", async () => {
+      const cmds = createCommands(store);
+      const plan = createEmptyScenePlan("proj-1");
+      store.addScenePlan(plan);
+
+      const result = await cmds.removeScenePlan(plan.id);
+
+      expect(result.ok).toBe(true);
+      expect(store.scenes).toHaveLength(0);
     });
   });
 

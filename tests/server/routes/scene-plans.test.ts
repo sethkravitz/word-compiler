@@ -167,3 +167,34 @@ describe("PATCH /api/scenes/:id/status", () => {
     expect(res.body).toEqual({ error: "Section not found" });
   });
 });
+
+describe("DELETE /api/scenes/:id", () => {
+  it("deletes a scene plan and returns 200 with cascadeCounts", async () => {
+    const { project, chapter } = seedProjectAndChapter();
+    const plan = seedScene(project.id, chapter.id, 0);
+
+    const res = await request(app).delete(`/api/scenes/${plan.id}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      ok: true,
+      cascadeCounts: {
+        chunks: 0,
+        compilationLogs: 0,
+        compiledPayloads: 0,
+        auditFlags: 0,
+        narrativeIRs: 0,
+        editPatterns: 0,
+      },
+    });
+
+    // Follow-up GET returns 404
+    const getRes = await request(app).get(`/api/scenes/${plan.id}`);
+    expect(getRes.status).toBe(404);
+  });
+
+  it("returns 404 for a nonexistent scene", async () => {
+    const res = await request(app).delete("/api/scenes/nonexistent-id");
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: "Section plan not found" });
+  });
+});
