@@ -361,6 +361,37 @@ export class ProjectStore {
   }
 
   /**
+   * Reorders the scenes in the store to match `orderedIds`. Pure permutation:
+   * does NOT add, remove, or mutate per-scene data other than `sceneOrder`.
+   *
+   * Silently no-ops if `orderedIds` is not a complete permutation of the
+   * current scene set — the server validates first, so by the time this runs
+   * the input should always match, but we defend against races.
+   *
+   * Re-syncs `activeSceneIndex` so whichever scene was previously active
+   * stays active at its new position.
+   */
+  reorderScenePlans(orderedIds: string[]) {
+    if (orderedIds.length !== this.scenes.length) return;
+
+    const byId = new Map(this.scenes.map((entry) => [entry.plan.id, entry] as const));
+    const next: SceneEntry[] = [];
+    for (let i = 0; i < orderedIds.length; i++) {
+      const id = orderedIds[i]!;
+      const entry = byId.get(id);
+      if (!entry) return; // unknown id — abort without mutation
+      next.push({ ...entry, sceneOrder: i });
+    }
+
+    const activeSceneId = this.scenes[this.activeSceneIndex]?.plan.id ?? null;
+    this.scenes = next;
+    if (activeSceneId !== null) {
+      const newIndex = next.findIndex((entry) => entry.plan.id === activeSceneId);
+      this.activeSceneIndex = newIndex >= 0 ? newIndex : 0;
+    }
+  }
+
+  /**
    * Removes a scene plan from the store along with its associated chunks,
    * narrative IR, and editorial annotations. Clamps `activeSceneIndex` to
    * remain within bounds after deletion.

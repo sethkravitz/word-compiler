@@ -109,6 +109,26 @@ export function createCommands(store: ProjectStore, actions?: ApiActions) {
     }
   }
 
+  /**
+   * Reorders scenes optimistically: updates the store immediately so the UI
+   * feels snappy, then fires the API. On API failure, reverts the store to
+   * the prior order using a snapshot taken before the optimistic mutation.
+   */
+  async function reorderScenePlans(chapterId: string, orderedIds: string[]): Promise<CommandResult> {
+    const priorOrder = store.scenes.map((entry) => entry.plan.id);
+    store.reorderScenePlans(orderedIds);
+    try {
+      if (actions) {
+        await actions.reorderScenePlans(chapterId, orderedIds);
+      }
+      return success();
+    } catch (err) {
+      // Rollback — restore prior order before reporting failure
+      store.reorderScenePlans(priorOrder);
+      return failure(handleError(err));
+    }
+  }
+
   // ─── Chapter Arc ────────────────────────────────
 
   async function saveChapterArc(arc: ChapterArc): Promise<CommandResult> {
@@ -443,6 +463,7 @@ export function createCommands(store: ProjectStore, actions?: ApiActions) {
     saveScenePlan,
     updateScenePlan,
     removeScenePlan,
+    reorderScenePlans,
     saveMultipleScenePlans,
     saveChapterArc,
     updateChapterArc,

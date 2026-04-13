@@ -17,6 +17,7 @@ function mockActions(): ApiActions {
     saveScenePlan: vi.fn().mockResolvedValue(undefined),
     updateScenePlan: vi.fn().mockResolvedValue(undefined),
     deleteScenePlan: vi.fn().mockResolvedValue(undefined),
+    reorderScenePlans: vi.fn().mockResolvedValue(undefined),
     saveMultipleScenePlans: vi.fn().mockResolvedValue(undefined),
     saveChapterArc: vi.fn().mockResolvedValue(undefined),
     updateChapterArc: vi.fn().mockResolvedValue(undefined),
@@ -182,6 +183,75 @@ describe("createCommands", () => {
 
       expect(result.ok).toBe(true);
       expect(store.scenes).toHaveLength(0);
+    });
+  });
+
+  // ─── reorderScenePlans ────────────────────────
+
+  describe("reorderScenePlans", () => {
+    it("updates the store optimistically, then calls the API action", async () => {
+      const cmds = createCommands(store, actions);
+      const plan1 = createEmptyScenePlan("proj-1");
+      const plan2 = createEmptyScenePlan("proj-1");
+      const plan3 = createEmptyScenePlan("proj-1");
+      store.addScenePlan(plan1);
+      store.addScenePlan(plan2);
+      store.addScenePlan(plan3);
+      const reorderSpy = vi.spyOn(store, "reorderScenePlans");
+
+      const result = await cmds.reorderScenePlans("chap-1", [plan3.id, plan1.id, plan2.id]);
+
+      expect(result.ok).toBe(true);
+      expect(actions.reorderScenePlans).toHaveBeenCalledWith("chap-1", [plan3.id, plan1.id, plan2.id]);
+      expect(reorderSpy).toHaveBeenCalledWith([plan3.id, plan1.id, plan2.id]);
+
+      // Optimistic: store mutation happens BEFORE the API resolves
+      const storeCallOrder = reorderSpy.mock.invocationCallOrder[0]!;
+      const apiCallOrder = (actions.reorderScenePlans as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]!;
+      expect(storeCallOrder).toBeLessThan(apiCallOrder);
+
+      // Final store order reflects the new order
+      expect(store.scenes.map((s) => s.plan.id)).toEqual([plan3.id, plan1.id, plan2.id]);
+    });
+
+    it("rolls back the store order when the API action fails", async () => {
+      (actions.reorderScenePlans as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network down"));
+      const cmds = createCommands(store, actions);
+      const plan1 = createEmptyScenePlan("proj-1");
+      const plan2 = createEmptyScenePlan("proj-1");
+      const plan3 = createEmptyScenePlan("proj-1");
+      store.addScenePlan(plan1);
+      store.addScenePlan(plan2);
+      store.addScenePlan(plan3);
+      const originalOrder = [plan1.id, plan2.id, plan3.id];
+      const reorderSpy = vi.spyOn(store, "reorderScenePlans");
+
+      const result = await cmds.reorderScenePlans("chap-1", [plan3.id, plan1.id, plan2.id]);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBe("Network down");
+      expect(store.error).toBe("Network down");
+
+      // Store method was called twice: once optimistically, once for rollback
+      expect(reorderSpy).toHaveBeenCalledTimes(2);
+      expect(reorderSpy.mock.calls[0]![0]).toEqual([plan3.id, plan1.id, plan2.id]);
+      expect(reorderSpy.mock.calls[1]![0]).toEqual(originalOrder);
+
+      // Final store order matches the original (rollback succeeded)
+      expect(store.scenes.map((s) => s.plan.id)).toEqual(originalOrder);
+    });
+
+    it("returns success in store-only mode without calling any API action", async () => {
+      const cmds = createCommands(store);
+      const plan1 = createEmptyScenePlan("proj-1");
+      const plan2 = createEmptyScenePlan("proj-1");
+      store.addScenePlan(plan1);
+      store.addScenePlan(plan2);
+
+      const result = await cmds.reorderScenePlans("chap-1", [plan2.id, plan1.id]);
+
+      expect(result.ok).toBe(true);
+      expect(store.scenes.map((s) => s.plan.id)).toEqual([plan2.id, plan1.id]);
     });
   });
 

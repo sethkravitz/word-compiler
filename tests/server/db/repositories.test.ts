@@ -354,6 +354,120 @@ describe("scene plans repository", () => {
     expect(found!.plan.title).toBe("Reloaded");
   });
 
+  // ─── reorderScenePlans ──────────────────────────
+
+  describe("reorderScenePlans", () => {
+    function seedScenes(count: number): string[] {
+      const ids: string[] = [];
+      for (let i = 0; i < count; i++) {
+        const plan = { ...createEmptyScenePlan(projectId), chapterId };
+        scenePlans.createScenePlan(db, plan, i);
+        ids.push(plan.id);
+      }
+      return ids;
+    }
+
+    function readOrder(cId: string): Array<{ id: string; scene_order: number }> {
+      return db
+        .prepare("SELECT id, scene_order FROM scene_plans WHERE chapter_id = ? ORDER BY scene_order")
+        .all(cId) as Array<{ id: string; scene_order: number }>;
+    }
+
+    it("reorders scenes to match the supplied permutation", () => {
+      const [a, b, c] = seedScenes(3) as [string, string, string];
+
+      const result = scenePlans.reorderScenePlans(db, chapterId, [c, a, b]);
+
+      expect(result).toEqual({ updated: 3 });
+      const rows = readOrder(chapterId);
+      const order = new Map(rows.map((r) => [r.id, r.scene_order]));
+      expect(order.get(c)).toBe(0);
+      expect(order.get(a)).toBe(1);
+      expect(order.get(b)).toBe(2);
+    });
+
+    it("accepts an identity permutation (no visible changes)", () => {
+      const ids = seedScenes(3);
+
+      const result = scenePlans.reorderScenePlans(db, chapterId, ids);
+
+      expect(result).toEqual({ updated: 3 });
+      const rows = readOrder(chapterId);
+      expect(rows.map((r) => r.id)).toEqual(ids);
+      expect(rows.map((r) => r.scene_order)).toEqual([0, 1, 2]);
+    });
+
+    it("returns MISMATCHED_IDS and does not mutate when an id does not belong to the chapter", () => {
+      const [a, b, c] = seedScenes(3) as [string, string, string];
+
+      const result = scenePlans.reorderScenePlans(db, chapterId, [a, b, "stranger-id"]);
+
+      expect(result).toEqual({ error: "MISMATCHED_IDS" });
+      // Verify no mutations
+      const rows = readOrder(chapterId);
+      expect(rows.map((r) => r.id)).toEqual([a, b, c]);
+      expect(rows.map((r) => r.scene_order)).toEqual([0, 1, 2]);
+    });
+
+    it("returns MISMATCHED_IDS when orderedIds is shorter than the chapter's scenes", () => {
+      const [a, b, c] = seedScenes(3) as [string, string, string];
+
+      const result = scenePlans.reorderScenePlans(db, chapterId, [a, b]);
+
+      expect(result).toEqual({ error: "MISMATCHED_IDS" });
+      const rows = readOrder(chapterId);
+      expect(rows.map((r) => r.id)).toEqual([a, b, c]);
+    });
+
+    it("returns MISMATCHED_IDS when orderedIds contains duplicates", () => {
+      const [a, b, _c] = seedScenes(3) as [string, string, string];
+
+      const result = scenePlans.reorderScenePlans(db, chapterId, [a, b, a]);
+
+      expect(result).toEqual({ error: "MISMATCHED_IDS" });
+      const rows = readOrder(chapterId);
+      expect(rows.map((r) => r.scene_order)).toEqual([0, 1, 2]);
+    });
+
+    it("returns MISMATCHED_IDS when orderedIds is empty but chapter has scenes", () => {
+      seedScenes(2);
+
+      const result = scenePlans.reorderScenePlans(db, chapterId, []);
+
+      expect(result).toEqual({ error: "MISMATCHED_IDS" });
+    });
+
+    it("returns { updated: 0 } for an empty chapter with an empty orderedIds", () => {
+      const result = scenePlans.reorderScenePlans(db, chapterId, []);
+      expect(result).toEqual({ updated: 0 });
+    });
+
+    it("does not touch scene_order in other chapters", () => {
+      // Chapter A (existing from beforeEach) — 3 scenes
+      const [a0, a1, a2] = seedScenes(3) as [string, string, string];
+
+      // Chapter B — 3 more scenes under a second chapter arc
+      const otherArc = makeChapterArc(projectId, { chapterNumber: 2 });
+      chapterArcs.createChapterArc(db, otherArc);
+      const otherChapterId = otherArc.id;
+      const otherIds: string[] = [];
+      for (let i = 0; i < 3; i++) {
+        const plan = { ...createEmptyScenePlan(projectId), chapterId: otherChapterId };
+        scenePlans.createScenePlan(db, plan, i);
+        otherIds.push(plan.id);
+      }
+
+      // Reorder chapter A only
+      const result = scenePlans.reorderScenePlans(db, chapterId, [a2, a1, a0]);
+      expect(result).toEqual({ updated: 3 });
+
+      // Chapter B stays in its original 0/1/2 order
+      const otherRows = readOrder(otherChapterId);
+      expect(otherRows.map((r) => r.id)).toEqual(otherIds);
+      expect(otherRows.map((r) => r.scene_order)).toEqual([0, 1, 2]);
+    });
+  });
+
   // ─── deleteScenePlan (cascade) ──────────────────
 
   describe("deleteScenePlan (cascade)", () => {

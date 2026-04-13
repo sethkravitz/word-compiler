@@ -87,6 +87,58 @@ export interface DeleteScenePlanResult {
  *
  * Wrapped in a transaction so any failure rolls back the entire delete.
  */
+export type ReorderScenePlansResult = { updated: number } | { error: "MISMATCHED_IDS" };
+
+/**
+ * Batch-reorder all scene plans in a chapter.
+ *
+ * `orderedIds` MUST be a complete permutation of every scene id currently in
+ * the chapter — no additions, no removals, no duplicates. Partial reorders are
+ * rejected on purpose: callers pass the full ordered list so validation is a
+ * simple set comparison.
+ *
+ * On validation failure, returns `{ error: "MISMATCHED_IDS" }` WITHOUT mutating
+ * any rows. On success, updates every scene's `scene_order` to its index in
+ * `orderedIds` inside a single transaction.
+ */
+export function reorderScenePlans(
+  db: Database.Database,
+  chapterId: string,
+  orderedIds: string[],
+): ReorderScenePlansResult {
+  const existing = (
+    db.prepare("SELECT id FROM scene_plans WHERE chapter_id = ?").all(chapterId) as Array<{
+      id: string;
+    }>
+  ).map((r) => r.id);
+
+  // Validation: same length, no duplicates in input, identical set membership.
+  if (existing.length !== orderedIds.length) {
+    return { error: "MISMATCHED_IDS" };
+  }
+  const inputSet = new Set(orderedIds);
+  if (inputSet.size !== orderedIds.length) {
+    // duplicates in orderedIds
+    return { error: "MISMATCHED_IDS" };
+  }
+  for (const id of existing) {
+    if (!inputSet.has(id)) {
+      return { error: "MISMATCHED_IDS" };
+    }
+  }
+
+  const run = db.transaction((ids: string[]) => {
+    const stmt = db.prepare("UPDATE scene_plans SET scene_order = ?, updated_at = ? WHERE id = ?");
+    const now = new Date().toISOString();
+    for (let i = 0; i < ids.length; i++) {
+      stmt.run(i, now, ids[i]);
+    }
+  });
+  run(orderedIds);
+
+  return { updated: orderedIds.length };
+}
+
 export function deleteScenePlan(db: Database.Database, sceneId: string): DeleteScenePlanResult {
   const run = db.transaction((id: string): DeleteScenePlanResult => {
     const counts: SceneCascadeCounts = {

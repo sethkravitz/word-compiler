@@ -168,6 +168,62 @@ describe("PATCH /api/scenes/:id/status", () => {
   });
 });
 
+describe("PATCH /api/chapters/:chapterId/scenes/reorder", () => {
+  it("reorders scenes and returns 200 with updated count", async () => {
+    const { project, chapter } = seedProjectAndChapter();
+    const s0 = seedScene(project.id, chapter.id, 0);
+    const s1 = seedScene(project.id, chapter.id, 1);
+    const s2 = seedScene(project.id, chapter.id, 2);
+
+    const res = await request(app)
+      .patch(`/api/chapters/${chapter.id}/scenes/reorder`)
+      .send({ orderedIds: [s2.id, s0.id, s1.id] });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ ok: true, updated: 3 });
+
+    // Follow-up GET returns scenes in the new order
+    const getRes = await request(app).get(`/api/chapters/${chapter.id}/scenes`);
+    expect(getRes.status).toBe(200);
+    expect(getRes.body.map((r: { plan: { id: string } }) => r.plan.id)).toEqual([s2.id, s0.id, s1.id]);
+  });
+
+  it("returns 400 when orderedIds contains an id outside the chapter", async () => {
+    const { project, chapter } = seedProjectAndChapter();
+    const s0 = seedScene(project.id, chapter.id, 0);
+    const s1 = seedScene(project.id, chapter.id, 1);
+
+    const res = await request(app)
+      .patch(`/api/chapters/${chapter.id}/scenes/reorder`)
+      .send({ orderedIds: [s0.id, s1.id, "not-in-chapter"] });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: "ID set does not match chapter's scenes" });
+  });
+
+  it("returns 400 when orderedIds is not an array of strings", async () => {
+    const { chapter } = seedProjectAndChapter();
+
+    const res = await request(app)
+      .patch(`/api/chapters/${chapter.id}/scenes/reorder`)
+      .send({ orderedIds: "not an array" });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: "orderedIds must be an array of strings" });
+  });
+
+  it("returns 400 when orderedIds is an array of non-strings", async () => {
+    const { chapter } = seedProjectAndChapter();
+
+    const res = await request(app)
+      .patch(`/api/chapters/${chapter.id}/scenes/reorder`)
+      .send({ orderedIds: [1, 2, 3] });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: "orderedIds must be an array of strings" });
+  });
+});
+
 describe("DELETE /api/scenes/:id", () => {
   it("deletes a scene plan and returns 200 with cascadeCounts", async () => {
     const { project, chapter } = seedProjectAndChapter();

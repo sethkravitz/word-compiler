@@ -27,6 +27,10 @@ export function createApiActions(store: ProjectStore) {
     await api.apiDeleteScenePlan(sceneId);
   }
 
+  async function reorderScenePlans(chapterId: string, orderedIds: string[]): Promise<void> {
+    await api.apiReorderScenePlans(chapterId, orderedIds);
+  }
+
   async function saveMultipleScenePlans(plans: ScenePlan[]): Promise<void> {
     const saved = await Promise.all(plans.map((plan, i) => api.apiSaveScenePlan(plan, store.scenes.length + i)));
     store.addMultipleScenePlans(saved);
@@ -93,6 +97,7 @@ export function createApiActions(store: ProjectStore) {
     saveScenePlan,
     updateScenePlan,
     deleteScenePlan,
+    reorderScenePlans,
     saveMultipleScenePlans,
     saveChapterArc,
     updateChapterArc,

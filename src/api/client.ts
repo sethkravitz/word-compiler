@@ -148,6 +148,13 @@ export function apiDeleteScenePlan(id: string): Promise<{ ok: true; cascadeCount
   return fetchJson(`${BASE}/scenes/${id}`, { method: "DELETE" });
 }
 
+export function apiReorderScenePlans(chapterId: string, orderedIds: string[]): Promise<{ ok: true; updated: number }> {
+  return fetchJson(`${BASE}/chapters/${chapterId}/scenes/reorder`, {
+    method: "PATCH",
+    body: JSON.stringify({ orderedIds }),
+  });
+}
+
 // ─── Chunks ──────────────────────────────────────────
 
 export function apiListChunks(sceneId: string): Promise<Chunk[]> {
