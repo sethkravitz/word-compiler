@@ -1,0 +1,52 @@
+src/app/store/commands.ts
+  75790ccc6b48b055 98-111,445
+tests/server/db/repositories.test.ts
+  75790ccc6b48b055 8-9,21,356-524
+server/db/repositories/scene-plans.ts
+  75790ccc6b48b055 62-137
+src/api/client.ts
+  75790ccc6b48b055 138-150
+tests/store/commands.test.ts
+  75790ccc6b48b055 19,138-187
+src/app/store/project.svelte.ts
+  75790ccc6b48b055 363-397
+server/api/routes.ts
+  75790ccc6b48b055 193-202
+src/app/store/api-actions.ts
+  75790ccc6b48b055 26-29,95
+tests/server/routes/scene-plans.test.ts
+  75790ccc6b48b055 170-200
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "238c3d67906dd2ff839dce952e5d7fc4e83d944f",
+  "prompts": {
+    "75790ccc6b48b055": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6658136-7697-415a-b4ee-3ff6fbd7db0c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 409,
+      "total_deletions": 1,
+      "accepted_lines": 865,
+      "overriden_lines": 1
+    },
+    "ac8190ea061f9627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea62ba6b-c68a-465d-9959-85d37bcdf544",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 6646,
+      "overriden_lines": 0
+    }
+  }
+}
