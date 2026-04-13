@@ -1,0 +1,38 @@
+src/app/components/composer/ComposerFooter.svelte
+  75790ccc6b48b055 1-325
+tests/ui/composer/ComposerFooter.test.ts
+  75790ccc6b48b055 1-36,38-422
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "ed8e2b284f2383371683f73dae26f3c0bbf4a36e",
+  "prompts": {
+    "75790ccc6b48b055": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6658136-7697-415a-b4ee-3ff6fbd7db0c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 1531,
+      "total_deletions": 34,
+      "accepted_lines": 3253,
+      "overriden_lines": 3
+    },
+    "ac8190ea061f9627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea62ba6b-c68a-465d-9959-85d37bcdf544",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 6646,
+      "overriden_lines": 0
+    }
+  }
+}
