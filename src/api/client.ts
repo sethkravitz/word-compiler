@@ -55,6 +55,10 @@ export function apiUpdateProject(id: string, updates: Partial<Pick<Project, "tit
   });
 }
 
+export function apiDeleteProject(id: string): Promise<void> {
+  return fetchJson(`${BASE}/projects/${id}`, { method: "DELETE" });
+}
+
 // ─── Bibles ──────────────────────────────────────────
 
 export function apiGetLatestBible(projectId: string): Promise<Bible> {

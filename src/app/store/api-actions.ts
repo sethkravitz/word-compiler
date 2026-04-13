@@ -1,5 +1,15 @@
 import * as api from "../../api/client.js";
-import type { AuditFlag, Bible, ChapterArc, Chunk, CompilationLog, NarrativeIR, ScenePlan } from "../../types/index.js";
+import type {
+  AuditFlag,
+  Bible,
+  ChapterArc,
+  Chunk,
+  CompilationLog,
+  NarrativeIR,
+  Project,
+  ScenePlan,
+} from "../../types/index.js";
+import { createEmptyChapterArc } from "../../types/index.js";
 import type { ProjectStore } from "./project.svelte.js";
 
 /**
@@ -92,6 +102,56 @@ export function createApiActions(store: ProjectStore) {
     await api.apiSaveCompilationLog(log);
   }
 
+  /**
+   * Atomically materialize a new essay project: project row -> bible ->
+   * chapter arc -> N scene plans. On any post-create failure, roll back by
+   * deleting the freshly created project (cascade cleans the rest).
+   *
+   * The caller is responsible for building the inputs via buildBootstrapPrompt
+   * + bootstrapToBible + bootstrapToScenePlans (or for skip-blank: an empty
+   * bible and a single placeholder scene plan). This helper owns the I/O and
+   * the failure recovery; it does not mutate prose or call the LLM.
+   */
+  async function createEssayProject(
+    project: Project,
+    bible: Bible,
+    scenePlans: ScenePlan[],
+  ): Promise<{ project: Project; chapterArc: ChapterArc; scenePlans: ScenePlan[] }> {
+    const savedProject = await api.apiCreateProject(project);
+    try {
+      const savedBible = await api.apiSaveBible({ ...bible, projectId: savedProject.id });
+      const arc = createEmptyChapterArc(savedProject.id);
+      const savedArc = await api.apiSaveChapterArc(arc);
+      const plansWithChapter = scenePlans.map((p) => ({
+        ...p,
+        projectId: savedProject.id,
+        chapterId: savedArc.id,
+      }));
+      const savedPlans: ScenePlan[] = [];
+      for (let i = 0; i < plansWithChapter.length; i++) {
+        const plan = plansWithChapter[i] as ScenePlan;
+        const saved = await api.apiSaveScenePlan(plan, i);
+        savedPlans.push(saved);
+      }
+      // Populate the store so the composer can render immediately when the
+      // caller flips into the essay route.
+      store.setProject(savedProject);
+      store.setBible(savedBible);
+      store.setChapterArc(savedArc);
+      store.addMultipleScenePlans(savedPlans);
+      return { project: savedProject, chapterArc: savedArc, scenePlans: savedPlans };
+    } catch (err) {
+      // Best-effort rollback. Swallow delete errors so the original cause
+      // surfaces to the caller.
+      try {
+        await api.apiDeleteProject(savedProject.id);
+      } catch {
+        // Intentionally ignored — surface the original error.
+      }
+      throw err;
+    }
+  }
+
   return {
     saveBible,
     saveScenePlan,
@@ -111,6 +171,7 @@ export function createApiActions(store: ProjectStore) {
     resolveAuditFlag,
     dismissAuditFlag,
     saveCompilationLog,
+    createEssayProject,
   };
 }
 

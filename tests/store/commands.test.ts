@@ -31,6 +31,7 @@ function mockActions(): ApiActions {
     resolveAuditFlag: vi.fn().mockResolvedValue(undefined),
     dismissAuditFlag: vi.fn().mockResolvedValue(undefined),
     saveCompilationLog: vi.fn().mockResolvedValue(undefined),
+    createEssayProject: vi.fn().mockResolvedValue(undefined),
   };
 }
 
