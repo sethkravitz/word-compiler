@@ -1,0 +1,50 @@
+.context/compound-engineering/todos/001-complete-p1-regenerate-while-queued-cleanup-bug.md
+  75790ccc6b48b055 1-76
+.context/compound-engineering/todos/002-complete-p1-cmd-g-keyboard-shortcut-dead-code.md
+  75790ccc6b48b055 1-69
+.context/compound-engineering/todos/006-complete-p2-data-integrity-rollback-and-race-fragility.md
+  75790ccc6b48b055 1-85
+.context/compound-engineering/todos/008-complete-p3-agent-native-ergonomics.md
+  75790ccc6b48b055 1-73
+.context/compound-engineering/todos/003-complete-p2-commandresult-swallowed-at-9-sites.md
+  75790ccc6b48b055 1-90
+.context/compound-engineering/todos/004-complete-p2-bootstrap-gate-contract-test.md
+  75790ccc6b48b055 1-104
+.context/compound-engineering/todos/005-complete-p2-llm-output-unvalidated-and-prompt-injection.md
+  75790ccc6b48b055 1-102
+.context/compound-engineering/todos/007-complete-p3-simplicity-cleanup-dead-fields-and-stubs.md
+  75790ccc6b48b055 1-92
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "d74d1773dc2785aceacb3e201d059608cc558a73",
+  "prompts": {
+    "75790ccc6b48b055": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6658136-7697-415a-b4ee-3ff6fbd7db0c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 699,
+      "total_deletions": 8,
+      "accepted_lines": 4521,
+      "overriden_lines": 0
+    },
+    "ac8190ea061f9627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea62ba6b-c68a-465d-9959-85d37bcdf544",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 6646,
+      "overriden_lines": 0
+    }
+  }
+}
