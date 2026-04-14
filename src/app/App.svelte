@@ -56,7 +56,7 @@ function handleKeydown(e: KeyboardEvent) {
   if (store.bible?.mode === "essay") {
     if (isCtrl && e.key === "g") {
       e.preventDefault();
-      composerRef?.generateFocusedSection?.();
+      composerRef?.generateFocusedSection();
     }
     return;
   }
@@ -164,8 +164,8 @@ let composerBoundaryErrorMsg = $state("");
 let templatePickerOpen = $state(false);
 // Binding target for EssayComposer so the keyboard handler can drive a
 // focused-section generate. The composer exposes `generateFocusedSection`
-// as part of its bound instance API.
-let composerRef = $state<{ generateFocusedSection?: () => void } | null>(null);
+// as an exported instance method (see EssayComposer.svelte).
+let composerRef = $state<{ generateFocusedSection: () => void } | null>(null);
 
 // ─── Essay composer bridge ───────────────────────
 //
@@ -407,8 +407,6 @@ function exportState() {
             {store}
             {commands}
             onGenerate={handleComposerGenerate}
-            onRequestRefinement={requestRefinement}
-            onExtractIR={(sceneId) => extractSceneIR(sceneId)}
           />
         </div>
         {#snippet failed(err, reset)}

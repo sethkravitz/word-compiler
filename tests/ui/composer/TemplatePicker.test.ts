@@ -33,10 +33,12 @@ function makeMockActions(overrides: Partial<ApiActions> = {}): ApiActions {
     dismissAuditFlag: vi.fn().mockResolvedValue(undefined),
     saveCompilationLog: vi.fn().mockResolvedValue(undefined),
     createEssayProject: vi.fn().mockResolvedValue({
-      project: { id: "proj-new", title: "Opinion Piece", status: "drafting", createdAt: "", updatedAt: "" } as Project,
-      chapterArc: { id: "ch-1" } as unknown as never,
-      scenePlans: [] as ScenePlan[],
-    }),
+      id: "proj-new",
+      title: "Opinion Piece",
+      status: "drafting",
+      createdAt: "",
+      updatedAt: "",
+    } as Project),
     ...overrides,
   } as ApiActions;
 }
@@ -135,9 +137,11 @@ describe("TemplatePicker", () => {
     );
 
     const createEssayProject = vi.fn().mockResolvedValue({
-      project: { id: "proj-created", title: "Opinion Piece", status: "drafting", createdAt: "", updatedAt: "" },
-      chapterArc: { id: "ch-1" },
-      scenePlans: [],
+      id: "proj-created",
+      title: "Opinion Piece",
+      status: "drafting",
+      createdAt: "",
+      updatedAt: "",
     });
     const onProjectCreated = vi.fn();
 
@@ -234,9 +238,11 @@ describe("TemplatePicker", () => {
 
   it("Skip-blank creates a project with a single placeholder scene plan passing the gate", async () => {
     const createEssayProject = vi.fn().mockResolvedValue({
-      project: { id: "proj-blank", title: "Personal Essay", status: "drafting", createdAt: "", updatedAt: "" },
-      chapterArc: { id: "ch-1" },
-      scenePlans: [],
+      id: "proj-blank",
+      title: "Personal Essay",
+      status: "drafting",
+      createdAt: "",
+      updatedAt: "",
     });
     const onProjectCreated = vi.fn();
 

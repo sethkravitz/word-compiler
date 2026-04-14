@@ -106,37 +106,41 @@ export function reorderScenePlans(
   chapterId: string,
   orderedIds: string[],
 ): ReorderScenePlansResult {
-  const existing = (
-    db.prepare("SELECT id FROM scene_plans WHERE chapter_id = ?").all(chapterId) as Array<{
-      id: string;
-    }>
-  ).map((r) => r.id);
+  // Validation + mutation share a single transaction so a concurrent DELETE
+  // between the SELECT and the UPDATEs cannot slip a stale id past the
+  // permutation check. better-sqlite3 serializes per-connection, so the
+  // enclosing transaction is also a serializability boundary.
+  const run = db.transaction((ids: string[]): ReorderScenePlansResult => {
+    const existing = (
+      db.prepare("SELECT id FROM scene_plans WHERE chapter_id = ?").all(chapterId) as Array<{
+        id: string;
+      }>
+    ).map((r) => r.id);
 
-  // Validation: same length, no duplicates in input, identical set membership.
-  if (existing.length !== orderedIds.length) {
-    return { error: "MISMATCHED_IDS" };
-  }
-  const inputSet = new Set(orderedIds);
-  if (inputSet.size !== orderedIds.length) {
-    // duplicates in orderedIds
-    return { error: "MISMATCHED_IDS" };
-  }
-  for (const id of existing) {
-    if (!inputSet.has(id)) {
+    // Validation: same length, no duplicates in input, identical set membership.
+    if (existing.length !== ids.length) {
       return { error: "MISMATCHED_IDS" };
     }
-  }
+    const inputSet = new Set(ids);
+    if (inputSet.size !== ids.length) {
+      // duplicates in ids
+      return { error: "MISMATCHED_IDS" };
+    }
+    for (const id of existing) {
+      if (!inputSet.has(id)) {
+        return { error: "MISMATCHED_IDS" };
+      }
+    }
 
-  const run = db.transaction((ids: string[]) => {
     const stmt = db.prepare("UPDATE scene_plans SET scene_order = ?, updated_at = ? WHERE id = ?");
     const now = new Date().toISOString();
     for (let i = 0; i < ids.length; i++) {
       stmt.run(i, now, ids[i]);
     }
+    return { updated: ids.length };
   });
-  run(orderedIds);
 
-  return { updated: orderedIds.length };
+  return run(orderedIds);
 }
 
 export function deleteScenePlan(db: Database.Database, sceneId: string): DeleteScenePlanResult {

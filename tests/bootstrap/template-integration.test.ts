@@ -41,13 +41,25 @@ const parsed: ParsedBootstrap = {
 describe("buildBootstrapPrompt — template integration", () => {
   it("is backward compatible when called without a template", () => {
     const payload = buildBootstrapPrompt("some synopsis");
-    expect(payload.systemMessage).toBe(
-      "You are an editorial analyst. Given an essay brief or idea, extract a structured essay plan. Be specific and opinionated — generic structure is useless.",
-    );
+    expect(payload.systemMessage).toContain("You are an editorial analyst");
+    expect(payload.systemMessage).toContain("structured essay plan");
     // A bare base systemMessage should not contain the opinion-piece or
     // personal-essay override text.
     expect(payload.systemMessage).not.toContain("advancing a single central argument");
     expect(payload.systemMessage).not.toContain("concrete moments from lived experience");
+  });
+
+  it("includes the untrusted-brief warning in the system message", () => {
+    const payload = buildBootstrapPrompt("some synopsis");
+    expect(payload.systemMessage).toContain("<user_brief>");
+    expect(payload.systemMessage).toContain("UNTRUSTED DATA");
+  });
+
+  it("wraps the brief in user_brief tags in the user message", () => {
+    const payload = buildBootstrapPrompt("A brief about productivity.");
+    expect(payload.userMessage).toContain("<user_brief>");
+    expect(payload.userMessage).toContain("A brief about productivity.");
+    expect(payload.userMessage).toContain("</user_brief>");
   });
 
   it("appends OPINION_PIECE systemPromptOverride to the system message", () => {

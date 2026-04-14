@@ -246,8 +246,10 @@ describe("createApiActions", () => {
       expect(store.bible?.mode).toBe("essay");
       expect(store.chapterArc).toBeTruthy();
       expect(store.scenes).toHaveLength(2);
-      expect(result.project).toEqual(project);
-      expect(result.scenePlans).toHaveLength(2);
+      // Return value is the persisted Project directly — bible + arc + plans
+      // are written to the store rather than returned, so callers don't have
+      // to unwrap a bundle.
+      expect(result).toEqual(project);
       // Each persisted plan got the chapterId stamped in.
       expect(mockedApi.apiSaveScenePlan.mock.calls[0]?.[0].chapterId).toBeTruthy();
     });

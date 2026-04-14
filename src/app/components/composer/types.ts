@@ -45,7 +45,6 @@ export type StateEvent =
   | { type: "GENERATE_SUCCEEDED" }
   | { type: "GENERATE_FAILED"; reason: "error" | "aborted"; message: string }
   | { type: "CANCELLED" }
-  | { type: "REVERTED" }
   | { type: "CLEARED" };
 
 /**
@@ -68,8 +67,6 @@ export interface ControlMatrix {
   reorderUpEnabled: boolean;
   reorderDownEnabled: boolean;
   deleteEnabled: boolean;
-  directiveEnabled: boolean;
-  queueIndicatorVisible: boolean;
   errorBannerVisible: boolean;
 }
 
@@ -108,8 +105,6 @@ export function computeControlMatrix(
     reorderUpEnabled: !isFirstSection,
     reorderDownEnabled: !isLastSection,
     deleteEnabled: true,
-    directiveEnabled: true,
-    queueIndicatorVisible: false,
     errorBannerVisible: false,
   };
 
@@ -136,8 +131,6 @@ export function computeControlMatrix(
       reorderUpEnabled: false,
       reorderDownEnabled: false,
       deleteEnabled: false,
-      directiveEnabled: false,
-      queueIndicatorVisible: true,
     };
   }
 
@@ -149,7 +142,6 @@ export function computeControlMatrix(
       reorderUpEnabled: false,
       reorderDownEnabled: false,
       deleteEnabled: false,
-      directiveEnabled: false,
     };
   }
 

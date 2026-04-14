@@ -12,17 +12,16 @@ import { apiFireBatchCipher, apiStoreSignificantEdit } from "../../../api/client
 import { runAudit } from "../../../auditor/index.js";
 import { shouldTriggerCipher } from "../../../profile/editFilter.js";
 import { getCanonicalText } from "../../../types/index.js";
-import type { Chunk, ScenePlan } from "../../../types/index.js";
+import type { AuditFlag, Chunk, ScenePlan } from "../../../types/index.js";
 import { createEmptyScenePlan } from "../../../types/scene.js";
 import { Button, Modal } from "../../primitives/index.js";
-import type { RefinementRequest, RefinementResult } from "../../../review/refineTypes.js";
 import type { Commands } from "../../store/commands.js";
 import type { ProjectStore } from "../../store/project.svelte.js";
 import ComposerFooter from "./ComposerFooter.svelte";
 import { reduce } from "./sectionStateMachine.js";
 import SectionCard from "./SectionCard.svelte";
 import SetupPanel from "./SetupPanel.svelte";
-import type { RevertSlot, SectionState, VoiceNudge } from "./types.js";
+import type { RevertSlot, SectionState, StateEvent, VoiceNudge } from "./types.js";
 
 // EssayComposer is the top-level orchestrator for the essay composer UI. It
 // owns the section state machine, the FIFO generation queue (UX sequencing,
@@ -51,14 +50,10 @@ let {
   store,
   commands,
   onGenerate,
-  onRequestRefinement: _onRequestRefinement,
-  onExtractIR: _onExtractIR,
 }: {
   store: ProjectStore;
   commands: Commands;
   onGenerate: (sceneId: string) => Promise<void>;
-  onRequestRefinement: (req: RefinementRequest) => Promise<RefinementResult>;
-  onExtractIR: (sceneId: string) => void;
 } = $props();
 
 // ─── State ──────────────────────────────────────────────
@@ -71,6 +66,13 @@ const sectionStates = new SvelteMap<string, SectionState>();
 const queue = $state<string[]>([]);
 const revertSlots = new SvelteMap<string, RevertSlot>();
 const directivesBySection = new SvelteMap<string, string>();
+
+// Post-generation hooks run inside `runGeneration`'s finally block. This is
+// how Regenerate ships its prior-chunk cleanup + 60s revert timer down the
+// line that works for both immediate and queued dispatch paths — without it,
+// a queued Regenerate would skip cleanup entirely (the original bug caught
+// in review).
+const postGenHooks = new Map<string, () => Promise<void>>();
 
 let voiceNudge = $state<VoiceNudge | null>(null);
 let sessionVoiceNudgeDismissed = $state(false);
@@ -95,22 +97,16 @@ function getSectionState(sceneId: string): SectionState {
   return sectionStates.get(sceneId) ?? "idle-empty";
 }
 
-function setSectionState(sceneId: string, next: SectionState) {
-  sectionStates.set(sceneId, next);
-  // Trigger reactive re-read via reassignment dance (Svelte 5 maps don't
-  // auto-track .set() — we re-poke the state proxy by replacing it).
-  // Note: $state(new Map()) IS reactive on .set() in Svelte 5.4+, but we
-  // also touch a sentinel to be safe across patches.
-}
-
 function hasPriorChunks(sceneId: string): boolean {
   return (store.sceneChunks[sceneId]?.length ?? 0) > 0;
 }
 
-function dispatchEvent(sceneId: string, event: import("./types.js").StateEvent) {
+// Named `applyEvent` rather than `dispatchEvent` so it doesn't shadow the
+// built-in `window.dispatchEvent` inside this file.
+function applyEvent(sceneId: string, event: StateEvent) {
   const current = getSectionState(sceneId);
   const next = reduce(current, event, hasPriorChunks(sceneId));
-  setSectionState(sceneId, next);
+  sectionStates.set(sceneId, next);
 }
 
 function isAnotherSectionInFlight(): boolean {
@@ -139,7 +135,7 @@ function errorMessage(err: unknown): string {
 async function runGeneration(sceneId: string): Promise<void> {
   // Enter streaming. The reducer will accept GENERATE_DISPATCHED from any
   // pre-stream source state.
-  dispatchEvent(sceneId, { type: "GENERATE_DISPATCHED" });
+  applyEvent(sceneId, { type: "GENERATE_DISPATCHED" });
   await tick();
 
   try {
@@ -148,7 +144,7 @@ async function runGeneration(sceneId: string): Promise<void> {
     // After awaited stream, check store-level error signal. generation.svelte.ts
     // sets store.error on stream failure and removes the pending chunk.
     if (store.error) {
-      dispatchEvent(sceneId, {
+      applyEvent(sceneId, {
         type: "GENERATE_FAILED",
         reason: "error",
         message: store.error,
@@ -156,14 +152,28 @@ async function runGeneration(sceneId: string): Promise<void> {
       return;
     }
 
-    dispatchEvent(sceneId, { type: "GENERATE_SUCCEEDED" });
+    applyEvent(sceneId, { type: "GENERATE_SUCCEEDED" });
   } catch (err) {
-    dispatchEvent(sceneId, {
+    applyEvent(sceneId, {
       type: "GENERATE_FAILED",
       reason: isAbortError(err) ? "aborted" : "error",
       message: errorMessage(err),
     });
   } finally {
+    // Run the post-generation hook for this section if one was registered
+    // (e.g. Regenerate's prior-chunk removal + 60s revert timer). Running it
+    // here — after state transitions, before draining the queue — is the
+    // single source of truth for both immediate and queued dispatch paths.
+    const hook = postGenHooks.get(sceneId);
+    if (hook) {
+      postGenHooks.delete(sceneId);
+      try {
+        await hook();
+      } catch (err) {
+        console.warn("[composer] post-gen hook failed:", err);
+      }
+    }
+
     // Drain the queue — only one stream in flight at a time.
     if (queue.length > 0) {
       const nextId = queue.shift();
@@ -208,7 +218,7 @@ function handleGenerate(sceneId: string) {
 
   if (isAnotherSectionInFlight()) {
     queue.push(sceneId);
-    dispatchEvent(sceneId, { type: "GENERATE_REQUESTED", hasPending: true });
+    applyEvent(sceneId, { type: "GENERATE_REQUESTED", hasPending: true });
     return;
   }
 
@@ -236,51 +246,45 @@ async function handleRegenerate(sceneId: string) {
 
   maybeShowVoiceNudge(sceneId);
 
-  const dispatchPath = async () => {
-    await runGeneration(sceneId);
-
-    // After successful regenerate, drop the prior chunk and start the 60s
-    // revert window. We check that the section actually transitioned to
-    // idle-populated — failure clears the slot.
+  // Register a post-generation hook that runs in runGeneration's finally
+  // block. This is the single cleanup path that works for both immediate
+  // and queued regenerate — an earlier version tried to run this inline
+  // AFTER an immediate dispatch, which skipped the queued path entirely
+  // and leaked prior chunks.
+  postGenHooks.set(sceneId, async () => {
     const finalState = getSectionState(sceneId);
-    if (finalState === "idle-populated") {
-      // The "prior chunk" was at index 0 of the original chunks array. Now
-      // there's a new chunk appended; the prior is still index 0.
-      if (priorText.length > 0) {
-        const removeResult = await commands.removeChunk(sceneId, 0);
-        if (removeResult.ok) {
-          // Start the 60s timer
-          const slot = revertSlots.get(sceneId);
-          if (slot) {
-            const timerId = setTimeout(() => {
-              revertSlots.delete(sceneId);
-            }, 60_000);
-            revertSlots.set(sceneId, { ...slot, timerId });
-          }
-        } else {
-          revertSlots.delete(sceneId);
-        }
-      }
-    } else {
+    if (finalState !== "idle-populated") {
       // Failure or cancellation — abandon the slot.
       revertSlots.delete(sceneId);
+      return;
     }
-  };
+    if (priorText.length === 0) return;
+
+    // The "prior chunk" was at index 0 of the original chunks array. Now
+    // there's a new chunk appended; the prior is still index 0.
+    const removeResult = await commands.removeChunk(sceneId, 0);
+    if (!removeResult.ok) {
+      store.setError(`Failed to remove prior chunk: ${removeResult.error}`);
+      revertSlots.delete(sceneId);
+      return;
+    }
+    // Start the 60s timer.
+    const slot = revertSlots.get(sceneId);
+    if (slot) {
+      const timerId = setTimeout(() => {
+        revertSlots.delete(sceneId);
+      }, 60_000);
+      revertSlots.set(sceneId, { ...slot, timerId });
+    }
+  });
 
   if (isAnotherSectionInFlight()) {
     queue.push(sceneId);
-    dispatchEvent(sceneId, { type: "GENERATE_REQUESTED", hasPending: true });
-    // Wait until the queue drains to this sceneId. We can't easily await
-    // that here without more plumbing; instead, the post-success cleanup is
-    // hooked from the same queue dispatch by checking state inside the
-    // finally block. For V1 simplicity, kick off dispatchPath when the queue
-    // empties via the runGeneration finally block. Since we already pushed,
-    // the runGeneration drain will pick this up. The priorText capture is
-    // already locked in via the slot.
+    applyEvent(sceneId, { type: "GENERATE_REQUESTED", hasPending: true });
     return;
   }
 
-  await dispatchPath();
+  void runGeneration(sceneId);
 }
 
 async function flushPendingEdit(sceneId: string): Promise<void> {
@@ -290,16 +294,22 @@ async function flushPendingEdit(sceneId: string): Promise<void> {
   editDebounceTimers.delete(sceneId);
   // Persist immediately (the store has already been mutated by handleEdit;
   // we just need to push it to the API).
-  await commands.persistChunk(sceneId, 0);
+  const result = await commands.persistChunk(sceneId, 0);
+  if (!result.ok) {
+    store.setError(`Failed to save edits: ${result.error}`);
+  }
 }
 
 async function handleRevert(sceneId: string) {
   const slot = revertSlots.get(sceneId);
   if (!slot) return;
   if (slot.timerId !== null) clearTimeout(slot.timerId);
-  await commands.updateChunk(sceneId, 0, { editedText: slot.priorText, status: "edited" });
+  const result = await commands.updateChunk(sceneId, 0, { editedText: slot.priorText, status: "edited" });
+  if (!result.ok) {
+    store.setError(`Failed to restore prior text: ${result.error}`);
+    return;
+  }
   revertSlots.delete(sceneId);
-  dispatchEvent(sceneId, { type: "REVERTED" });
 }
 
 function handleEdit(sceneId: string, newText: string) {
@@ -319,7 +329,11 @@ function handleEdit(sceneId: string, newText: string) {
   if (existing) clearTimeout(existing);
   const timerId = setTimeout(async () => {
     editDebounceTimers.delete(sceneId);
-    await commands.persistChunk(sceneId, 0);
+    const persistResult = await commands.persistChunk(sceneId, 0);
+    if (!persistResult.ok) {
+      store.setError(`Failed to save edits: ${persistResult.error}`);
+      return;
+    }
 
     // ─── CIPHER duplication from DraftStage.svelte:389-427 ────────────
     // TODO v2: extract shared helper — reference: DraftStage.svelte:389-427
@@ -359,7 +373,17 @@ function handleCancel(sceneId: string) {
     store.cancelGeneration?.();
   }
 
-  dispatchEvent(sceneId, { type: "CANCELLED" });
+  // Cancelling a queued Regenerate must clean up the revert slot and the
+  // pending post-gen hook — otherwise the revert button stays visible for a
+  // section that will never actually regenerate.
+  postGenHooks.delete(sceneId);
+  const slot = revertSlots.get(sceneId);
+  if (slot) {
+    if (slot.timerId !== null) clearTimeout(slot.timerId);
+    revertSlots.delete(sceneId);
+  }
+
+  applyEvent(sceneId, { type: "CANCELLED" });
 }
 
 function handleDeleteRequest(sceneId: string) {
@@ -380,13 +404,17 @@ async function confirmDelete() {
   if (editTimer) clearTimeout(editTimer);
   editDebounceTimers.delete(sceneId);
 
+  postGenHooks.delete(sceneId);
   sectionStates.delete(sceneId);
   directivesBySection.delete(sceneId);
 
   const idx = queue.indexOf(sceneId);
   if (idx >= 0) queue.splice(idx, 1);
 
-  await commands.removeScenePlan(sceneId);
+  const result = await commands.removeScenePlan(sceneId);
+  if (!result.ok) {
+    store.setError(`Failed to delete section: ${result.error}`);
+  }
 }
 
 function cancelDelete() {
@@ -400,7 +428,10 @@ async function handleMoveUp(sceneId: string) {
   const next = [...ids];
   [next[idx - 1], next[idx]] = [next[idx]!, next[idx - 1]!];
   const chapterId = store.scenes[idx]?.plan.chapterId ?? "";
-  await commands.reorderScenePlans(chapterId, next);
+  const result = await commands.reorderScenePlans(chapterId, next);
+  if (!result.ok) {
+    store.setError(`Failed to reorder sections: ${result.error}`);
+  }
 }
 
 async function handleMoveDown(sceneId: string) {
@@ -410,7 +441,10 @@ async function handleMoveDown(sceneId: string) {
   const next = [...ids];
   [next[idx], next[idx + 1]] = [next[idx + 1]!, next[idx]!];
   const chapterId = store.scenes[idx]?.plan.chapterId ?? "";
-  await commands.reorderScenePlans(chapterId, next);
+  const result = await commands.reorderScenePlans(chapterId, next);
+  if (!result.ok) {
+    store.setError(`Failed to reorder sections: ${result.error}`);
+  }
 }
 
 async function handleAddSection() {
@@ -421,19 +455,24 @@ async function handleAddSection() {
     "Generic section without a clear function. Define what this section should do in the essay.";
   const order = store.scenes.length;
   const result = await commands.saveScenePlan(plan, order);
-  if (result.ok) {
-    sectionStates.set(plan.id, "idle-empty");
-    // Scroll to the new section after the next render tick.
-    await tick();
-    const el = document.querySelector(`[data-section-id="${plan.id}"]`);
-    if (el && typeof (el as HTMLElement).scrollIntoView === "function") {
-      (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+  if (!result.ok) {
+    store.setError(`Failed to add section: ${result.error}`);
+    return;
+  }
+  sectionStates.set(plan.id, "idle-empty");
+  // Scroll to the new section after the next render tick.
+  await tick();
+  const el = document.querySelector(`[data-section-id="${plan.id}"]`);
+  if (el && typeof (el as HTMLElement).scrollIntoView === "function") {
+    (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
 
 async function handleUpdatePlan(plan: ScenePlan) {
-  await commands.updateScenePlan(plan);
+  const result = await commands.updateScenePlan(plan);
+  if (!result.ok) {
+    store.setError(`Failed to update section: ${result.error}`);
+  }
 }
 
 function handleDirectiveChange(sceneId: string, text: string) {
@@ -449,7 +488,10 @@ async function handleDismissKillListPattern(pattern: string) {
       killList: store.bible.styleGuide.killList.filter((k) => k.pattern !== pattern),
     },
   };
-  await commands.saveBible(next);
+  const result = await commands.saveBible(next);
+  if (!result.ok) {
+    store.setError(`Failed to save kill list change: ${result.error}`);
+  }
 }
 
 function handleDismissFailed(sceneId: string) {
@@ -461,11 +503,16 @@ function handleDismissFailed(sceneId: string) {
   }
 }
 
-function handleJumpToViolation(_category: "kill_list" | "rhythm_monotony" | "paragraph_length") {
-  // V1 stub — focus the first section that has a flag of this category. The
-  // actual scroll-to-flag is annotation-driven inside SectionCard's editor;
-  // the minimum viable wiring here is a no-op placeholder for the prop
-  // contract. ComposerFooter already verifies the click fires the callback.
+function handleJumpToViolation(category: "kill_list" | "rhythm_monotony" | "paragraph_length") {
+  // Scroll the first section that has an unresolved flag of this category
+  // into view. The finer-grained scroll-to-span inside the editor is an
+  // annotation-driven V2 concern; section-level is enough for V1.
+  const targetFlag = store.auditFlags.find((f) => !f.resolved && f.category === category);
+  if (!targetFlag) return;
+  const el = document.querySelector(`[data-section-id="${targetFlag.sceneId}"]`);
+  if (el && typeof (el as HTMLElement).scrollIntoView === "function") {
+    (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 function handleBibleChange() {
@@ -487,7 +534,7 @@ function shouldReauditSection(state: SectionState, sceneId: string): boolean {
 
 async function runReauditAcrossSections() {
   if (!store.bible) return;
-  const allFlags = [];
+  const allFlags: AuditFlag[] = [];
   for (const scene of store.scenes) {
     const sceneId = scene.plan.id;
     const state = getSectionState(sceneId);
@@ -498,7 +545,10 @@ async function runReauditAcrossSections() {
     const { flags } = runAudit(prose, store.bible, sceneId);
     allFlags.push(...flags);
   }
-  await commands.saveAuditFlags(allFlags);
+  const result = await commands.saveAuditFlags(allFlags);
+  if (!result.ok) {
+    store.setError(`Failed to save audit flags: ${result.error}`);
+  }
 }
 
 // ─── Cold-load recovery ─────────────────────────────────
@@ -573,6 +623,40 @@ function auditFlagsForScene(sceneId: string) {
 
 function revertDeadlineFor(sceneId: string): number | null {
   return revertSlots.get(sceneId)?.expiresAt ?? null;
+}
+
+// ─── Exposed method for parent (Cmd/Ctrl+G keyboard shortcut) ──────────
+//
+// bind:this in Svelte 5 exposes `export function` declarations from the
+// component script as instance methods. App.svelte's essay-mode keyboard
+// handler calls `composerRef?.generateFocusedSection?.()`.
+//
+// Semantics: "generate the next section that needs it."
+//   - First section in `idle-empty` state → Generate
+//   - Else first section in `idle-populated` state → Regenerate
+//   - Else no-op (everything is already streaming/queued/failed)
+//
+// This deliberately picks a deterministic target rather than tracking keyboard
+// focus across SectionCards, which would require wiring focus events through
+// every form field. If the user needs a specific section, they can click its
+// button directly — the shortcut is for "next action" fast-path.
+
+export function generateFocusedSection(): void {
+  let idlePopulatedTarget: string | null = null;
+  for (const scene of store.scenes) {
+    const sceneId = scene.plan.id;
+    const state = getSectionState(sceneId);
+    if (state === "idle-empty") {
+      handleGenerate(sceneId);
+      return;
+    }
+    if (state === "idle-populated" && idlePopulatedTarget === null) {
+      idlePopulatedTarget = sceneId;
+    }
+  }
+  if (idlePopulatedTarget !== null) {
+    void handleRegenerate(idlePopulatedTarget);
+  }
 }
 </script>
 

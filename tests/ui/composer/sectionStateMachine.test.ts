@@ -11,13 +11,12 @@ import type { SectionState } from "../../../src/app/components/composer/types.js
 //   - "streaming"
 //   - { state: "failed"; reason: "error" | "aborted"; message }
 //
-// Events (7):
+// Events (6):
 //   - GENERATE_REQUESTED   (with hasPending flag)
 //   - GENERATE_DISPATCHED
 //   - GENERATE_SUCCEEDED
 //   - GENERATE_FAILED      (with reason + message)
 //   - CANCELLED
-//   - REVERTED
 //   - CLEARED
 //
 // Invalid transitions are no-ops (return state unchanged) so race conditions
@@ -186,23 +185,6 @@ describe("sectionStateMachine reducer", () => {
     });
   });
 
-  describe("REVERTED", () => {
-    it("idle-populated -> idle-populated (state unchanged; revert slot lives in composer)", () => {
-      const next = reduce("idle-populated", { type: "REVERTED" }, true);
-      expect(next).toBe("idle-populated");
-    });
-
-    it("idle-empty -> idle-empty (no-op)", () => {
-      const next = reduce("idle-empty", { type: "REVERTED" }, false);
-      expect(next).toBe("idle-empty");
-    });
-
-    it("streaming -> streaming (no-op)", () => {
-      const next = reduce("streaming", { type: "REVERTED" }, false);
-      expect(next).toBe("streaming");
-    });
-  });
-
   describe("CLEARED", () => {
     it("idle-populated -> idle-empty", () => {
       const next = reduce("idle-populated", { type: "CLEARED" }, true);
@@ -240,7 +222,9 @@ describe("sectionStateMachine reducer", () => {
 
     it("returns the same reference for no-op transitions", () => {
       const original: SectionState = { state: "failed", reason: "error", message: "x" };
-      const next = reduce(original, { type: "REVERTED" }, true);
+      // GENERATE_SUCCEEDED from a non-streaming state is a no-op — the
+      // reducer returns the same reference unchanged.
+      const next = reduce(original, { type: "GENERATE_SUCCEEDED" }, true);
       expect(next).toBe(original);
     });
   });

@@ -154,7 +154,6 @@ describe("computeControlMatrix (pure)", () => {
     expect(m.reorderUpEnabled).toBe(true);
     expect(m.reorderDownEnabled).toBe(true);
     expect(m.errorBannerVisible).toBe(false);
-    expect(m.queueIndicatorVisible).toBe(false);
   });
 
   it("idle-populated: Regenerate visible+enabled, Generate hidden", () => {
@@ -186,8 +185,6 @@ describe("computeControlMatrix (pure)", () => {
     expect(m.reorderUpEnabled).toBe(false);
     expect(m.reorderDownEnabled).toBe(false);
     expect(m.deleteEnabled).toBe(false);
-    expect(m.directiveEnabled).toBe(false);
-    expect(m.queueIndicatorVisible).toBe(true);
   });
 
   it("streaming: Generate/Regenerate hidden, Cancel visible, editor readonly, reorder/delete disabled", () => {

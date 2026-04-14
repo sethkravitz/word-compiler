@@ -372,14 +372,25 @@ export class ProjectStore {
    * stays active at its new position.
    */
   reorderScenePlans(orderedIds: string[]) {
-    if (orderedIds.length !== this.scenes.length) return;
+    if (orderedIds.length !== this.scenes.length) {
+      // Length mismatch means the store was mutated between when the caller
+      // captured its snapshot and when it tried to rollback. Surface this
+      // so silent no-op rollbacks stop being invisible in production.
+      console.warn(
+        `[project-store] reorderScenePlans length mismatch: input=${orderedIds.length}, scenes=${this.scenes.length}. Skipping rollback.`,
+      );
+      return;
+    }
 
     const byId = new Map(this.scenes.map((entry) => [entry.plan.id, entry] as const));
     const next: SceneEntry[] = [];
     for (let i = 0; i < orderedIds.length; i++) {
       const id = orderedIds[i]!;
       const entry = byId.get(id);
-      if (!entry) return; // unknown id — abort without mutation
+      if (!entry) {
+        console.warn(`[project-store] reorderScenePlans unknown id: ${id}. Aborting without mutation.`);
+        return;
+      }
       next.push({ ...entry, sceneOrder: i });
     }
 

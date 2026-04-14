@@ -363,6 +363,74 @@ describe("EssayComposer regenerate + revert", () => {
     });
   });
 
+  it("Queued Regenerate still removes the prior chunk and starts the 60s timer after draining", async () => {
+    vi.useFakeTimers();
+    let resolveFirst: () => void = () => {};
+    const firstStream = new Promise<void>((r) => {
+      resolveFirst = r;
+    });
+    let callCount = 0;
+    const { store, commands } = setupComposer({
+      scenes: [{ id: "a" }, { id: "b", chunks: [{ text: "PRIOR_B" }] }],
+      onGenerateImpl: async (sceneId: string) => {
+        callCount++;
+        if (callCount === 1) {
+          await firstStream;
+          store.addChunk(makeChunk(sceneId, `new-${sceneId}`));
+        } else {
+          store.addChunk(makeChunk(sceneId, `new-${sceneId}`));
+        }
+      },
+    });
+
+    // Wire removeChunk to actually mutate the store so the post-gen hook's
+    // cleanup is observable.
+    commands.removeChunk.mockImplementation(async (sceneId: string, index: number) => {
+      store.removeChunkForScene(sceneId, index);
+      return { ok: true, value: undefined };
+    });
+
+    // Wait for cold-load effect to promote section b to idle-populated.
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Start streaming section a (will hang).
+    const generateBtns = screen.getAllByRole("button", { name: /^Generate$/ });
+    await fireEvent.click(generateBtns[0]!);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Click Regenerate on section b while a is still streaming → queued.
+    const regenerateBtn = screen.getByRole("button", { name: /^Regenerate$/ });
+    await fireEvent.click(regenerateBtn);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Section b should be queued now
+    expect(screen.getByText(/Queued/i)).toBeInTheDocument();
+
+    // Resolve the first stream; runGeneration drains the queue.
+    resolveFirst();
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(0);
+
+    // THE FIX: the post-gen hook must run for section b during the drain
+    // and remove the prior chunk. Without the fix, removeChunk was never
+    // called for b and the prior chunk leaked.
+    await waitFor(() => {
+      expect(commands.removeChunk).toHaveBeenCalledWith("b", 0);
+    });
+
+    // Revert button should now be visible for b (slot is active).
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^Revert$/ })).toBeInTheDocument();
+    });
+
+    // Advance past 60s — revert slot should expire cleanly.
+    await vi.advanceTimersByTimeAsync(60_001);
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: /^Revert$/ })).not.toBeInTheDocument();
+    });
+  });
+
   it("Revert window expires after 60 seconds", async () => {
     vi.useFakeTimers();
     const { store, commands } = setupComposer({
@@ -535,6 +603,91 @@ describe("EssayComposer voice nudge", () => {
     await fireEvent.click(remainingGenerate);
 
     expect(screen.queryByTestId("voice-nudge-banner")).not.toBeInTheDocument();
+  });
+});
+
+// ─── generateFocusedSection (Cmd+G keyboard shortcut) ─────
+
+describe("EssayComposer generateFocusedSection", () => {
+  it("generates the first idle-empty section", async () => {
+    const { onGenerate, store, ...rest } = setupComposer({
+      scenes: [{ id: "a", chunks: [{ text: "already done" }] }, { id: "b" }, { id: "c" }],
+      onGenerateImpl: async (sceneId: string) => {
+        store.addChunk(makeChunk(sceneId, "new"));
+      },
+    });
+
+    // Wait for cold-load effect to mark section a as idle-populated
+    await tick();
+
+    // Access the exported method via the rendered component instance.
+    // @testing-library/svelte exposes it on `component` in Svelte 5.
+    const component = (rest as unknown as { component: { generateFocusedSection: () => void } }).component;
+    expect(typeof component.generateFocusedSection).toBe("function");
+
+    component.generateFocusedSection();
+    await tick();
+    await Promise.resolve();
+
+    // First idle-empty is "b" — it should receive the generate call
+    expect(onGenerate).toHaveBeenCalledWith("b");
+  });
+
+  it("regenerates the first idle-populated when no idle-empty sections exist", async () => {
+    const { onGenerate, store, commands, ...rest } = setupComposer({
+      scenes: [
+        { id: "a", chunks: [{ text: "a-text" }] },
+        { id: "b", chunks: [{ text: "b-text" }] },
+      ],
+      onGenerateImpl: async (sceneId: string) => {
+        store.addChunk(makeChunk(sceneId, `new-${sceneId}`));
+      },
+    });
+    commands.removeChunk.mockImplementation(async (sceneId: string, index: number) => {
+      store.removeChunkForScene(sceneId, index);
+      return { ok: true, value: undefined };
+    });
+
+    await tick();
+    await tick();
+
+    const component = (rest as unknown as { component: { generateFocusedSection: () => void } }).component;
+    component.generateFocusedSection();
+
+    // handleRegenerate chains: flushPendingEdit → tick → runGeneration → tick → onGenerate.
+    // That's multiple awaits, so drain via waitFor rather than a fixed count.
+    await waitFor(() => {
+      expect(onGenerate).toHaveBeenCalledWith("a");
+    });
+  });
+
+  it("is a no-op when every section is streaming/queued/failed", async () => {
+    let resolveHang: () => void = () => {};
+    const hang = new Promise<void>((r) => {
+      resolveHang = r;
+    });
+    const { onGenerate, store, ...rest } = setupComposer({
+      scenes: [{ id: "a" }],
+      onGenerateImpl: async (sceneId: string) => {
+        store.addChunk(makeChunk(sceneId, "t"));
+        await hang;
+      },
+    });
+
+    // Start streaming section a (will hang)
+    await fireEvent.click(screen.getByRole("button", { name: /^Generate$/ }));
+    await tick();
+
+    onGenerate.mockClear();
+
+    const component = (rest as unknown as { component: { generateFocusedSection: () => void } }).component;
+    component.generateFocusedSection();
+    await tick();
+
+    // No new generate call — section a is already streaming
+    expect(onGenerate).not.toHaveBeenCalled();
+
+    resolveHang();
   });
 });
 

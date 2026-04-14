@@ -105,18 +105,27 @@ export function createApiActions(store: ProjectStore) {
   /**
    * Atomically materialize a new essay project: project row -> bible ->
    * chapter arc -> N scene plans. On any post-create failure, roll back by
-   * deleting the freshly created project (cascade cleans the rest).
+   * deleting the freshly created project.
+   *
+   * **Rollback coupling note.** Rollback delegates to `apiDeleteProject`,
+   * which invokes the server-side `deleteProject` cascade at
+   * `server/db/repositories/projects.ts`. That cascade deletes project-scoped
+   * tables including `significant_edits` and `preference_statements` —
+   * broader than scene-level delete which deliberately preserves them for
+   * CIPHER voice-learning continuity. This is safe here because
+   * `createEssayProject` is only called on a brand-new project id with no
+   * significant_edits yet. Do NOT reuse this helper on existing projects.
    *
    * The caller is responsible for building the inputs via buildBootstrapPrompt
    * + bootstrapToBible + bootstrapToScenePlans (or for skip-blank: an empty
    * bible and a single placeholder scene plan). This helper owns the I/O and
    * the failure recovery; it does not mutate prose or call the LLM.
+   *
+   * Returns the persisted Project. The bible, chapter arc, and scene plans
+   * are written to the store directly so the composer can render immediately
+   * after the caller flips the routing branch.
    */
-  async function createEssayProject(
-    project: Project,
-    bible: Bible,
-    scenePlans: ScenePlan[],
-  ): Promise<{ project: Project; chapterArc: ChapterArc; scenePlans: ScenePlan[] }> {
+  async function createEssayProject(project: Project, bible: Bible, scenePlans: ScenePlan[]): Promise<Project> {
     const savedProject = await api.apiCreateProject(project);
     try {
       const savedBible = await api.apiSaveBible({ ...bible, projectId: savedProject.id });
@@ -128,8 +137,7 @@ export function createApiActions(store: ProjectStore) {
         chapterId: savedArc.id,
       }));
       const savedPlans: ScenePlan[] = [];
-      for (let i = 0; i < plansWithChapter.length; i++) {
-        const plan = plansWithChapter[i] as ScenePlan;
+      for (const [i, plan] of plansWithChapter.entries()) {
         const saved = await api.apiSaveScenePlan(plan, i);
         savedPlans.push(saved);
       }
@@ -139,7 +147,7 @@ export function createApiActions(store: ProjectStore) {
       store.setBible(savedBible);
       store.setChapterArc(savedArc);
       store.addMultipleScenePlans(savedPlans);
-      return { project: savedProject, chapterArc: savedArc, scenePlans: savedPlans };
+      return savedProject;
     } catch (err) {
       // Best-effort rollback. Swallow delete errors so the original cause
       // surfaces to the caller.

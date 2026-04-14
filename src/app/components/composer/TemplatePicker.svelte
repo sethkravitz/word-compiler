@@ -156,14 +156,14 @@ async function handleBootstrap() {
     const plans = bootstrapToScenePlans(parsed, project.id, authorId, template);
 
     status = "Saving project...";
-    const result = await actions.createEssayProject(project, bible, plans);
+    const savedProject = await actions.createEssayProject(project, bible, plans);
 
     status = "Done!";
     setTimeout(() => {
       resetTransient();
       selectedTemplateId = null;
       brief = "";
-      onProjectCreated(result.project);
+      onProjectCreated(savedProject);
     }, 400);
   } catch (err) {
     error = err instanceof Error ? err.message : "Bootstrap failed";
@@ -214,11 +214,11 @@ async function handleSkipBlank() {
     placeholder.chunkCount = 1;
     placeholder.estimatedWordCount = template.defaultWordCountTarget;
 
-    const result = await actions.createEssayProject(project, bible, [placeholder]);
+    const savedProject = await actions.createEssayProject(project, bible, [placeholder]);
     resetTransient();
     selectedTemplateId = null;
     brief = "";
-    onProjectCreated(result.project);
+    onProjectCreated(savedProject);
   } catch (err) {
     error = err instanceof Error ? err.message : "Could not create blank essay";
     loading = false;

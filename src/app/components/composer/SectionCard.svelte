@@ -152,24 +152,14 @@ function handleDirectiveBlur() {
   }
 }
 
-// ─── Annotation dismissal: extract pattern from id, forward to composer ─
+// ─── Annotation dismissal: read pattern from the typed field ───────────
 //
-// auditMapping.ts encodes the pattern in the annotation fingerprint as
-// `${sceneId}:${pattern}:${start}:${end}`. We parse it back out here so the
-// composer never needs to know the encoding.
+// auditMapping.ts sets `killListPattern` on every kill-list annotation so
+// the composer doesn't have to parse it out of the fingerprint string.
 function handleDismissAnnotation(annotationId: string) {
   const ann = annotations.find((a) => a.id === annotationId);
-  if (!ann) return;
-  // Fingerprint format: sceneId:pattern:start:end. The pattern itself may
-  // contain colons in pathological cases, but our auditor only emits literal
-  // text patterns from the kill list, none of which contain colons. Splitting
-  // on the first and last two colons is enough for the V1 contract.
-  const parts = ann.fingerprint.split(":");
-  if (parts.length < 4) return;
-  // Drop first (sceneId) and last two (start, end). Rejoin the middle in case
-  // a future pattern legitimately contains a colon.
-  const pattern = parts.slice(1, parts.length - 2).join(":");
-  if (pattern) onDismissKillListPattern(pattern);
+  if (!ann || !ann.killListPattern) return;
+  onDismissKillListPattern(ann.killListPattern);
 }
 
 // ─── Key points (chunkDescriptions) ───────────────────────
@@ -241,7 +231,7 @@ const failedMessage = $derived(isFailedState(sectionState) ? sectionState.messag
       </FormField>
     </div>
     <div class="header-status">
-      {#if controlMatrix.queueIndicatorVisible && queuePosition !== null}
+      {#if queuePosition !== null}
         <Badge variant="pending">Queued — position {queuePosition + 1}</Badge>
       {/if}
     </div>

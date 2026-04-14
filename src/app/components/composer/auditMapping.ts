@@ -94,6 +94,7 @@ function buildKillListAnnotation(
     anchor: buildAnchor(text, start, end),
     charRange: { start, end },
     fingerprint,
+    killListPattern: pattern,
   };
 }
 

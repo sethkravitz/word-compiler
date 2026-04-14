@@ -24,65 +24,48 @@ import type { SectionState, StateEvent } from "./types.js";
 
 export type { StateEvent } from "./types.js";
 
-// Per-event handlers — pulled out so the top-level `reduce` stays under the
-// cyclomatic complexity ceiling Biome enforces (max 15).
-
-function onGenerateRequested(state: SectionState): SectionState {
-  // Streaming sections never re-queue themselves — defensive no-op layer
-  // beneath the control matrix.
-  if (state === "streaming") return state;
-  // Already queued — leave as-is. The composer's queue array is the ground
-  // truth for ordering.
-  if (state === "queued") return state;
-  return "queued";
-}
-
-function onGenerateDispatched(state: SectionState): SectionState {
-  if (state === "streaming") return state;
-  return "streaming";
-}
-
-function onGenerateSucceeded(state: SectionState): SectionState {
-  // Only valid out of streaming. Any other source state is a race we
-  // silently ignore.
-  if (state !== "streaming") return state;
-  return "idle-populated";
-}
-
-function onGenerateFailed(state: SectionState, reason: "error" | "aborted", message: string): SectionState {
-  // Valid from streaming (the normal path) or queued (failure can race a
-  // dispatch — e.g. abort while still in queue). Idle and failed states are
-  // not legal sources for a new failure.
-  if (state !== "streaming" && state !== "queued") return state;
-  return { state: "failed", reason, message };
-}
-
+// Helpers for the two events that can resolve a stream. Splitting them out
+// keeps the main `reduce` switch under Biome's cognitive complexity ceiling.
 function onCancelled(state: SectionState, hasPriorChunks: boolean): SectionState {
   // Cancellation is only meaningful when we're trying to generate.
   if (state !== "queued" && state !== "streaming") return state;
   return hasPriorChunks ? "idle-populated" : "idle-empty";
 }
 
+function onFailed(state: SectionState, reason: "error" | "aborted", message: string): SectionState {
+  // Valid from streaming (normal path) or queued (abort while still in
+  // queue). Idle and failed states are not legal sources for a new failure.
+  if (state !== "streaming" && state !== "queued") return state;
+  return { state: "failed", reason, message };
+}
+
 export function reduce(state: SectionState, event: StateEvent, hasPriorChunks: boolean): SectionState {
   switch (event.type) {
     case "GENERATE_REQUESTED":
-      return onGenerateRequested(state);
+      // Streaming/queued sections never re-enter the queue. Idle-* and failed
+      // transition to queued.
+      if (state === "streaming" || state === "queued") return state;
+      return "queued";
+
     case "GENERATE_DISPATCHED":
-      return onGenerateDispatched(state);
+      if (state === "streaming") return state;
+      return "streaming";
+
     case "GENERATE_SUCCEEDED":
-      return onGenerateSucceeded(state);
+      // Only valid out of streaming. Any other source state is a race we
+      // silently ignore.
+      return state === "streaming" ? "idle-populated" : state;
+
     case "GENERATE_FAILED":
-      return onGenerateFailed(state, event.reason, event.message);
+      return onFailed(state, event.reason, event.message);
+
     case "CANCELLED":
       return onCancelled(state, hasPriorChunks);
-    case "REVERTED":
-      // Revert slot is composer-owned; the reducer just acknowledges the
-      // section is still populated. The derived `isRevertable` predicate
-      // flips false because the composer cleared the slot.
-      return state;
+
     case "CLEARED":
       // Hard reset. Used by deletion + cold-load recovery + section drop.
       return "idle-empty";
+
     default:
       // Unknown event type — defensive no-op so a stray dispatch can't crash
       // the reducer in production.
