@@ -5,6 +5,10 @@ import { generateId } from "./utils.js";
 export interface Bible {
   projectId: string;
   version: number;
+  // undefined or "fiction" means fiction mode. Routing branch in App.svelte
+  // treats both as fiction. Essay mode is set explicitly by essay templates
+  // or by reading back a bible with mode === "essay".
+  mode?: "fiction" | "essay";
   characters: CharacterDossier[];
   styleGuide: StyleGuide;
   narrativeRules: NarrativeRules;
@@ -125,10 +129,11 @@ export interface Location {
 
 // ─── Factory Functions ──────────────────────────────────
 
-export function createEmptyBible(projectId: string): Bible {
+export function createEmptyBible(projectId: string, mode?: "fiction" | "essay"): Bible {
   return {
     projectId,
     version: 1,
+    ...(mode !== undefined && { mode }),
     characters: [],
     styleGuide: {
       metaphoricRegister: null,

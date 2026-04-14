@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Block pushes to upstream (2389-research). Only push to origin (sethkravitz).
+remote="$1"
+url="$2"
+
+if echo "$url" | grep -q "2389-research"; then
+  echo "BLOCKED: Push to upstream (2389-research) is not allowed."
+  echo "Push to origin (sethkravitz/word-compiler) instead."
+  exit 1
+fi

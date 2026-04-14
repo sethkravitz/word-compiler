@@ -81,6 +81,15 @@ export function deleteProject(db: Database.Database, id: string): boolean {
       db.prepare("DELETE FROM narrative_irs WHERE scene_id = ?").run(sceneId);
     }
 
+    // NOTE: project-level delete intentionally scopes broader than
+    // scene-level delete — `significant_edits` and `preference_statements`
+    // are CIPHER voice-learning history. Scene deletion preserves them
+    // (see deleteScenePlan in scene-plans.ts) so voice learning survives
+    // editing a scene out of a project. Project deletion removes them
+    // because the project itself is gone and there's nothing left to learn
+    // against. `createEssayProject`'s rollback path relies on this helper
+    // being safe for brand-new projects with no history yet — do NOT call
+    // it on existing projects that might already have voice history.
     db.prepare("DELETE FROM significant_edits WHERE project_id = ?").run(projectId);
     db.prepare("DELETE FROM preference_statements WHERE project_id = ?").run(projectId);
     db.prepare("DELETE FROM scene_plans WHERE project_id = ?").run(projectId);

@@ -95,6 +95,40 @@ export function createCommands(store: ProjectStore, actions?: ApiActions) {
     }
   }
 
+  async function removeScenePlan(sceneId: string): Promise<CommandResult> {
+    try {
+      // API call first — if it fails, the store is NOT mutated and the UI
+      // still shows the scene, which is the correct failure mode.
+      if (actions) {
+        await actions.deleteScenePlan(sceneId);
+      }
+      store.removeScenePlan(sceneId);
+      return success();
+    } catch (err) {
+      return failure(handleError(err));
+    }
+  }
+
+  /**
+   * Reorders scenes optimistically: updates the store immediately so the UI
+   * feels snappy, then fires the API. On API failure, reverts the store to
+   * the prior order using a snapshot taken before the optimistic mutation.
+   */
+  async function reorderScenePlans(chapterId: string, orderedIds: string[]): Promise<CommandResult> {
+    const priorOrder = store.scenes.map((entry) => entry.plan.id);
+    store.reorderScenePlans(orderedIds);
+    try {
+      if (actions) {
+        await actions.reorderScenePlans(chapterId, orderedIds);
+      }
+      return success();
+    } catch (err) {
+      // Rollback — restore prior order before reporting failure
+      store.reorderScenePlans(priorOrder);
+      return failure(handleError(err));
+    }
+  }
+
   // ─── Chapter Arc ────────────────────────────────
 
   async function saveChapterArc(arc: ChapterArc): Promise<CommandResult> {
@@ -428,6 +462,8 @@ export function createCommands(store: ProjectStore, actions?: ApiActions) {
     saveBible,
     saveScenePlan,
     updateScenePlan,
+    removeScenePlan,
+    reorderScenePlans,
     saveMultipleScenePlans,
     saveChapterArc,
     updateChapterArc,

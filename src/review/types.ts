@@ -47,6 +47,10 @@ export interface EditorialAnnotation {
   charRange: { start: number; end: number };
   spans?: Array<{ start: number; end: number }>;
   fingerprint: string;
+  // Optional typed reference back to the kill-list pattern that produced
+  // this annotation (only set for category === "kill_list"). Lets the
+  // composer forward dismiss events without re-parsing the fingerprint.
+  killListPattern?: string;
 }
 
 // ─── Anchor Resolution ─────────────────────────

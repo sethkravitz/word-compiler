@@ -1,9 +1,11 @@
 <script lang="ts">
-import { onMount } from "svelte";
+import { onMount, tick } from "svelte";
 import { fade } from "svelte/transition";
-import { apiCreateProject, apiListProjects, apiUpdateProject } from "../api/client.js";
+import { apiListProjects, apiUpdateProject } from "../api/client.js";
 import { countTokens } from "../tokens/index.js";
-import { generateId, getCanonicalText } from "../types/index.js";
+import { getCanonicalText, type Project } from "../types/index.js";
+import EssayComposer from "./components/composer/EssayComposer.svelte";
+import TemplatePicker from "./components/composer/TemplatePicker.svelte";
 import GlossaryPanel from "./components/GlossaryPanel.svelte";
 import ProjectList from "./components/ProjectList.svelte";
 import StageCTA from "./components/StageCTA.svelte";
@@ -47,6 +49,18 @@ const workflow = new WorkflowStore(store);
 function handleKeydown(e: KeyboardEvent) {
   if (!appReady) return;
   const isCtrl = e.ctrlKey || e.metaKey;
+
+  // Essay mode has its own shortcut set — Cmd/Ctrl+G generates the focused
+  // section. Fiction Ctrl+1-7 shortcuts are not reachable here because the
+  // WorkflowRail is not rendered in essay mode.
+  if (store.bible?.mode === "essay") {
+    if (isCtrl && e.key === "g") {
+      e.preventDefault();
+      composerRef?.generateFocusedSection();
+    }
+    return;
+  }
+
   if (!isCtrl) return;
 
   // Ctrl+1-6: stage navigation
@@ -88,25 +102,6 @@ onMount(async () => {
   }
 });
 
-async function createFirstProject() {
-  const title = newProjectTitle.trim() || "Untitled Essay";
-  try {
-    const project = await apiCreateProject({
-      id: generateId(),
-      title,
-      status: "bootstrap",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    store.setProject(project);
-    newProjectTitle = "";
-    appReady = true;
-    currentView = "project";
-  } catch (err) {
-    store.setError(err instanceof Error ? err.message : "Failed to create project");
-  }
-}
-
 async function handleSelectProject(projectId: string) {
   store.resetForProjectSwitch();
   const result = await loadProject(store, projectId);
@@ -116,23 +111,21 @@ async function handleSelectProject(projectId: string) {
   }
 }
 
-async function handleCreateProjectFromList() {
-  const title = newProjectTitle.trim() || "Untitled Essay";
-  try {
-    const project = await apiCreateProject({
-      id: generateId(),
-      title,
-      status: "bootstrap",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
-    store.setProject(project);
-    newProjectTitle = "";
-    appReady = true;
-    currentView = "project";
-  } catch (err) {
-    store.setError(err instanceof Error ? err.message : "Failed to create project");
-  }
+function handleOpenTemplatePicker() {
+  templatePickerOpen = true;
+}
+
+// The createEssayProject action has already populated the store — project,
+// bible, chapter arc, scene plans. All that's left is to flip the app into
+// the loaded state and close the picker. The `project` parameter is accepted
+// to match the TemplatePicker contract even though we read everything from
+// the store; rename to `_project` satisfies Biome's unused-parameter rule.
+function handleEssayProjectCreated(_project: Project) {
+  templatePickerOpen = false;
+  newProjectTitle = "";
+  appReady = true;
+  currentView = "project";
+  startupStatus = "loaded";
 }
 
 async function handleRenameProject() {
@@ -167,6 +160,29 @@ let newProjectTitle = $state("");
 let editingTitle = $state(false);
 let editTitleValue = $state("");
 let boundaryErrorMsg = "";
+let composerBoundaryErrorMsg = $state("");
+let templatePickerOpen = $state(false);
+// Binding target for EssayComposer so the keyboard handler can drive a
+// focused-section generate. The composer exposes `generateFocusedSection`
+// as an exported instance method (see EssayComposer.svelte).
+let composerRef = $state<{ generateFocusedSection: () => void } | null>(null);
+
+// ─── Essay composer bridge ───────────────────────
+//
+// The composer treats `onGenerate(sceneId) => Promise<void>` as an opaque
+// awaited promise. Fiction's `generateChunk(pinnedSceneId)` handles the
+// active-scene bookkeeping internally, but the compiler effect listens for
+// `activeScenePlan` changes to recompute `compiledPayload`. We mirror the
+// DraftStage flow: set active scene, let the compiler effect settle via a
+// `tick()` microtask, then await the generation. Returning the promise lets
+// the composer drive its own state machine on success/failure.
+async function handleComposerGenerate(sceneId: string): Promise<void> {
+  const idx = store.scenes.findIndex((s) => s.plan.id === sceneId);
+  if (idx < 0) return;
+  store.setActiveScene(idx);
+  await tick();
+  await generateChunk(sceneId);
+}
 
 // ─── Prose word count ───────────────────────────
 let totalWordCount = $derived(
@@ -294,16 +310,9 @@ function exportState() {
     {#if startupStatus === "loading"}
       <p>Loading project...</p>
     {:else if startupStatus === "no-projects"}
-      <p>Welcome to Word Compiler. Create your first project to get started.</p>
+      <p>Welcome to Word Compiler. Create your first essay to get started.</p>
       <div class="new-project-form">
-        <Input
-          autofocus
-          placeholder="Project title"
-          value={newProjectTitle}
-          oninput={(e) => { newProjectTitle = (e.target as HTMLInputElement).value; }}
-          onkeydown={(e) => { if (e.key === "Enter") createFirstProject(); }}
-        />
-        <Button onclick={createFirstProject}>Create Project</Button>
+        <Button onclick={handleOpenTemplatePicker}>Create Project</Button>
       </div>
     {:else if startupStatus === "error"}
       <ErrorBanner message={store.error ?? "Failed to load"} onDismiss={() => store.setError(null)} />
@@ -312,7 +321,7 @@ function exportState() {
         projects={projectList}
         newTitle={newProjectTitle}
         onSelectProject={handleSelectProject}
-        onCreateProject={handleCreateProjectFromList}
+        onCreateProject={handleOpenTemplatePicker}
         onTitleChange={(t) => { newProjectTitle = t; }}
       />
     {/if}
@@ -345,7 +354,7 @@ function exportState() {
     {/if}
     <div class="header-right">
       <Button size="sm" onclick={handleBackToProjects}>Projects</Button>
-      {#if workflow.activeStage === "draft"}
+      {#if workflow.activeStage === "draft" || store.bible?.mode === "essay"}
         <label class="model-selector">
           Model:
           <Select
@@ -372,7 +381,9 @@ function exportState() {
     </div>
   </div>
 
-  <WorkflowRail {workflow} />
+  {#if store.bible?.mode !== "essay"}
+    <WorkflowRail {workflow} />
+  {/if}
 
   {#if store.error}
     <div class="error-margin">
@@ -380,63 +391,100 @@ function exportState() {
     </div>
   {/if}
 
-  <StageCTA nextStage={workflow.nextStageCTA} onclick={(stage) => workflow.goToStage(stage.id)} />
+  {#if store.bible?.mode !== "essay"}
+    <StageCTA nextStage={workflow.nextStageCTA} onclick={(stage) => workflow.goToStage(stage.id)} />
+  {/if}
 
   <div class="stage-workspace">
-    {#key workflow.activeStage}
-      <svelte:boundary onerror={(err) => { console.error("[boundary] Stage crash:", err); boundaryErrorMsg = `Something went wrong: ${err instanceof Error ? err.message : "Unknown error"}. Try switching stages or refreshing.`; store.setError(boundaryErrorMsg); }}>
-        <div class="stage-content" in:fade={{ duration: 150, delay: 50 }} out:fade={{ duration: 100 }}>
-          {#if workflow.activeStage === "bootstrap"}
-            <BootstrapStage {store} {commands} />
-          {:else if workflow.activeStage === "draft"}
-            <DraftStage
-              {store}
-              {commands}
-              onGenerate={() => generateChunk()}
-              onRunAudit={() => runAuditManual()}
-              onRunDeepAudit={() => runDeepAudit()}
-              onAutopilot={() => runAutopilot()}
-              onExtractIR={(sceneId) => extractSceneIR(sceneId)}
-            />
-          {:else if workflow.activeStage === "plan"}
-            <PlanStage {store} {commands} />
-          {:else if workflow.activeStage === "audit"}
-            <AuditStage
-              {store}
-              {commands}
-              onRunAudit={() => runAuditManual()}
-              onRunDeepAudit={() => runDeepAudit()}
-            />
-          {:else if workflow.activeStage === "edit"}
-            <EditStage
-              {store}
-              {commands}
-              onRequestRefinement={requestRefinement}
-            />
-          {:else if workflow.activeStage === "complete"}
-            <CompleteStage
-              {store}
-              {commands}
-              onExtractIR={(sceneId) => extractSceneIR(sceneId)}
-            />
-          {:else if workflow.activeStage === "export"}
-            <ExportStage {store} />
-          {/if}
+    {#if store.bible?.mode === "essay"}
+      <!-- Essay mode: single-page composer. No stage switching, so no {#key}.
+           A dedicated svelte:boundary with its own error state keeps a
+           composer crash from dragging fiction-mode state down with it. -->
+      <svelte:boundary onerror={(err) => { console.error("[boundary] Composer crash:", err); composerBoundaryErrorMsg = `Something went wrong: ${err instanceof Error ? err.message : "Unknown error"}. Try again or refresh.`; store.setError(composerBoundaryErrorMsg); }}>
+        <div class="stage-content">
+          <EssayComposer
+            bind:this={composerRef}
+            {store}
+            {commands}
+            onGenerate={handleComposerGenerate}
+          />
         </div>
         {#snippet failed(err, reset)}
           <div class="stage-crash">
             <h3>Something went wrong</h3>
             <p>{err instanceof Error ? err.message : "An unexpected error occurred."}</p>
-            <Button onclick={() => { if (store.error === boundaryErrorMsg) store.setError(null); reset(); }}>Try Again</Button>
+            <Button onclick={() => { if (store.error === composerBoundaryErrorMsg) store.setError(null); reset(); }}>Try Again</Button>
           </div>
         {/snippet}
       </svelte:boundary>
-    {/key}
+    {:else}
+      {#key workflow.activeStage}
+        <svelte:boundary onerror={(err) => { console.error("[boundary] Stage crash:", err); boundaryErrorMsg = `Something went wrong: ${err instanceof Error ? err.message : "Unknown error"}. Try switching stages or refreshing.`; store.setError(boundaryErrorMsg); }}>
+          <div class="stage-content" in:fade={{ duration: 150, delay: 50 }} out:fade={{ duration: 100 }}>
+            {#if workflow.activeStage === "bootstrap"}
+              <BootstrapStage {store} {commands} />
+            {:else if workflow.activeStage === "draft"}
+              <DraftStage
+                {store}
+                {commands}
+                onGenerate={() => generateChunk()}
+                onRunAudit={() => runAuditManual()}
+                onRunDeepAudit={() => runDeepAudit()}
+                onAutopilot={() => runAutopilot()}
+                onExtractIR={(sceneId) => extractSceneIR(sceneId)}
+              />
+            {:else if workflow.activeStage === "plan"}
+              <PlanStage {store} {commands} />
+            {:else if workflow.activeStage === "audit"}
+              <AuditStage
+                {store}
+                {commands}
+                onRunAudit={() => runAuditManual()}
+                onRunDeepAudit={() => runDeepAudit()}
+              />
+            {:else if workflow.activeStage === "edit"}
+              <EditStage
+                {store}
+                {commands}
+                onRequestRefinement={requestRefinement}
+              />
+            {:else if workflow.activeStage === "complete"}
+              <CompleteStage
+                {store}
+                {commands}
+                onExtractIR={(sceneId) => extractSceneIR(sceneId)}
+              />
+            {:else if workflow.activeStage === "export"}
+              <ExportStage {store} />
+            {/if}
+          </div>
+          {#snippet failed(err, reset)}
+            <div class="stage-crash">
+              <h3>Something went wrong</h3>
+              <p>{err instanceof Error ? err.message : "An unexpected error occurred."}</p>
+              <Button onclick={() => { if (store.error === boundaryErrorMsg) store.setError(null); reset(); }}>Try Again</Button>
+            </div>
+          {/snippet}
+        </svelte:boundary>
+      {/key}
+    {/if}
   </div>
 
-  <GlossaryPanel />
+  {#if store.bible?.mode !== "essay"}
+    <GlossaryPanel />
+  {/if}
 </div>
 {/if}
+
+<!-- TemplatePicker lives outside the appReady gate so a first-time user on
+     the no-projects screen can open it. It's always in the DOM but only
+     visible when `templatePickerOpen` is true. -->
+<TemplatePicker
+  open={templatePickerOpen}
+  {actions}
+  onProjectCreated={handleEssayProjectCreated}
+  onCancel={() => { templatePickerOpen = false; }}
+/>
 
 <style>
   .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }

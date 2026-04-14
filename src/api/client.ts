@@ -55,6 +55,10 @@ export function apiUpdateProject(id: string, updates: Partial<Pick<Project, "tit
   });
 }
 
+export function apiDeleteProject(id: string): Promise<void> {
+  return fetchJson(`${BASE}/projects/${id}`, { method: "DELETE" });
+}
+
 // ─── Bibles ──────────────────────────────────────────
 
 export function apiGetLatestBible(projectId: string): Promise<Bible> {
@@ -132,6 +136,26 @@ export function apiUpdateSceneStatus(id: string, status: SceneStatus): Promise<v
   return fetchJson(`${BASE}/scenes/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
+  });
+}
+
+export interface SceneCascadeCounts {
+  chunks: number;
+  compilationLogs: number;
+  compiledPayloads: number;
+  auditFlags: number;
+  narrativeIRs: number;
+  editPatterns: number;
+}
+
+export function apiDeleteScenePlan(id: string): Promise<{ ok: true; cascadeCounts: SceneCascadeCounts }> {
+  return fetchJson(`${BASE}/scenes/${id}`, { method: "DELETE" });
+}
+
+export function apiReorderScenePlans(chapterId: string, orderedIds: string[]): Promise<{ ok: true; updated: number }> {
+  return fetchJson(`${BASE}/chapters/${chapterId}/scenes/reorder`, {
+    method: "PATCH",
+    body: JSON.stringify({ orderedIds }),
   });
 }
 

@@ -360,6 +360,83 @@ export class ProjectStore {
     this.activeSceneIndex = this.scenes.length - 1;
   }
 
+  /**
+   * Reorders the scenes in the store to match `orderedIds`. Pure permutation:
+   * does NOT add, remove, or mutate per-scene data other than `sceneOrder`.
+   *
+   * Silently no-ops if `orderedIds` is not a complete permutation of the
+   * current scene set — the server validates first, so by the time this runs
+   * the input should always match, but we defend against races.
+   *
+   * Re-syncs `activeSceneIndex` so whichever scene was previously active
+   * stays active at its new position.
+   */
+  reorderScenePlans(orderedIds: string[]) {
+    if (orderedIds.length !== this.scenes.length) {
+      // Length mismatch means the store was mutated between when the caller
+      // captured its snapshot and when it tried to rollback. Surface this
+      // so silent no-op rollbacks stop being invisible in production.
+      console.warn(
+        `[project-store] reorderScenePlans length mismatch: input=${orderedIds.length}, scenes=${this.scenes.length}. Skipping rollback.`,
+      );
+      return;
+    }
+
+    const byId = new Map(this.scenes.map((entry) => [entry.plan.id, entry] as const));
+    const next: SceneEntry[] = [];
+    for (let i = 0; i < orderedIds.length; i++) {
+      const id = orderedIds[i]!;
+      const entry = byId.get(id);
+      if (!entry) {
+        console.warn(`[project-store] reorderScenePlans unknown id: ${id}. Aborting without mutation.`);
+        return;
+      }
+      next.push({ ...entry, sceneOrder: i });
+    }
+
+    const activeSceneId = this.scenes[this.activeSceneIndex]?.plan.id ?? null;
+    this.scenes = next;
+    if (activeSceneId !== null) {
+      const newIndex = next.findIndex((entry) => entry.plan.id === activeSceneId);
+      this.activeSceneIndex = newIndex >= 0 ? newIndex : 0;
+    }
+  }
+
+  /**
+   * Removes a scene plan from the store along with its associated chunks,
+   * narrative IR, and editorial annotations. Clamps `activeSceneIndex` to
+   * remain within bounds after deletion.
+   */
+  removeScenePlan(sceneId: string) {
+    const removedIndex = this.scenes.findIndex((s) => s.plan.id === sceneId);
+    if (removedIndex < 0) return;
+
+    this.scenes = this.scenes.filter((s) => s.plan.id !== sceneId);
+
+    const { [sceneId]: _removedChunks, ...restChunks } = this.sceneChunks;
+    this.sceneChunks = restChunks;
+
+    const { [sceneId]: _removedIR, ...restIRs } = this.sceneIRs;
+    this.sceneIRs = restIRs;
+
+    const { [sceneId]: _removedAnns, ...restAnns } = this.editorialAnnotations;
+    this.editorialAnnotations = restAnns;
+
+    // Clamp activeSceneIndex so the getter never returns null if other scenes remain
+    if (this.scenes.length === 0) {
+      this.activeSceneIndex = 0;
+    } else if (this.activeSceneIndex >= this.scenes.length) {
+      this.activeSceneIndex = this.scenes.length - 1;
+    } else if (removedIndex < this.activeSceneIndex) {
+      // The removal shifted everything after it left by one — keep the same scene active
+      this.activeSceneIndex = this.activeSceneIndex - 1;
+    }
+    // Otherwise (removedIndex >= activeSceneIndex and scenes still in bounds) the
+    // active index now points at what was the next scene, which is the right behavior.
+
+    this.selectedChunkIndex = null;
+  }
+
   loadFromServer(data: {
     project: Project;
     bible: Bible | null;

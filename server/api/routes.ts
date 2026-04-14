@@ -190,6 +190,33 @@ export function createApiRouter(db: Database.Database, anthropicClient?: Anthrop
     res.json({ ok: true });
   });
 
+  router.patch("/chapters/:chapterId/scenes/reorder", (req, res) => {
+    const { orderedIds } = req.body ?? {};
+    if (!Array.isArray(orderedIds) || !orderedIds.every((id): id is string => typeof id === "string")) {
+      console.warn(`[data] Reorder rejected: malformed body for chapter=${req.params.chapterId}`);
+      return res.status(400).json({ error: "orderedIds must be an array of strings" });
+    }
+    const result = scenePlans.reorderScenePlans(db, req.params.chapterId, orderedIds);
+    if ("error" in result) {
+      console.warn(
+        `[data] Reorder rejected: mismatched ids chapter=${req.params.chapterId} count=${orderedIds.length}`,
+      );
+      return res.status(400).json({ error: "ID set does not match chapter's scenes" });
+    }
+    console.log(`[data] Reordered sections: chapter=${req.params.chapterId} count=${result.updated}`);
+    res.json({ ok: true, updated: result.updated });
+  });
+
+  router.delete("/scenes/:id", (req, res) => {
+    const result = scenePlans.deleteScenePlan(db, req.params.id);
+    if (!result.deleted) {
+      console.warn(`[data] Section plan not found for delete: ${req.params.id}`);
+      return res.status(404).json({ error: "Section plan not found" });
+    }
+    console.log(`[data] Deleted section plan: ${req.params.id} (cascade: ${JSON.stringify(result.cascadeCounts)})`);
+    res.json({ ok: true, cascadeCounts: result.cascadeCounts });
+  });
+
   // ─── Chunks ────────────────────────────────────────
   router.get("/scenes/:sceneId/chunks", (req, res) => {
     res.json(chunks.listChunksForScene(db, req.params.sceneId));

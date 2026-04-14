@@ -16,6 +16,8 @@ function mockActions(): ApiActions {
     saveBible: vi.fn().mockResolvedValue(undefined),
     saveScenePlan: vi.fn().mockResolvedValue(undefined),
     updateScenePlan: vi.fn().mockResolvedValue(undefined),
+    deleteScenePlan: vi.fn().mockResolvedValue(undefined),
+    reorderScenePlans: vi.fn().mockResolvedValue(undefined),
     saveMultipleScenePlans: vi.fn().mockResolvedValue(undefined),
     saveChapterArc: vi.fn().mockResolvedValue(undefined),
     updateChapterArc: vi.fn().mockResolvedValue(undefined),
@@ -29,6 +31,7 @@ function mockActions(): ApiActions {
     resolveAuditFlag: vi.fn().mockResolvedValue(undefined),
     dismissAuditFlag: vi.fn().mockResolvedValue(undefined),
     saveCompilationLog: vi.fn().mockResolvedValue(undefined),
+    createEssayProject: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -131,6 +134,125 @@ describe("createCommands", () => {
       await cmds.saveMultipleScenePlans(plans);
 
       expect(store.scenes).toHaveLength(2);
+    });
+  });
+
+  // ─── removeScenePlan ──────────────────────────
+
+  describe("removeScenePlan", () => {
+    it("calls the API action then the store method in order", async () => {
+      const cmds = createCommands(store, actions);
+      const plan = createEmptyScenePlan("proj-1");
+      store.addScenePlan(plan);
+      const removeSpy = vi.spyOn(store, "removeScenePlan");
+
+      const result = await cmds.removeScenePlan(plan.id);
+
+      expect(result.ok).toBe(true);
+      expect(actions.deleteScenePlan).toHaveBeenCalledWith(plan.id);
+      expect(removeSpy).toHaveBeenCalledWith(plan.id);
+      expect(store.scenes).toHaveLength(0);
+
+      // Ordering: API action must resolve before the store mutation runs
+      const apiCallOrder = (actions.deleteScenePlan as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]!;
+      const storeCallOrder = removeSpy.mock.invocationCallOrder[0]!;
+      expect(apiCallOrder).toBeLessThan(storeCallOrder);
+    });
+
+    it("does not mutate the store when the API action fails", async () => {
+      (actions.deleteScenePlan as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network down"));
+      const cmds = createCommands(store, actions);
+      const plan = createEmptyScenePlan("proj-1");
+      store.addScenePlan(plan);
+
+      const result = await cmds.removeScenePlan(plan.id);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBe("Network down");
+      expect(store.error).toBe("Network down");
+      // Scene still in store — UI continues to show it
+      expect(store.scenes).toHaveLength(1);
+      expect(store.scenes[0]!.plan.id).toBe(plan.id);
+    });
+
+    it("removes scene from store in store-only mode", async () => {
+      const cmds = createCommands(store);
+      const plan = createEmptyScenePlan("proj-1");
+      store.addScenePlan(plan);
+
+      const result = await cmds.removeScenePlan(plan.id);
+
+      expect(result.ok).toBe(true);
+      expect(store.scenes).toHaveLength(0);
+    });
+  });
+
+  // ─── reorderScenePlans ────────────────────────
+
+  describe("reorderScenePlans", () => {
+    it("updates the store optimistically, then calls the API action", async () => {
+      const cmds = createCommands(store, actions);
+      const plan1 = createEmptyScenePlan("proj-1");
+      const plan2 = createEmptyScenePlan("proj-1");
+      const plan3 = createEmptyScenePlan("proj-1");
+      store.addScenePlan(plan1);
+      store.addScenePlan(plan2);
+      store.addScenePlan(plan3);
+      const reorderSpy = vi.spyOn(store, "reorderScenePlans");
+
+      const result = await cmds.reorderScenePlans("chap-1", [plan3.id, plan1.id, plan2.id]);
+
+      expect(result.ok).toBe(true);
+      expect(actions.reorderScenePlans).toHaveBeenCalledWith("chap-1", [plan3.id, plan1.id, plan2.id]);
+      expect(reorderSpy).toHaveBeenCalledWith([plan3.id, plan1.id, plan2.id]);
+
+      // Optimistic: store mutation happens BEFORE the API resolves
+      const storeCallOrder = reorderSpy.mock.invocationCallOrder[0]!;
+      const apiCallOrder = (actions.reorderScenePlans as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]!;
+      expect(storeCallOrder).toBeLessThan(apiCallOrder);
+
+      // Final store order reflects the new order
+      expect(store.scenes.map((s) => s.plan.id)).toEqual([plan3.id, plan1.id, plan2.id]);
+    });
+
+    it("rolls back the store order when the API action fails", async () => {
+      (actions.reorderScenePlans as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network down"));
+      const cmds = createCommands(store, actions);
+      const plan1 = createEmptyScenePlan("proj-1");
+      const plan2 = createEmptyScenePlan("proj-1");
+      const plan3 = createEmptyScenePlan("proj-1");
+      store.addScenePlan(plan1);
+      store.addScenePlan(plan2);
+      store.addScenePlan(plan3);
+      const originalOrder = [plan1.id, plan2.id, plan3.id];
+      const reorderSpy = vi.spyOn(store, "reorderScenePlans");
+
+      const result = await cmds.reorderScenePlans("chap-1", [plan3.id, plan1.id, plan2.id]);
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.error).toBe("Network down");
+      expect(store.error).toBe("Network down");
+
+      // Store method was called twice: once optimistically, once for rollback
+      expect(reorderSpy).toHaveBeenCalledTimes(2);
+      expect(reorderSpy.mock.calls[0]![0]).toEqual([plan3.id, plan1.id, plan2.id]);
+      expect(reorderSpy.mock.calls[1]![0]).toEqual(originalOrder);
+
+      // Final store order matches the original (rollback succeeded)
+      expect(store.scenes.map((s) => s.plan.id)).toEqual(originalOrder);
+    });
+
+    it("returns success in store-only mode without calling any API action", async () => {
+      const cmds = createCommands(store);
+      const plan1 = createEmptyScenePlan("proj-1");
+      const plan2 = createEmptyScenePlan("proj-1");
+      store.addScenePlan(plan1);
+      store.addScenePlan(plan2);
+
+      const result = await cmds.reorderScenePlans("chap-1", [plan2.id, plan1.id]);
+
+      expect(result.ok).toBe(true);
+      expect(store.scenes.map((s) => s.plan.id)).toEqual([plan2.id, plan1.id]);
     });
   });
 

@@ -210,4 +210,97 @@ describe("createApiActions", () => {
       expect(mockedApi.apiSaveCompilationLog).toHaveBeenCalledWith(log);
     });
   });
+
+  describe("createEssayProject", () => {
+    function makeProject(id = "proj-essay-1") {
+      return {
+        id,
+        title: "Opinion Piece",
+        status: "drafting" as const,
+        createdAt: "",
+        updatedAt: "",
+      };
+    }
+
+    it("persists project -> bible -> chapter arc -> scene plans and populates the store", async () => {
+      const project = makeProject();
+      const bible = { ...createEmptyBible(project.id, "essay"), projectId: project.id };
+      const plan1 = { ...createEmptyScenePlan(project.id), title: "S1", failureModeToAvoid: "x" };
+      const plan2 = { ...createEmptyScenePlan(project.id), title: "S2", failureModeToAvoid: "y" };
+
+      mockedApi.apiCreateProject.mockResolvedValue(project);
+      mockedApi.apiSaveBible.mockImplementation(async (b) => b);
+      mockedApi.apiSaveChapterArc.mockImplementation(async (a) => a);
+      mockedApi.apiSaveScenePlan.mockImplementation(async (p) => p);
+
+      const result = await actions.createEssayProject(project, bible, [plan1, plan2]);
+
+      expect(mockedApi.apiCreateProject).toHaveBeenCalledWith(project);
+      expect(mockedApi.apiSaveBible).toHaveBeenCalledTimes(1);
+      expect(mockedApi.apiSaveChapterArc).toHaveBeenCalledTimes(1);
+      expect(mockedApi.apiSaveScenePlan).toHaveBeenCalledTimes(2);
+      expect(mockedApi.apiDeleteProject).not.toHaveBeenCalled();
+
+      // Store populated so the composer can render immediately.
+      expect(store.project).toEqual(project);
+      expect(store.bible?.mode).toBe("essay");
+      expect(store.chapterArc).toBeTruthy();
+      expect(store.scenes).toHaveLength(2);
+      // Return value is the persisted Project directly — bible + arc + plans
+      // are written to the store rather than returned, so callers don't have
+      // to unwrap a bundle.
+      expect(result).toEqual(project);
+      // Each persisted plan got the chapterId stamped in.
+      expect(mockedApi.apiSaveScenePlan.mock.calls[0]?.[0].chapterId).toBeTruthy();
+    });
+
+    it("rolls back the project if bible persistence fails", async () => {
+      const project = makeProject("proj-fail-bible");
+      const bible = createEmptyBible(project.id, "essay");
+      mockedApi.apiCreateProject.mockResolvedValue(project);
+      mockedApi.apiSaveBible.mockRejectedValue(new Error("bible write failed"));
+      mockedApi.apiDeleteProject.mockResolvedValue(undefined);
+
+      await expect(actions.createEssayProject(project, bible, [])).rejects.toThrow("bible write failed");
+
+      expect(mockedApi.apiCreateProject).toHaveBeenCalledWith(project);
+      expect(mockedApi.apiDeleteProject).toHaveBeenCalledWith(project.id);
+      expect(mockedApi.apiSaveChapterArc).not.toHaveBeenCalled();
+      // Store was NOT populated because persistence didn't complete.
+      expect(store.bible).toBeNull();
+    });
+
+    it("rolls back if a scene plan save fails midway", async () => {
+      const project = makeProject("proj-fail-plan");
+      const bible = createEmptyBible(project.id, "essay");
+      const plan1 = createEmptyScenePlan(project.id);
+      const plan2 = createEmptyScenePlan(project.id);
+
+      mockedApi.apiCreateProject.mockResolvedValue(project);
+      mockedApi.apiSaveBible.mockImplementation(async (b) => b);
+      mockedApi.apiSaveChapterArc.mockImplementation(async (a) => a);
+      mockedApi.apiSaveScenePlan
+        .mockImplementationOnce(async (p) => p)
+        .mockImplementationOnce(async () => {
+          throw new Error("plan 2 persistence failed");
+        });
+      mockedApi.apiDeleteProject.mockResolvedValue(undefined);
+
+      await expect(actions.createEssayProject(project, bible, [plan1, plan2])).rejects.toThrow(
+        "plan 2 persistence failed",
+      );
+
+      expect(mockedApi.apiDeleteProject).toHaveBeenCalledWith(project.id);
+    });
+
+    it("swallows rollback errors so the original cause surfaces", async () => {
+      const project = makeProject("proj-rollback-fails");
+      const bible = createEmptyBible(project.id, "essay");
+      mockedApi.apiCreateProject.mockResolvedValue(project);
+      mockedApi.apiSaveBible.mockRejectedValue(new Error("original bible failure"));
+      mockedApi.apiDeleteProject.mockRejectedValue(new Error("rollback also failed"));
+
+      await expect(actions.createEssayProject(project, bible, [])).rejects.toThrow("original bible failure");
+    });
+  });
 });
