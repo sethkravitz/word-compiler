@@ -1,0 +1,72 @@
+src/app/components/composer/auditMapping.ts
+  75790ccc6b48b055 97
+src/app/components/composer/EssayComposer.svelte
+  75790ccc6b48b055 15,24,70-76,104-106,109,138,147,155,157,163-176,221,249-254,256,259,261-267,269,271-279,283,287,297-300,307-311,332-336,376-386,407,414-417,431-434,444-447,458-460,462-467,472-475,491-494,506-515,537,548-551,627-660
+src/app/components/composer/sectionStateMachine.ts
+  75790ccc6b48b055 27-28,35-41,45-49,51-53,55-58,60-61,64,68
+src/app/store/api-actions.ts
+  75790ccc6b48b055 108,110-117,123-126,128,140,150
+server/db/repositories/projects.ts
+  75790ccc6b48b055 84-92
+src/app/components/composer/SectionCard.svelte
+  75790ccc6b48b055 155,157-158,161-162,234
+src/app/store/project.svelte.ts
+  75790ccc6b48b055 375-383,390-393
+src/app/App.svelte
+  75790ccc6b48b055 59,167-168
+src/app/components/composer/TemplatePicker.svelte
+  75790ccc6b48b055 159,166,217,221
+tests/ui/composer/sectionStateMachine.test.ts
+  75790ccc6b48b055 14,225-227
+tests/bootstrap/template-integration.test.ts
+  75790ccc6b48b055 44-45,52-62
+src/review/types.ts
+  75790ccc6b48b055 50-53
+tests/store/api-actions.test.ts
+  75790ccc6b48b055 249-252
+src/bootstrap/index.ts
+  75790ccc6b48b055 66-73,77,79,190-242,245-254
+tests/ui/composer/EssayComposer.test.ts
+  75790ccc6b48b055 366-373,375-433,609-613,615-693
+tests/bootstrap/template-gate-contract.test.ts
+  75790ccc6b48b055 1-85
+tests/ui/composer/TemplatePicker.test.ts
+  75790ccc6b48b055 36-41,140-144,241-245
+tests/bootstrap/index.test.ts
+  75790ccc6b48b055 59-111
+server/db/repositories/scene-plans.ts
+  75790ccc6b48b055 109-118,120-121,124-133,140,143
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.8",
+  "base_commit_sha": "c0a131f4116c92f147b9b21e4d22da723c07653c",
+  "prompts": {
+    "75790ccc6b48b055": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e6658136-7697-415a-b4ee-3ff6fbd7db0c",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 1903,
+      "total_deletions": 301,
+      "accepted_lines": 5483,
+      "overriden_lines": 18
+    },
+    "ac8190ea061f9627": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "ea62ba6b-c68a-465d-9959-85d37bcdf544",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Seth Kravitz",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 6646,
+      "overriden_lines": 0
+    }
+  }
+}
